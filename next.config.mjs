@@ -1,6 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.three-komunika.com",
+        pathname: "/storage/**",
+      },
+    ],
+  },
+  productionBrowserSourceMaps: false,
+  env: {
+    APP_VERSION: process.env.npm_package_version,
+  },
 };
 
 export default nextConfig;
