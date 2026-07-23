@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Plus, ArrowLeftRight, Warehouse, ArrowUpDown, Ticket, ListCheck } from "lucide-react";
+import { Search, Plus, ArrowLeftRight, Warehouse, ArrowUpDown, Ticket, ListCheck, Signal, Sparkles, Landmark } from "lucide-react";
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
@@ -14,10 +14,19 @@ import Notification from "@/app/components/Notification";
 import axios from "@/app/utils/axios";
 import JournalTable from "./JournalTable";
 import { motion, AnimatePresence } from "motion/react";
+import CreateMutation from "./CreateMutation";
+import CashBankBalance from "./CashBankBalance";
+import SalesTable from "./SalesTable";
+import useCashBankBalance from "@/app/hooks/useCashBankBalance";
+import DepositLog from "./DepositLog";
+import ExpenseLog from "./ExpenseLog";
+import CashBankMutation from "./CashBankMutation";
+import useWarehouse from "@/app/hooks/useWarehouse";
 
 const TransactionContent = () => {
     const { user } = useAuth();
     const { today } = DateTimeNow();
+    const userRole = user.role;
     const warehouseId = user.warehouse_id;
     const warehouseCashId = user.warehouse?.primary_cash?.id;
     const [startDate, setStartDate] = useState(today);
@@ -29,7 +38,10 @@ const TransactionContent = () => {
         startDate: startDate,
         endDate: endDate,
     });
+    const { data: accountBalance, error: balanceError, isValidating, mutate: mutateBalance } = useCashBankBalance(warehouseId, endDate);
+
     const { accounts, loading: loadingAccounts, error: errorAccounts } = useAccounts();
+    const { warehouses, loading: loadingWarehouses, error: errorWarehouses } = useWarehouse();
 
     const whAccounts = accounts.filter((account) => account.warehouse_id === warehouseId);
     const hqAccounts = accounts.filter((account) => account.warehouse_id === 1);
@@ -108,6 +120,8 @@ const TransactionContent = () => {
     }, [personalSetting]);
 
     const [isModalAddTransactionOpen, setIsModalAddTransactionOpen] = useState(false);
+    const [isModalEditTransactionOpen, setIsModalEditTransactionOpen] = useState(false);
+    const [isModalAddMutationOpen, setIsModalAddMutationOpen] = useState(false);
     const [selectedBankAccount, setSelectedBankAccount] = useState(null);
     // --- Delete confirmation state ---
     const [txToDelete, setTxToDelete] = useState(null);
@@ -126,48 +140,41 @@ const TransactionContent = () => {
     return (
         <>
             <Notification message={notification} onClose={() => setNotification(null)} />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs">
+                <div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 mb-1.5">
+                        <Sparkles className="h-3 w-3" /> {user.warehouse?.name}
+                    </span>
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Welcome Back, {user.name}</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{user.role}</p>
+                </div>
+            </div>
             <div className="space-y-6" id="stock-inventory-section">
-                <div className="border-b border-slate-150 dark:border-slate-800 flex gap-6 pb-px">
-                    <button
-                        onClick={() => setActiveSubTab("transactions")}
-                        className={`pb-3 text-sm font-bold relative transition-colors ${
-                            activeSubTab === "transactions"
-                                ? "text-indigo-600 dark:text-indigo-400"
-                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                        }`}
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <ArrowUpDown className="h-4 w-4" />
-                            Transactions Journal
-                        </span>
-                        {activeSubTab === "transactions" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab("sales")}
-                        className={`pb-3 text-sm font-bold relative transition-colors ${
-                            activeSubTab === "sales" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                        }`}
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <Ticket className="h-4 w-4" />
-                            Voucher & Deposit
-                        </span>
-                        {activeSubTab === "sales" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab("attendance")}
-                        className={`pb-3 text-sm font-bold relative transition-colors ${
-                            activeSubTab === "attendance"
-                                ? "text-indigo-600 dark:text-indigo-400"
-                                : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                        }`}
-                    >
-                        <span className="flex items-center gap-1.5">
-                            <ListCheck className="h-4 w-4" />
-                            Absensi Karyawan
-                        </span>
-                        {activeSubTab === "attendance" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
-                    </button>
+                <div className="border-b border-slate-200 dark:border-slate-800 flex gap-6 pb-px pt-4 px-4">
+                    {/* Sub-Tab Buttons */}
+                    {[
+                        { id: "transactions", label: "Transaction Journal", icon: ArrowUpDown },
+                        { id: "sales", label: "Voucher & Accessories", icon: Ticket },
+                        { id: "deposits", label: "Deposit (Pulsa, Token, Dll)", icon: Signal },
+                        { id: "expenses", label: "Pengeluaran (Biaya)", icon: Signal },
+                        { id: "accounts", label: "Saldo Kas dan Bank", icon: Landmark },
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveSubTab(tab.id)}
+                            className={`pb-3 text-sm font-bold relative transition-colors ${
+                                activeSubTab === tab.id
+                                    ? "text-indigo-600 dark:text-indigo-400"
+                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                            }`}
+                        >
+                            <span className="flex items-center gap-1.5">
+                                <tab.icon className="h-4 w-4" />
+                                {tab.label}
+                            </span>
+                            {activeSubTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
+                        </button>
+                    ))}
                 </div>
                 <AnimatePresence mode="wait">
                     {activeSubTab === "transactions" && (
@@ -223,7 +230,7 @@ const TransactionContent = () => {
                                 </div>
 
                                 {/* Action Button */}
-                                <div className="flex gap-2">
+                                <div className="flex gap-4">
                                     <button
                                         type="button"
                                         onClick={() => setIsModalAddTransactionOpen(true)}
@@ -234,8 +241,8 @@ const TransactionContent = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setIsModalAddTransactionOpen(true)}
-                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                                        onClick={() => setIsModalAddMutationOpen(true)}
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500 transition-colors"
                                     >
                                         <Plus className="h-4 w-4" />
                                         <span>Add Mutation</span>
@@ -243,7 +250,90 @@ const TransactionContent = () => {
                                 </div>
                             </div>
 
-                            <JournalTable filteredTransactions={filteredTransactions} setTxToDelete={setTxToDelete} />
+                            <div className="flex gap-6">
+                                <div className="w-3/4">
+                                    <JournalTable
+                                        filteredTransactions={filteredTransactions}
+                                        setTxToDelete={setTxToDelete}
+                                        warehouseCashId={warehouseCashId}
+                                        warehouseId={warehouseId}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <CashBankBalance
+                                        journals={journalByWarehouse}
+                                        accountBalance={accountBalance}
+                                        warehouseId={warehouseId}
+                                        endDate={endDate}
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                    {activeSubTab === "sales" && (
+                        <motion.div
+                            key="sales"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <SalesTable warehouseId={warehouseId} startDate={startDate} endDate={endDate} notification={setNotification} />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "deposits" && (
+                        <motion.div
+                            key="deposits"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <DepositLog journals={journalByWarehouse} notification={setNotification} mutate={mutate} />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "expenses" && (
+                        <motion.div
+                            key="expenses"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <ExpenseLog
+                                warehouseCashId={warehouseCashId}
+                                journals={journalByWarehouse}
+                                notification={setNotification}
+                                mutate={mutate}
+                                accounts={accounts}
+                            />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "accounts" && (
+                        <motion.div
+                            key="accounts"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <CashBankMutation
+                                journals={journalByWarehouse}
+                                mutate={mutate}
+                                notification={setNotification}
+                                accountBalance={accountBalance}
+                                accounts={accounts}
+                                warehouseId={warehouseId}
+                                endDate={endDate}
+                                setIsModalAddMutationOpen={setIsModalAddMutationOpen}
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -255,10 +345,25 @@ const TransactionContent = () => {
                         setSelectedBankAccount={setSelectedBankAccount}
                         accountOptions={accountOptions}
                         mutate={mutate}
+                        mutateBalance={mutateBalance}
                         isModalOpen={setIsModalAddTransactionOpen}
                         notification={setNotification}
                         feeAuto={personalSetting.feeAdminAuto}
                         setPersonalSetting={setPersonalSetting}
+                    />
+                </Modal>
+
+                {/* --- ADD MUTATION --- */}
+                <Modal isOpen={isModalAddMutationOpen} onClose={() => setIsModalAddMutationOpen(false)} title="Register New Mutation">
+                    <CreateMutation
+                        accounts={accounts}
+                        mutate={mutate}
+                        mutateBalance={mutateBalance}
+                        isModalOpen={setIsModalAddMutationOpen}
+                        warehouseId={warehouseId}
+                        notification={setNotification}
+                        warehouses={warehouses}
+                        userRole={userRole}
                     />
                 </Modal>
                 {/* --- CONFIRMATION POPOVER FOR TX DELETES --- */}

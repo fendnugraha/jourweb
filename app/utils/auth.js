@@ -19,7 +19,7 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             .then((res) => res.data)
             .catch((error) => {
                 throw error;
-            })
+            }),
     );
 
     const csrf = async () => {
@@ -27,7 +27,7 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     };
 
     const login = async ({ setErrors, setStatus, setMessage, setLoading, ...props }) => {
-        setLoading(true); // Set loading state to true before login starts
+        setLoading(true);
         await csrf();
 
         setErrors([]);
@@ -38,13 +38,10 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             .then(() => {
                 mutate();
                 setMessage("Login successful!");
-                setLoading(false); // Set loading state to false once login is successful
-
-                // Add your routing logic here, for example:
-                // history.push("/dashboard"); // if using react-router
+                setLoading(false);
             })
             .catch((error) => {
-                setLoading(false); // Set loading state to false if an error occurs
+                setLoading(false);
                 if (error.response.status !== 422) throw error;
                 setStatus(error.response.status);
                 setErrors(error.response.data.errors);
@@ -60,27 +57,45 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     }, [error, mutate]);
 
     useEffect(() => {
+        // 🔥 UPDATE: Cek role langsung menggunakan user.role
+        const requiresCheckin = user && !user.has_checked_in && user.role !== "Super Admin";
+
+        // 1. JIKA USER ADALAH GUEST (Belum Login) & BERHASIL LOGIN
         if (middleware === "guest" && redirectIfAuthenticated && user) {
-            if (user.role?.role === "Courier") {
+            if (requiresCheckin) {
+                router.push("/portal-checkin");
+            } else if (user.role === "Courier") {
+                // 🔥 Menggunakan user.role
                 router.push("/delivery");
             } else {
                 router.push(redirectIfAuthenticated || "/transaction");
             }
         }
 
-        if (middleware === "auth" && !user && error) {
-            router.push("/");
-        }
-
+        // 2. JIKA DI HALAMAN UTAMA "/" DAN USER SUDAH LOGIN
         if (window.location.pathname === "/" && user) {
-            if (user.role?.role === "Courier") {
+            if (requiresCheckin) {
+                router.push("/portal-checkin");
+            } else if (user.role === "Courier") {
+                // 🔥 Menggunakan user.role
                 router.push("/delivery");
             } else {
                 router.push(redirectIfAuthenticated || "/transaction");
             }
         }
 
-        if (middleware === "auth" && error) logout();
+        // 3. PROTEKSI UTAMA HALAMAN INTERNAL (MIDDLEWARE: AUTH)
+        if (middleware === "auth") {
+            if (!user && error) {
+                router.push("/");
+                logout();
+                return;
+            }
+
+            if (requiresCheckin && window.location.pathname !== "/portal-checkin") {
+                router.push("/portal-checkin");
+            }
+        }
     }, [middleware, redirectIfAuthenticated, user, error, router, logout]);
 
     return {

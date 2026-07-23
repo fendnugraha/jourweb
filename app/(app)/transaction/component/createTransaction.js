@@ -10,6 +10,7 @@ const CreateTransaction = ({
     setSelectedBankAccount,
     accountOptions,
     mutate,
+    mutateBalance,
     isModalOpen,
     notification,
     setPersonalSetting,
@@ -49,6 +50,7 @@ const CreateTransaction = ({
                 custName: "",
             });
             mutate();
+            mutateBalance();
             // isModalOpen(false);
             // setErrors([]);
             setFormError("");

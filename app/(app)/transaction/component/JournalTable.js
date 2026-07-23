@@ -1,7 +1,7 @@
-import { formatRupiah } from "@/app/utils/format";
-import { AlertCircle, Calendar, Coins, Tag, Trash2 } from "lucide-react";
+import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
+import { AlertCircle, ArrowRightLeft, Calendar, Coins, CreditCard, FileWarning, Tag, Trash2 } from "lucide-react";
 
-const JournalTable = ({ filteredTransactions, setTxToDelete }) => {
+const JournalTable = ({ filteredTransactions, setTxToDelete, warehouseCashId, warehouseId }) => {
     return (
         <div>
             {/* Stock Ledger/Table */}
@@ -43,21 +43,20 @@ const JournalTable = ({ filteredTransactions, setTxToDelete }) => {
                                     return (
                                         <tr key={tx.id} className="group hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150">
                                             {/* Description & Date */}
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 max-w-xs md:max-w-md text-wrap wrap-break-word">
                                                 <div className="space-y-1">
-                                                    <span className="font-bold text-slate-800 dark:text-slate-100 block max-w-xs md:max-w-md truncate">
-                                                        {tx.description}
-                                                    </span>
-                                                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-mono">
+                                                    {/* 'truncate' dihapus agar teks bebas turun ke bawah */}
+                                                    <span className="font-bold text-slate-800 dark:text-slate-100 block">{tx.description}</span>
+                                                    <span className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                                                         <Calendar className="h-3 w-3" />
-                                                        {tx.date_issued}
+                                                        {formatDateTime(tx.date_issued)}
                                                     </span>
                                                 </div>
                                             </td>
 
                                             {/* Category */}
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-100 dark:bg-slate-950/40 dark:border-slate-800 dark:text-slate-400">
+                                                <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-100 dark:bg-slate-950/40 dark:border-slate-800 dark:text-slate-400">
                                                     <Tag className="h-3 w-3 text-slate-400" />
                                                     {tx.trx_type}
                                                 </span>
@@ -65,15 +64,44 @@ const JournalTable = ({ filteredTransactions, setTxToDelete }) => {
 
                                             {/* Settlement Channel */}
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50/40 px-2.5 py-1 text-xs font-bold text-indigo-600 border border-indigo-100/30 dark:bg-slate-950/40 dark:border-slate-800 dark:text-indigo-400">
-                                                    <Coins className="h-3 w-3" />
-                                                    {tx.debt?.group || "Cash"}
-                                                </span>
+                                                {tx.trx_type === "Mutasi Kas" ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50/70 px-2.5 py-1 text-xs font-bold text-indigo-600 border border-indigo-100/30 dark:bg-slate-950/40 dark:border-slate-800 dark:text-indigo-400">
+                                                        <ArrowRightLeft className="h-3 w-3" />
+                                                        {tx.cred?.group}
+                                                        {tx.cred?.warehouse?.id !== warehouseId && (
+                                                            <span className="text-slate-500 dark:text-slate-400">
+                                                                ({tx.cred?.warehouse?.name.replace(/^konter\s*/i, "")})
+                                                            </span>
+                                                        )}{" "}
+                                                        {"->"} {tx.debt?.group}{" "}
+                                                        {tx.debt?.warehouse?.id !== warehouseId && (
+                                                            <span className="text-slate-500 dark:text-slate-400">
+                                                                ({tx.debt?.warehouse?.name.replace(/^konter\s*/i, "")})
+                                                            </span>
+                                                        )}
+                                                        {tx.debt?.group !== tx.cred?.group && <FileWarning className="h-3 w-3 animate-bounce text-red-400" />}
+                                                    </span>
+                                                ) : tx.cred_id === warehouseCashId ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50/70 px-2.5 py-1 text-xs font-bold text-indigo-600 border border-indigo-100/30 dark:bg-slate-950/40 dark:border-slate-800 dark:text-indigo-400">
+                                                        <CreditCard className="h-3 w-3" />
+                                                        {tx.debt?.group || "Cash"}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50/70 px-2.5 py-1 text-xs font-bold text-indigo-600 border border-indigo-100/30 dark:bg-slate-950/40 dark:border-slate-800 dark:text-indigo-400">
+                                                        <CreditCard className="h-3 w-3" />
+                                                        {tx.cred?.group || "Cash"}
+                                                    </span>
+                                                )}
                                             </td>
 
                                             {/* Amount with Rupiah custom formatting */}
                                             <td className="px-6 py-4 text-right whitespace-nowrap font-mono font-bold">
-                                                <span className="text-slate-800 dark:text-slate-100">{formatRupiah(tx.amount)}</span>
+                                                <span className="text-slate-800 dark:text-slate-100">
+                                                    {formatRupiah(tx.amount)}
+                                                    <span className="text-slate-500 dark:text-slate-400 block" hidden={tx.fee_amount === 0}>
+                                                        {formatNumber(tx.fee_amount)}
+                                                    </span>
+                                                </span>
                                             </td>
 
                                             {/* Delete Action with SWR Sync */}
