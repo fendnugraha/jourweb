@@ -1,34 +1,20 @@
 import Dropdown from "@/app/components/Dropdown";
 import { DateTimeNow, formatNumber } from "@/app/utils/format";
-import { Search, Plus, ArrowLeftRight, Warehouse, ArrowUpDown, Ticket, ListCheck, Signal, Sparkles, Landmark, AlertCircle } from "lucide-react";
+import { Search, Plus, Coins, ReceiptText } from "lucide-react";
 import { useState } from "react";
+import CashBankSummary from "./CashBankSummary";
+import { motion, AnimatePresence } from "motion/react";
 
 const CashBankMutation = ({ journals, notification, mutate, accountBalance, accounts, warehouseId, endDate, setIsModalAddMutationOpen }) => {
     const { today } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [accountFilter, setAccountFilter] = useState("all");
+    const [activeSubTab, setActiveSubTab] = useState("balances");
 
     const accountOptions = [
         { value: "all", label: "All Accounts" },
         ...accounts.filter((account) => account.warehouse_id === warehouseId).map((account) => ({ value: account.id, label: account.group })),
     ];
-    const mutationInSumById = (acc_id) => {
-        return journals.reduce(
-            (sum, journal) => (Number(journal.debt_id) === Number(acc_id) && journal.trx_type === "Mutasi Kas" ? sum + Number(journal.amount) : sum),
-            0,
-        );
-    };
-
-    const mutationOutSumById = (acc_id) => {
-        return journals.reduce(
-            (sum, journal) => (Number(journal.cred_id) === Number(acc_id) && journal.trx_type === "Mutasi Kas" ? sum + Number(journal.amount) : sum),
-            0,
-        );
-    };
-
-    const mutationInSum = accountBalance?.data?.chartOfAccounts?.reduce((sum, acc) => sum + mutationInSumById(acc.id), 0);
-
-    const mutationOutSum = accountBalance?.data?.chartOfAccounts?.reduce((sum, acc) => sum + mutationOutSumById(acc.id), 0);
     return (
         <>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
@@ -74,95 +60,40 @@ const CashBankMutation = ({ journals, notification, mutate, accountBalance, acco
                     </button>
                 </div>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left">
-                        <thead>
-                            <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                                <th scope="col" className="px-6 py-4">
-                                    Akun
-                                </th>
-                                <th scope="col" className="px-6 py-4">
-                                    Saldo
-                                </th>
-                                <th scope="col" className="px-6 py-4">
-                                    Masuk
-                                </th>
-                                <th scope="col" className="px-6 py-4">
-                                    Keluar
-                                </th>
-                            </tr>
-                        </thead>
-                        <tfoot>
-                            <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                                <th scope="col" className="px-6 py-4">
-                                    Total
-                                </th>
-                                <th scope="col" className="px-6 py-4 text-right">
-                                    {formatNumber(accountBalance?.data?.chartOfAccounts?.reduce((sum, acc) => sum + acc.balance, 0))}
-                                </th>
-                                <th scope="col" className="px-6 py-4 text-right">
-                                    {formatNumber(mutationInSum)}
-                                </th>
-                                <th scope="col" className="px-6 py-4 text-right">
-                                    {formatNumber(mutationOutSum)}
-                                </th>
-                            </tr>
-                        </tfoot>
-                        <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
-                            {accountBalance?.data?.chartOfAccounts?.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                                        <div className="flex flex-col items-center justify-center space-y-2">
-                                            <AlertCircle className="h-6 w-6 text-slate-300 dark:text-slate-700" />
-                                            <p className="font-semibold text-xs">No matching transactions found</p>
-                                            <p className="text-[10px] text-slate-400">Try adjusting your filters or search query</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                accountBalance?.data?.chartOfAccounts?.map((account, index) => (
-                                    <tr key={index} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
-                                        <td className="px-6 py-4">{account.name}</td>
-                                        <td className="px-6 py-4 text-right">{formatNumber(account.balance)}</td>
-                                        <td className="px-6 py-4 text-right">{formatNumber(mutationInSumById(account.id))}</td>
-                                        <td className="px-6 py-4 text-right">{formatNumber(mutationOutSumById(account.id))}</td>
-                                    </tr>
-                                ))
-                            )}
-                            <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
-                                <td className="font-bold px-6 py-4">
-                                    {Number(warehouseId) === 1 ? "Penambahan saldo ke Cabang" : "Penambahan saldo dari HQ"}
-                                    <h1 className="font-bold text-blue-500 block sm:hidden">
-                                        {(() => {
-                                            const remaining = mutationInSum - mutationOutSum;
-
-                                            if (remaining === 0) {
-                                                return <span className="text-green-600">Completed</span>;
-                                            }
-
-                                            return <span className="text-red-600 dark:text-red-400">{formatNumber(remaining)}</span>;
-                                        })()}
-                                    </h1>
-                                </td>
-                                <td className="px-6 py-4 text-end font-bold hidden sm:table-cell"></td>
-                                <td className="px-6 py-4 text-end font-bold hidden sm:table-cell"></td>
-                                <td className="px-6 py-4 text-end font-bold hidden sm:table-cell">
-                                    {(() => {
-                                        const remaining = mutationInSum - mutationOutSum;
-
-                                        if (remaining === 0) {
-                                            return "Completed";
-                                        }
-
-                                        return <span className="text-red-600 dark:text-red-400">{formatNumber(remaining)}</span>;
-                                    })()}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div className="border-b border-slate-200 dark:border-slate-800 flex gap-6 pb-px px-4">
+                {[
+                    { id: "balances", label: "Saldo Kas & Bank", icon: Coins },
+                    { id: "history", label: "Mutation History Log", icon: ReceiptText },
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveSubTab(tab.id)}
+                        className={`pb-3 text-xs font-bold relative transition-colors ${
+                            activeSubTab === tab.id ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        }`}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <tab.icon className="h-4 w-4" />
+                            {tab.label}
+                        </span>
+                        {activeSubTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
+                    </button>
+                ))}
             </div>
+            <AnimatePresence mode="wait">
+                {activeSubTab === "balances" && (
+                    <motion.div
+                        key="balances"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-6"
+                    >
+                        <CashBankSummary accountBalance={accountBalance} journals={journals} warehouseId={warehouseId} endDate={endDate} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 };

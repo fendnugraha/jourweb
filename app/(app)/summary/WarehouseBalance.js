@@ -36,7 +36,7 @@ const WarehouseBalance = () => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
-                    {warehouseBalance.warehouse.map((w, i) => (
+                    {warehouseBalance.warehouse?.map((w, i) => (
                         <tr key={i} className="group hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150">
                             <td className="px-6 py-4">
                                 {i + 1}. {w.name.replace(/^konter\s*/i, "")}

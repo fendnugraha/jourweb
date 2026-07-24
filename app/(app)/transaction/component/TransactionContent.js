@@ -250,8 +250,8 @@ const TransactionContent = () => {
                                 </div>
                             </div>
 
-                            <div className="flex gap-6">
-                                <div className="w-3/4">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+                                <div className="sm:col-span-3">
                                     <JournalTable
                                         filteredTransactions={filteredTransactions}
                                         setTxToDelete={setTxToDelete}
@@ -259,7 +259,7 @@ const TransactionContent = () => {
                                         warehouseId={warehouseId}
                                     />
                                 </div>
-                                <div className="flex-1">
+                                <div className="">
                                     <CashBankBalance
                                         journals={journalByWarehouse}
                                         accountBalance={accountBalance}
