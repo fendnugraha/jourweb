@@ -56,14 +56,8 @@ const TransactionContent = () => {
     ];
     // --- Search & Filter State ---
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedAccount, setSelectedAccount] = useState(null);
     const [accountFilter, setAccountFilter] = useState("all");
     const [categoryFilter, setCategoryFilter] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
-
-    // --- Sorting State ---
-    const [sortField, setSortField] = useState("quantity");
-    const [sortOrder, setSortOrder] = useState("asc");
 
     // --- Sub-Tab State ---
     const [activeSubTab, setActiveSubTab] = useState("transactions");
@@ -127,13 +121,14 @@ const TransactionContent = () => {
     const [txToDelete, setTxToDelete] = useState(null);
 
     const handleDeleteTransaction = async (id) => {
-        setNotification("Ledger entry deleted");
-
         try {
             await axios.delete(`/api/journals/${id}`);
+            setNotification("Ledger entry deleted");
+
             mutate();
         } catch (e) {
             console.error("Failed to delete transaction via API:", e);
+            setNotification("Failed to delete ledger entry");
         }
     };
 

@@ -1,12 +1,13 @@
 import Dropdown from "@/app/components/Dropdown";
-import { DateTimeNow, formatNumber } from "@/app/utils/format";
 import { Search, Plus, Coins, ReceiptText } from "lucide-react";
 import { useState } from "react";
 import CashBankSummary from "./CashBankSummary";
 import { motion, AnimatePresence } from "motion/react";
+import MutationHistoryLog from "./MutationHistoryLog";
+import Notification from "@/app/components/Notification";
 
-const CashBankMutation = ({ journals, notification, mutate, accountBalance, accounts, warehouseId, endDate, setIsModalAddMutationOpen }) => {
-    const { today } = DateTimeNow();
+const CashBankMutation = ({ journals, accountBalance, accounts, warehouseId, setIsModalAddMutationOpen, mutate }) => {
+    const [notification, setNotification] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [accountFilter, setAccountFilter] = useState("all");
     const [activeSubTab, setActiveSubTab] = useState("balances");
@@ -17,6 +18,7 @@ const CashBankMutation = ({ journals, notification, mutate, accountBalance, acco
     ];
     return (
         <>
+            <Notification message={notification} onClose={() => setNotification(null)} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 {/* Left Side Filters */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
@@ -90,7 +92,19 @@ const CashBankMutation = ({ journals, notification, mutate, accountBalance, acco
                         transition={{ duration: 0.15 }}
                         className="space-y-6"
                     >
-                        <CashBankSummary accountBalance={accountBalance} journals={journals} warehouseId={warehouseId} endDate={endDate} />
+                        <CashBankSummary accountBalance={accountBalance} journals={journals} warehouseId={warehouseId} />
+                    </motion.div>
+                )}
+                {activeSubTab === "history" && (
+                    <motion.div
+                        key="history"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-6"
+                    >
+                        <MutationHistoryLog journals={journals} warehouseId={warehouseId} setNotification={setNotification} mutate={mutate} />
                     </motion.div>
                 )}
             </AnimatePresence>

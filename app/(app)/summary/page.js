@@ -10,3 +10,9 @@ const SummaryPage = () => {
 };
 
 export default SummaryPage;
+
+//make metadata
+export const metadata = {
+    title: "Summary",
+    description: "Summary page for the application",
+};

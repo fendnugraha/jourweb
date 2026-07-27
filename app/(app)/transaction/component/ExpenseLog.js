@@ -82,7 +82,9 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts 
                         />
                     </div>
                 </div>
-                <h1 className="font-semibold text-lg">Total Biaya: {formatRupiah(filteredJournals.reduce((total, journal) => total + journal.amount, 0))}</h1>
+                <h1 className="font-semibold text-lg">
+                    Total Biaya: {formatRupiah(filteredJournals.reduce((total, journal) => total + journal.fee_amount * -1, 0))}
+                </h1>
             </div>
 
             <div className="flex gap-6">

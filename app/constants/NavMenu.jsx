@@ -8,8 +8,8 @@ export const navMenu = {
         { name: "Delivery", path: "/delivery", href: "/delivery", icon: Truck, role: ["Administrator", "Super Admin", "Courier"] },
         { name: "Summary", path: "/summary", href: "/summary", icon: ChartAreaIcon, role: ["Administrator", "Super Admin"] },
         { name: "Employee", path: "/employee", href: "/employee", icon: IdCardLanyardIcon, role: ["Administrator", "Kasir", "Staff", "Super Admin"] },
-        { name: "Settings", path: "/setting", href: "/setting", icon: CogIcon, role: ["Administrator", "Super Admin"] },
-        // { name: "Profile", path: "/setting/profile", href: "/setting/profile", icon: UserCircle, role: ["Administrator", "Super Admin", "Kasir", "Staff"] },
+        { name: "Settings", path: "/settings", href: "/settings", icon: CogIcon, role: ["Administrator", "Super Admin"] },
+        // { name: "Profile", path: "/settings/profile", href: "/settings/profile", icon: UserCircle, role: ["Administrator", "Super Admin", "Kasir", "Staff"] },
     ],
-    settings: [{ name: "Settings", path: "/setting", href: "/setting", icon: CogIcon, role: ["Administrator", "Super Admin"] }],
+    settings: [{ name: "Settings", path: "/settings", href: "/settings", icon: CogIcon, role: ["Administrator", "Super Admin"] }],
 };

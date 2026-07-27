@@ -3,6 +3,8 @@ import { Coins, Logs, Wallet2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import WarehouseBalance from "./WarehouseBalance";
+import RevenueReport from "./RevenueReport";
+import LogTrack from "./LogTrack";
 
 const SummaryContent = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -35,18 +37,43 @@ const SummaryContent = () => {
                     ))}
                 </div>
                 <AnimatePresence mode="wait">
-                    <motion.div
-                        key="transactions"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="space-y-6"
-                    >
-                        {activeSubTab === "balances" && <WarehouseBalance />}
-                    </motion.div>
-                    {activeSubTab === "revenue" && <div className="p-4">Revenue & Expenses</div>}
-                    {activeSubTab === "logtrack" && <div className="p-4">Log Input Tracking</div>}
+                    {activeSubTab === "balances" && (
+                        <motion.div
+                            key="balances"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <WarehouseBalance />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "revenue" && (
+                        <motion.div
+                            key="revenue"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <RevenueReport />
+                        </motion.div>
+                    )}
+                    {activeSubTab === "logtrack" && (
+                        <motion.div
+                            key="logtrack"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <LogTrack />
+                        </motion.div>
+                    )}
                 </AnimatePresence>
             </div>
         </>
