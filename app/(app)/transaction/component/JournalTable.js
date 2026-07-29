@@ -56,7 +56,7 @@ const JournalTable = ({ filteredTransactions, setTxToDelete, warehouseCashId, wa
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 border border-slate-100 dark:bg-slate-950/40 dark:border-slate-800 dark:text-slate-400">
                                                 <Tag className="h-3 w-3 text-slate-400" />
-                                                {tx.trx_type}
+                                                {tx.trx_type || "Uncategorized"}
                                             </span>
                                         </td>
 

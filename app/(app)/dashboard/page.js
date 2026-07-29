@@ -1,18 +1,16 @@
-"use client";
-import { useDailyDashboard } from "@/app/hooks/useDailyDashboard";
-import { useAuth } from "@/app/utils/auth";
-import { DateTimeNow } from "@/app/utils/format";
+import MainContent from "../main";
+import DashboardContent from "./DashboardContent";
 
 const DashboardPage = () => {
-    const { today } = DateTimeNow();
-    const { user } = useAuth({ middleware: "auth" });
-    const { dailyDashboard, loading, error } = useDailyDashboard(user?.warehouse_id, today, today);
-    console.log({ dailyDashboard });
-    return <div>Dashboard</div>;
+    return (
+        <MainContent headerTitle="Dashboard">
+            <DashboardContent />
+        </MainContent>
+    );
 };
 
 export default DashboardPage;
 
-// export const metadata = {
-//     title: "Dashboard",
-// };
+export const metadata = {
+    title: "Dashboard",
+};

@@ -1,24 +1,22 @@
-"use client";
 import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 
-const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
+const CreateSaving = ({ contacts, accounts, notification, mutate, setModalTitle, isModalOpen }) => {
     const { today } = DateTimeNow();
-    const [type, setType] = useState("Payable");
-    const [loading, setLoading] = useState(false);
-    const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
         date_issued: today,
         contact_id: "",
         amount: "",
         description: "",
         debt_id: "",
-        cred_id: "",
-        type: "Payable",
+        type: "Saving",
     });
+    const [type, setType] = useState("single");
+    const [formError, setFormError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const accountOptions = [
         { value: "", label: "Pilih Rekening" },
@@ -30,34 +28,16 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
             })),
     ];
 
-    const payableOptions = [
-        { value: "", label: `Pilih Akun ${type === "Payable" ? "Hutang" : "Piutang"}` },
-        ...accounts
-            .filter((account) => (type === "Payable" ? account.account_id === 19 : account.account_id === 4))
-            .map((account) => ({
-                value: account.id,
-                label: account.name,
-            })),
-    ];
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post("/api/finance", formData);
+            const response = await axios.post("/api/store-saving", formData);
             notification(response.data.message);
-            mutate();
-            setFormData({
-                date_issued: today,
-                contact_id: "",
-                amount: "",
-                description: "",
-                debt_id: "",
-                cred_id: "",
-                type: "Payable",
-            });
+            isModalOpen(false);
+            fetchFinance();
         } catch (error) {
-            setFormError(error.response?.data?.errors || ["Something went wrong."]);
+            setFormError(error.response?.data?.message || "Something went wrong.");
             notification(error.response?.data?.message || "Something went wrong.");
         } finally {
             setLoading(false);
@@ -71,36 +51,36 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                     <button
                         type="button"
                         onClick={() => {
-                            setType("Payable");
+                            setType("single");
                             setFormData({
                                 ...formData,
-                                type: "Payable",
+                                type: "single",
                             });
                         }}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            type === "Payable"
+                            type === "single"
                                 ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
                         }`}
                     >
-                        Hutang Usaha
+                        Single
                     </button>
                     <button
                         type="button"
                         onClick={() => {
-                            setType("Receivable");
+                            setType("multiple");
                             setFormData({
                                 ...formData,
-                                type: "Receivable",
+                                type: "multiple",
                             });
                         }}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            type === "Receivable"
+                            type === "multiple"
                                 ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
                         }`}
                     >
-                        Piutang Usaha
+                        Multiple (Batch)
                     </button>
                 </div>
             </div>
@@ -129,6 +109,21 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
 
                 <div className="space-y-1">
                     <label id="tx-debt_id-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Rekening
+                    </label>
+                    <Dropdown
+                        id="tx-debt_id"
+                        label="Account Selector"
+                        options={accountOptions}
+                        selectedValue={formData.debt_id}
+                        onChange={(val) => {
+                            setFormData({ ...formData, debt_id: val });
+                        }}
+                    />
+                </div>
+
+                <div className="space-y-1">
+                    <label id="tx-debt_id-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Kontak
                     </label>
                     <Dropdown
@@ -140,38 +135,6 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                             setFormData({ ...formData, contact_id: val });
                         }}
                     />
-                </div>
-
-                {/* Category drop down */}
-                <div className="grid sm:grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                        <label id="tx-payable-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Akun {type === "Payable" ? "Hutang" : "Piutang"}
-                        </label>
-                        <Dropdown
-                            id="tx-payable"
-                            label="payable Selector"
-                            options={payableOptions}
-                            selectedValue={type === "Payable" ? formData.cred_id : formData.debt_id}
-                            onChange={(val) => {
-                                setFormData({ ...formData, [type === "Payable" ? "cred_id" : "debt_id"]: val });
-                            }}
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label id="tx-debt_id-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Rekening
-                        </label>
-                        <Dropdown
-                            id="tx-debt_id"
-                            label="Account Selector"
-                            options={accountOptions}
-                            selectedValue={type === "Payable" ? formData.debt_id : formData.cred_id}
-                            onChange={(val) => {
-                                setFormData({ ...formData, [type === "Payable" ? "debt_id" : "cred_id"]: val });
-                            }}
-                        />
-                    </div>
                 </div>
 
                 {/* Amount and Date input rows */}
@@ -240,4 +203,4 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
     );
 };
 
-export default CreateFinance;
+export default CreateSaving;

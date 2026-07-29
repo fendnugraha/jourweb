@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PayableTable from "./PayableTable";
 import { Clock11, CreditCard, PiggyBank, Plus, Search, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -12,6 +12,8 @@ import CreateFinance from "./CreateFinance";
 import Notification from "@/app/components/Notification";
 import FinanceMutationHistory from "./FinanceMutationHistory";
 import PaymentForm from "./PaymentForm";
+import Dropdown from "@/app/components/Dropdown";
+import CreateSaving from "./CreateSaving";
 
 const FinanceContent = () => {
     const { today } = DateTimeNow();
@@ -27,6 +29,12 @@ const FinanceContent = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPaymentActive, setIsPaymentActive] = useState(false);
     const [modalTitle, setModalTitle] = useState("Add Finance Mutation");
+    const [status, setStatus] = useState("unpaid");
+    const statusOptions = [
+        { value: "all", label: "All Status" },
+        { value: "paid", label: "Paid" },
+        { value: "unpaid", label: "Unpaid" },
+    ];
 
     const contactOption = [
         { value: "", label: "Pilih Kontak" },
@@ -35,6 +43,24 @@ const FinanceContent = () => {
             label: contact.name,
         })),
     ];
+
+    const filteredFinances = useMemo(() => {
+        return financeGroup.filter((finance) => {
+            const paid = Number(finance.sisa) === 0;
+            const unpaid = Number(finance.sisa) > 0;
+
+            if (status === "all") {
+                return true;
+            }
+            if (status === "paid") {
+                return paid;
+            }
+            if (status === "unpaid") {
+                return unpaid;
+            }
+            return false;
+        });
+    }, [financeGroup, status]);
 
     // ✅ Berikan properti default agar tidak undefined saat diakses
     const findContact =
@@ -49,7 +75,10 @@ const FinanceContent = () => {
                 <button
                     type="button"
                     className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Payable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => setFinanceType("Payable")}
+                    onClick={() => {
+                        setFinanceType("Payable");
+                        setSelectedContactId("All");
+                    }}
                 >
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Hutang Usaha</h2>
                     {financeType === "Payable" && (
@@ -61,7 +90,10 @@ const FinanceContent = () => {
                 <button
                     type="button"
                     className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Receivable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => setFinanceType("Receivable")}
+                    onClick={() => {
+                        setFinanceType("Receivable");
+                        setSelectedContactId("All");
+                    }}
                 >
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Piutang Usaha</h2>
                     {financeType === "Receivable" && (
@@ -73,7 +105,10 @@ const FinanceContent = () => {
                 <button
                     type="button"
                     className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Saving" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => setFinanceType("Saving")}
+                    onClick={() => {
+                        setFinanceType("Saving");
+                        setSelectedContactId("All");
+                    }}
                 >
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Simpanan Karyawan</h2>
                     {financeType === "Saving" && (
@@ -100,6 +135,17 @@ const FinanceContent = () => {
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
+                    {/* Status Dropdown */}
+                    <div>
+                        <Dropdown
+                            id="stock-status-filter"
+                            label="Stock Status Filter"
+                            options={statusOptions}
+                            selectedValue={status}
+                            onChange={(val) => setStatus(val)}
+                            ariaLabel="Filter inventory by status"
+                        />
+                    </div>
                 </div>
 
                 {/* Action Button */}
@@ -118,6 +164,7 @@ const FinanceContent = () => {
                     <button
                         type="button"
                         onClick={() => {
+                            setFinanceType("Saving");
                             setIsModalOpen(true);
                             setModalTitle("Add Employee Savings");
                         }}
@@ -164,7 +211,7 @@ const FinanceContent = () => {
                         >
                             <PayableTable
                                 finances={finances}
-                                financeGroup={financeGroup}
+                                financeGroup={filteredFinances}
                                 selectedContactId={selectedContactId}
                                 setSelectedContactId={setSelectedContactId}
                                 searchTerm={searchTerm}
@@ -188,18 +235,46 @@ const FinanceContent = () => {
                     )}
                 </AnimatePresence>
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
-                {isPaymentActive ? (
-                    <PaymentForm
-                        accounts={accounts}
-                        type={financeType}
-                        contactId={selectedContactId}
-                        notification={setNotification}
-                        fetchFinance={mutate}
-                        isModalOpen={setIsModalOpen}
-                    />
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setIsPaymentActive(false);
+                }}
+                title={modalTitle}
+            >
+                {["Payable", "Receivable"].includes(financeType) ? (
+                    isPaymentActive ? (
+                        <PaymentForm
+                            accounts={accounts}
+                            type={financeType}
+                            contactId={selectedContactId}
+                            notification={setNotification}
+                            fetchFinance={mutate}
+                            isModalOpen={setIsModalOpen}
+                        />
+                    ) : (
+                        <CreateFinance
+                            contacts={contactOption}
+                            accounts={accounts}
+                            notification={setNotification}
+                            mutate={mutate}
+                            setModalTitle={setModalTitle}
+                        />
+                    )
                 ) : (
-                    <CreateFinance contacts={contactOption} accounts={accounts} notification={setNotification} mutate={mutate} setModalTitle={setModalTitle} />
+                    financeType === "Saving" &&
+                    (isPaymentActive ? (
+                        <h1>Under Construction</h1>
+                    ) : (
+                        <CreateSaving
+                            contacts={contactOption}
+                            accounts={accounts}
+                            notification={setNotification}
+                            mutate={mutate}
+                            setModalTitle={setModalTitle}
+                        />
+                    ))
                 )}
             </Modal>
         </>

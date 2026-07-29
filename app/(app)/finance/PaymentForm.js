@@ -157,8 +157,9 @@ const PaymentForm = ({ accounts, type, contactId, notification, fetchFinance, is
                 )}
                 <button
                     type="button"
-                    className="border border-slate-500 dark:border-slate-300 text-xs p-2 rounded-lg w-1/2 hover:border-indigo-400 hover:text-indigo-400"
+                    className="border border-slate-500 dark:border-slate-300 text-xs p-2 rounded-xl w-1/2 hover:border-indigo-400 hover:text-indigo-400 disabled:border-slate-600 disabled:text-slate-600"
                     onClick={() => setFormData({ ...formData, amount: filterDataByInvoice?.sisa })}
+                    disabled={formData.amount === filterDataByInvoice?.sisa || !formData.invoice}
                 >
                     Bayar Penuh
                 </button>

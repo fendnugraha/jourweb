@@ -6,7 +6,7 @@ const FinanceMutationHistory = ({ finances, findContact, selectedContactId }) =>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">{findContact.contact_name}</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Sisa: {formatRupiah(findContact.sisa)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Sisa: {formatRupiah(Number(findContact.sisa) || 0)}</p>
                 </div>
             </div>
             <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">

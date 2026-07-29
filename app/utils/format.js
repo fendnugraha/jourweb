@@ -1,4 +1,4 @@
-import { differenceInDays, differenceInMinutes, formatDistanceToNow, getMonth, getYear, min, parse } from "date-fns";
+import { differenceInDays, differenceInMinutes, formatDistanceToNow, getMonth, getYear, intervalToDuration, parse } from "date-fns";
 import { enUS, id } from "date-fns/locale";
 
 /**
@@ -218,17 +218,14 @@ export const formatDurationTime = (to, from) => {
 };
 
 export const calculateFee = (amount, chunkSize = 2500000, feePerChunk = 5000, minFee = 3000, minAmount = 100000) => {
-    // 1. Antisipasi jika input kosong atau di bawah batas minimum mutlak
-    if (amount === "" || amount === null || amount === undefined || amount < 10000) {
+    if (amount < 10000 || amount === "") {
         return "";
     }
 
-    // 2. Jika di bawah atau sama dengan minAmount (100k), biayanya flat minFee (3k)
     if (amount <= minAmount) {
         return minFee;
     }
 
-    // 3. KUNCI PERBAIKAN: Hitung berapa banyak chunk, lalu kalikan dengan biaya per chunk
     const chunkCount = Math.ceil(amount / chunkSize);
     return chunkCount * feePerChunk;
 };
@@ -346,6 +343,28 @@ export function calculateWorkDuration(startDateString) {
     if (parts.length === 0) {
         return "0 hari";
     }
+
+    return parts.join(" ");
+}
+
+export function calculateContractTillEnd(contractEnd) {
+    const today = new Date();
+    const end = new Date(contractEnd);
+
+    if (end <= today) {
+        return "Kontrak berakhir";
+    }
+
+    const duration = intervalToDuration({
+        start: today,
+        end,
+    });
+
+    const parts = [];
+
+    if (duration.years) parts.push(`${duration.years} thn`);
+    if (duration.months) parts.push(`${duration.months} bln`);
+    if (duration.days) parts.push(`${duration.days} hr`);
 
     return parts.join(" ");
 }
