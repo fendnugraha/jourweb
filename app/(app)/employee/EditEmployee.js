@@ -14,6 +14,7 @@ const formatFormData = (employee) => ({
     birth_date: employee?.birth_date || "",
     gender: employee?.gender || "",
     religion: employee?.religion || "",
+    status: employee?.status || "",
     marital_status: employee?.marital_status || "",
     employment_type: employee?.employment_type || "full_time",
     contract_start: employee?.contract_start || "",
@@ -121,6 +122,14 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
         { value: "deduction", label: "Potongan" },
     ];
 
+    const statusOptions = [
+        { value: "", label: "Select a status" },
+        { value: "active", label: "Active" },
+        { value: "inactive", label: "Inactive" },
+        { value: "resigned", label: "Resigned" },
+        { value: "terminated", label: "Terminated" },
+    ];
+
     return (
         <div className="space-y-4">
             <div className="mb-2">
@@ -222,7 +231,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </div>
 
                     {/* Place & Date of Birth */}
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-3 gap-3">
                         <div className="space-y-1">
                             <label htmlFor="emp-birth-place" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                                 Tempat lahir
@@ -245,6 +254,18 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                                 value={formData.birth_date}
                                 onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                                 className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label htmlFor="emp-status" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                Status
+                            </label>
+                            <Dropdown
+                                id="emp-status"
+                                label="Status Selector"
+                                options={statusOptions}
+                                selectedValue={formData.status}
+                                onChange={(val) => setFormData({ ...formData, status: val })}
                             />
                         </div>
                     </div>

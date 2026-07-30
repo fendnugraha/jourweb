@@ -2,7 +2,7 @@ import { formatRupiah } from "@/app/utils/format";
 import { CheckCircle, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
-const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen }) => {
+const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notification }) => {
     const [componentName, setComponentName] = useState("");
     const [componentAmount, setComponentAmount] = useState("");
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
@@ -38,6 +38,9 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen }) => {
         // reset form
         setComponentName("");
         setComponentAmount("");
+        setSelectedEmployeeIds([]);
+
+        notification("Component added successfully!");
     };
     return (
         <form onSubmit={addComponent}>
@@ -123,7 +126,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen }) => {
                         onClick={() => {
                             setSelectedEmployeeIds(employees.map((emp) => emp.id));
                         }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
                     >
                         <span>Select All</span>
                     </button>
@@ -132,7 +135,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen }) => {
                         onClick={() => {
                             setSelectedEmployeeIds([]);
                         }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
                     >
                         <span>Deselect All</span>
                     </button>

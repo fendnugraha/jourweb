@@ -1,5 +1,6 @@
 import { useLogActivities } from "@/app/hooks/useLogActivities";
 import { formatDateTime } from "@/app/utils/format";
+import { PencilRuler, Trash2 } from "lucide-react";
 
 const LogTrack = () => {
     const { logActivities, loading, error, mutate } = useLogActivities();
@@ -13,9 +14,6 @@ const LogTrack = () => {
                                 Activity
                             </th>
                             <th scope="col" className="px-6 py-4">
-                                Username
-                            </th>
-                            <th scope="col" className="px-6 py-4">
                                 Warehouse
                             </th>
                             <th scope="col" className="px-6 py-4">
@@ -26,11 +24,19 @@ const LogTrack = () => {
                     <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
                         {logActivities.map((activity) => (
                             <tr key={activity.id} className="group hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150">
-                                <td className="whitespace-nowrap px-6 py-4">{activity.activity}</td>
-                                <td className="whitespace-nowrap px-6 py-4">{activity.user?.name}</td>
-                                <td className="whitespace-nowrap px-6 py-4">{activity.warehouse?.name}</td>
                                 <td className="whitespace-nowrap px-6 py-4">
-                                    <span className="block max-w-xs truncate">{formatDateTime(activity.created_at)}</span>
+                                    {activity.activity === "Updated Journal" ? (
+                                        <PencilRuler className="h-4 w-4 text-yellow-300" />
+                                    ) : (
+                                        <Trash2 className="h-4 w-4 text-red-400" />
+                                    )}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4">
+                                    {activity.user?.name}
+                                    <span className="block text-xs text-slate-400 dark:text-slate-500">({activity.warehouse?.name})</span>
+                                </td>
+                                <td className="whitespace-normal wrap-break-word px-6 py-4">
+                                    <span className="block max-w-xs text-slate-500">{formatDateTime(activity.created_at)}</span>
                                     {activity.description}
                                 </td>
                             </tr>

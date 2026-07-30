@@ -1,5 +1,5 @@
 import Modal from "@/app/components/Modal";
-import { Mars, Plus, Search, Venus } from "lucide-react";
+import { Mars, Plus, Search, UserCircle, UserRound, Venus } from "lucide-react";
 import EditEmployee from "./EditEmployee";
 import { useMemo, useState } from "react";
 import { calculateContractTillEnd, calculateWorkDuration, formatRupiah } from "@/app/utils/format";
@@ -19,14 +19,14 @@ const EmployeeTable = ({ contacts, employees, notification, mutate }) => {
         { value: "all", label: "All Status" },
         { value: "active", label: "Active" },
         { value: "inactive", label: "Inactive" },
-        { value: "terminated", label: "Terminated" },
         { value: "resigned", label: "Resigned" },
+        { value: "terminated", label: "Terminated" },
     ];
 
     const employmentOptions = [
         { value: "all", label: "All Types" },
-        { value: "full-time", label: "Full-time" },
-        { value: "part-time", label: "Part-time" },
+        { value: "full_time", label: "Full-time" },
+        { value: "part_time", label: "Part-time" },
         { value: "contract", label: "Contract" },
     ];
 
@@ -58,12 +58,12 @@ const EmployeeTable = ({ contacts, employees, notification, mutate }) => {
                     {/* Status Dropdown */}
                     <div>
                         <Dropdown
-                            id="stock-status-filter"
-                            label="Stock Status Filter"
+                            id="user-status-filter"
+                            label="User Status Filter"
                             options={statusOptions}
                             selectedValue={status}
                             onChange={(val) => setStatus(val)}
-                            ariaLabel="Filter inventory by status"
+                            ariaLabel="Filter users by status"
                         />
                     </div>
                     {/* Employment Dropdown */}
@@ -80,17 +80,11 @@ const EmployeeTable = ({ contacts, employees, notification, mutate }) => {
                 </div>
 
                 {/* Action Button */}
-                <div className="flex gap-4">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsModalAddEmployeeOpen(true);
-                        }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span>Karyawan</span>
-                    </button>
+                <div className="flex gap-2 items-center">
+                    <UserRound size={28} strokeWidth={2} />
+                    <h1 className="text-xl font-bold">
+                        {filteredEmployee.length || 0} <span className="text-slate-500 font-semibold">Pegawai</span>
+                    </h1>
                 </div>
             </div>
             <div className="data-table-wrapper overflow-x-auto">

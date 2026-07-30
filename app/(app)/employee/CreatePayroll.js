@@ -4,12 +4,15 @@ import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
 import { AlarmClockPlus, Clock, Ellipsis, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
+import axios from "@/app/utils/axios";
 
-const CreatePayroll = ({ employees }) => {
-    const [searchTerm, setSearchTerm] = useState("");
+const CreatePayroll = ({ employees, notification }) => {
     const { thisMonth, thisYear } = DateTimeNow();
+    const [searchTerm, setSearchTerm] = useState("");
     const [month, setMonth] = useState(thisMonth);
     const [year, setYear] = useState(thisYear);
+    const [loading, setLoading] = useState(false);
+    const [payrollType, setPayrollType] = useState("monthly");
     const [processData, setProcessData] = useState(() => {
         const saved = localStorage.getItem("processData");
         return saved ? JSON.parse(saved) : [];
@@ -21,23 +24,29 @@ const CreatePayroll = ({ employees }) => {
     const [modalFormActive, setModalFormActive] = useState("summary");
 
     const monthOptions = [
-        { value: "01", label: "January" },
-        { value: "02", label: "February" },
-        { value: "03", label: "March" },
-        { value: "04", label: "April" },
-        { value: "05", label: "May" },
-        { value: "06", label: "June" },
-        { value: "07", label: "July" },
-        { value: "08", label: "August" },
-        { value: "09", label: "September" },
-        { value: "10", label: "October" },
-        { value: "11", label: "November" },
-        { value: "12", label: "December" },
+        { value: 1, label: "January" },
+        { value: 2, label: "February" },
+        { value: 3, label: "March" },
+        { value: 4, label: "April" },
+        { value: 5, label: "May" },
+        { value: 6, label: "June" },
+        { value: 7, label: "July" },
+        { value: 8, label: "August" },
+        { value: 9, label: "September" },
+        { value: 10, label: "October" },
+        { value: 11, label: "November" },
+        { value: 12, label: "December" },
     ];
 
     const yearOptions = [
-        { value: "2025", label: "2025" },
-        { value: "2026", label: "2026" },
+        { value: 2025, label: 2025 },
+        { value: 2026, label: 2026 },
+    ];
+
+    const payrollTypeOptions = [
+        { value: "monthly", label: "Gaji Bulanan" },
+        { value: "yearly", label: "Tahunan (THR)" },
+        { value: "one-time", label: "Satu Kali (Bonus)" },
     ];
 
     const AddToProcessData = (employees, month, year, payroll = true) => {
@@ -132,6 +141,49 @@ const CreatePayroll = ({ employees }) => {
         localStorage.removeItem("processData");
     };
 
+    const handleSubmit = async (e) => {
+        if (!confirm("Anda yakin ingin menyimpan payroll?")) return;
+        e.preventDefault();
+
+        if (!processData.length) {
+            notification({
+                type: "error",
+                message: "Data payroll masih kosong",
+            });
+            return;
+        }
+
+        if (!month || !year) {
+            notification({
+                type: "error",
+                message: "Bulan dan tahun wajib diisi",
+            });
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await axios.post("/api/store-payroll", {
+                employees: processData,
+                month,
+                year,
+                type: payrollType,
+            });
+
+            notification(response.data.message || "Payroll berhasil disimpan");
+            // fetchContacts();
+            setIsModalOpen(false);
+            clearProcessData();
+        } catch (error) {
+            console.error(error);
+
+            notification(error.response?.data?.message || "Terjadi kesalahan saat menyimpan payroll");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
@@ -157,8 +209,11 @@ const CreatePayroll = ({ employees }) => {
                             setIsModalOpen(true);
                         }}
                         className="w-full sm:w-auto inline-flex items-center justify-between gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        hidden={processData.length === 0}
                     >
-                        <ReceiptText className="h-4 w-4" />
+                        <span className="flex gap-1 items-center">
+                            <ReceiptText className="h-4 w-4" /> {month}/{year}
+                        </span>
                         <span>{formatRupiah(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable + totalSavingSum)}</span>
                     </button>
                 </div>
@@ -177,38 +232,6 @@ const CreatePayroll = ({ employees }) => {
                     >
                         <Plus className="h-4 w-4" />
                         <span>Bonus/Potongan</span>
-                    </button>
-                    <div>
-                        <Dropdown
-                            id="month-filter"
-                            label="Month"
-                            options={monthOptions}
-                            selectedValue={month}
-                            onChange={(val) => setMonth(val)}
-                            ariaLabel="Filter inventory by status"
-                        />
-                    </div>
-
-                    <div>
-                        <Dropdown
-                            id="year-filter"
-                            label="Year"
-                            options={yearOptions}
-                            selectedValue={year}
-                            onChange={(val) => setYear(val)}
-                            ariaLabel="Filter inventory by status"
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            AddToProcessData(employees, month, year);
-                        }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
-                        hidden={processData.length > 0}
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span>Generate</span>
                     </button>
                     <button
                         type="button"
@@ -251,50 +274,101 @@ const CreatePayroll = ({ employees }) => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
-                        {processData
-                            .filter((emp) => emp.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                            .map((employee) => (
-                                <tr
-                                    key={employee.employee_id}
-                                    className="group text-xs hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150"
-                                >
-                                    <td className="px-6 py-4">
-                                        {employee.name}
-                                        <div className="flex gap-4 items-center font-normal">
-                                            <div className="flex gap-1 items-center">
-                                                <Star size={12} fill="yellow" className="text-amber-500" />
-                                                {employee.attendances?.filter((a) => a.approval_status === "Good").length}
+                        {processData.length > 0 ? (
+                            processData
+                                .filter((emp) => emp.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                .map((employee) => (
+                                    <tr
+                                        key={employee.employee_id}
+                                        className="group text-xs hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150"
+                                    >
+                                        <td className="px-6 py-4">
+                                            {employee.name}
+                                            <div className="flex gap-4 items-center font-normal">
+                                                <div className="flex gap-1 items-center">
+                                                    <Star size={12} fill="yellow" className="text-amber-500" />
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Good").length}
+                                                </div>
+                                                <div className="flex gap-1 items-center">
+                                                    <AlarmClockPlus size={12} className="text-violet-500" />
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Overtime").length}
+                                                </div>
+                                                <div className="flex gap-1 items-center">
+                                                    <Clock size={12} className="text-red-500" />
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Late").length}
+                                                </div>
                                             </div>
-                                            <div className="flex gap-1 items-center">
-                                                <AlarmClockPlus size={12} className="text-violet-500" />
-                                                {employee.attendances?.filter((a) => a.approval_status === "Overtime").length}
-                                            </div>
-                                            <div className="flex gap-1 items-center">
-                                                <Clock size={12} className="text-red-500" />
-                                                {employee.attendances?.filter((a) => a.approval_status === "Late").length}
-                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">{formatNumber(employee.basic_salary ?? 0)}</td>
+                                        <td className="px-6 py-4 text-right">{formatNumber(employee.commission ?? 0)}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            {formatNumber(employee.bonuses.reduce((total, bonus) => total + bonus.amount, 0) + employee.overtime)}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {formatNumber(
+                                                employee?.deductions?.reduce((total, deduction) => total + deduction.amount, 0) +
+                                                    Number(employee.employee_receivable) +
+                                                    Number(employee.installment_receivable),
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right font-bold text-green-400">{calculateTotalItem(employee)}</td>
+                                        <td className="px-6 py-4 text-center">
+                                            <button type="button">
+                                                <ReceiptText size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                        ) : (
+                            <tr>
+                                <td colSpan="8" className="px-6 py-8 text-center">
+                                    <div className="grid grid-cols-2 gap-4 mx-auto sm:w-1/3">
+                                        <div>
+                                            <Dropdown
+                                                id="month-filter"
+                                                label="Month"
+                                                options={monthOptions}
+                                                selectedValue={month}
+                                                onChange={(val) => setMonth(val)}
+                                                ariaLabel="Filter inventory by status"
+                                            />
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">{formatNumber(employee.basic_salary ?? 0)}</td>
-                                    <td className="px-6 py-4 text-right">{formatNumber(employee.commission ?? 0)}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        {formatNumber(employee.bonuses.reduce((total, bonus) => total + bonus.amount, 0) + employee.overtime)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        {formatNumber(
-                                            employee?.deductions?.reduce((total, deduction) => total + deduction.amount, 0) +
-                                                Number(employee.employee_receivable) +
-                                                Number(employee.installment_receivable),
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-bold">{calculateTotalItem(employee)}</td>
-                                    <td className="px-6 py-4 text-center">
-                                        <button type="button">
-                                            <ReceiptText size={16} />
+
+                                        <div>
+                                            <Dropdown
+                                                id="year-filter"
+                                                label="Year"
+                                                options={yearOptions}
+                                                selectedValue={year}
+                                                onChange={(val) => setYear(val)}
+                                                ariaLabel="Filter inventory by status"
+                                            />
+                                        </div>
+                                        <div className="sm:col-span-2">
+                                            <Dropdown
+                                                id="type-filter"
+                                                label="Type"
+                                                options={payrollTypeOptions}
+                                                selectedValue={payrollType}
+                                                onChange={(val) => setPayrollType(val)}
+                                                ariaLabel="Filter inventory by status"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                AddToProcessData(employees, month, year);
+                                            }}
+                                            className="w-full sm:w-auto sm:col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                                            hidden={processData.length > 0}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            <span>Generate new payroll</span>
                                         </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -348,18 +422,18 @@ const CreatePayroll = ({ employees }) => {
                             </div>
 
                             <button
-                                onClick={() => {}}
-                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-slate-100"
+                                onClick={handleSubmit}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300"
                             >
                                 <Play size={16} />
-                                Process Payroll
+                                Process
                             </button>
                         </div>
                     </>
                 )}
 
                 {modalFormActive === "bonus-deduction" && (
-                    <CreateSalaryComponents employees={employees} setProcessData={setProcessData} isModalOpen={setIsModalOpen} />
+                    <CreateSalaryComponents employees={employees} setProcessData={setProcessData} isModalOpen={setIsModalOpen} notification={notification} />
                 )}
             </Modal>
         </div>

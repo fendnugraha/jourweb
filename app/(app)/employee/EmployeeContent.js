@@ -7,12 +7,12 @@ import AttendancePage from "./Attendance";
 import Payroll from "./Payroll";
 import useEmployee from "@/app/hooks/useEmployee";
 import Notification from "@/app/components/Notification";
+import EmployeeReceivable from "./EmployeeReceivable";
 
 const EmployeeContent = () => {
     const [activeSubTab, setActiveSubTab] = useState("attendance");
     const { employees, mutate: mutateEmployee } = useEmployee();
     const [notification, setNotification] = useState(null);
-    console.log(employees);
     return (
         <>
             <Notification message={notification} onClose={() => setNotification(null)} />
@@ -55,6 +55,7 @@ const EmployeeContent = () => {
                             <AttendancePage />
                         </motion.div>
                     )}
+
                     {activeSubTab === "payroll" && (
                         <motion.div
                             key="payroll"
@@ -65,6 +66,19 @@ const EmployeeContent = () => {
                             className="space-y-6"
                         >
                             <Payroll employees={employees} notification={setNotification} mutateEmployee={mutateEmployee} />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "receivable" && (
+                        <motion.div
+                            key="receivable"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <EmployeeReceivable />
                         </motion.div>
                     )}
                 </AnimatePresence>

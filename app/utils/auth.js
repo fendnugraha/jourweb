@@ -47,7 +47,6 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             })
             .catch((err) => {
                 setLoading(false);
-
                 // Safe check dengan optional chaining (?.)
                 if (err?.response?.status === 422) {
                     if (setStatus) setStatus(err.response?.status);

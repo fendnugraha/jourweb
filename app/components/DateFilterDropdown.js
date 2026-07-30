@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Calendar, ChevronDown, Check, X, ArrowRight, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { DateTimeNow } from "../utils/format";
 
 // Date utility helpers
 function formatDateString(dateObj) {
@@ -23,10 +24,6 @@ function formatReadableDate(dateStr) {
 export function getDatePresetRange(presetKey) {
     const now = new Date();
     const todayStr = formatDateString(now);
-
-    if (presetKey === "all") {
-        return { startDate: "", endDate: "" };
-    }
 
     if (presetKey === "today") {
         return { startDate: todayStr, endDate: todayStr };
@@ -77,13 +74,14 @@ export function getDatePresetRange(presetKey) {
 }
 
 export default function DateFilterDropdown({
-    selectedPreset = "all",
+    selectedPreset = "today",
     customStartDate = "",
     customEndDate = "",
     onChange, // ({ preset, startDate, endDate }) => void
     label = "Filter by Date",
     className = "",
 }) {
+    const { today } = DateTimeNow();
     const [isOpen, setIsOpen] = useState(false);
     const [showCustomRangeInputs, setShowCustomRangeInputs] = useState(selectedPreset === "custom");
     const [tempStart, setTempStart] = useState(customStartDate);
@@ -102,7 +100,6 @@ export default function DateFilterDropdown({
     }, []);
 
     const PRESETS = [
-        { key: "all", label: "All Dates (Semua Tanggal)" },
         { key: "today", label: "Today (Hari Ini)" },
         { key: "yesterday", label: "Yesterday (Kemarin)" },
         { key: "this-week", label: "This Week (Minggu Ini)" },
@@ -143,16 +140,15 @@ export default function DateFilterDropdown({
         setTempStart("");
         setTempEnd("");
         onChange({
-            preset: "all",
-            startDate: "",
-            endDate: "",
+            preset: "today",
+            startDate: today,
+            endDate: today,
         });
         setIsOpen(false);
     };
 
     // Generate trigger button label text
     const getDisplayLabel = () => {
-        if (selectedPreset === "all") return "All Dates";
         if (selectedPreset === "today") return "Today";
         if (selectedPreset === "yesterday") return "Yesterday";
         if (selectedPreset === "this-week") return "This Week";
@@ -183,18 +179,18 @@ export default function DateFilterDropdown({
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all cursor-pointer shadow-xs ${
-                    selectedPreset !== "all"
+                    selectedPreset !== "today"
                         ? "border-indigo-500/80 bg-indigo-50/50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-500/60"
                         : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-700"
                 }`}
             >
                 <div className="flex items-center gap-2 truncate">
-                    <Calendar className={`h-4 w-4 shrink-0 ${selectedPreset !== "all" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
+                    <Calendar className={`h-4 w-4 shrink-0 ${selectedPreset !== "today" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
                     <span className="truncate">{getDisplayLabel()}</span>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                    {selectedPreset !== "all" && (
+                    {selectedPreset !== "today" && (
                         <span
                             onClick={(e) => {
                                 e.stopPropagation();

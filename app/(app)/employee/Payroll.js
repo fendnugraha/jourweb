@@ -7,6 +7,7 @@ import useContacts from "@/app/hooks/useContacts";
 import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 import { AnimatePresence, motion } from "motion/react";
 import CreatePayroll from "./CreatePayroll";
+import PayrollTable from "./PayrollTable";
 
 const Payroll = ({ employees, notification, mutateEmployee }) => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -117,7 +118,20 @@ const Payroll = ({ employees, notification, mutateEmployee }) => {
                         transition={{ duration: 0.15 }}
                         className="space-y-6"
                     >
-                        <CreatePayroll employees={employees} />
+                        <CreatePayroll employees={employees} notification={notification} />
+                    </motion.div>
+                )}
+
+                {activeSubTab === "payroll-report" && (
+                    <motion.div
+                        key="payroll-report"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-6"
+                    >
+                        <PayrollTable />
                     </motion.div>
                 )}
             </AnimatePresence>

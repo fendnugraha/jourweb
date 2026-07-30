@@ -130,8 +130,8 @@ const FinanceContent = () => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search by SKU or Name..."
-                            aria-label="Search stock item list"
+                            placeholder="Search..."
+                            aria-label="Search finance records"
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
@@ -155,6 +155,7 @@ const FinanceContent = () => {
                         onClick={() => {
                             setIsModalOpen(true);
                             setModalTitle("Add Finance Mutation");
+                            setFinanceType("Payable");
                         }}
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
                     >
@@ -240,8 +241,10 @@ const FinanceContent = () => {
                 onClose={() => {
                     setIsModalOpen(false);
                     setIsPaymentActive(false);
+                    setFinanceType("Payable");
                 }}
                 title={modalTitle}
+                maxWidth="max-w-xl"
             >
                 {["Payable", "Receivable"].includes(financeType) ? (
                     isPaymentActive ? (
@@ -268,11 +271,15 @@ const FinanceContent = () => {
                         <h1>Under Construction</h1>
                     ) : (
                         <CreateSaving
-                            contacts={contactOption}
                             accounts={accounts}
                             notification={setNotification}
                             mutate={mutate}
                             setModalTitle={setModalTitle}
+                            onClose={() => {
+                                setIsModalOpen(false);
+                                setIsPaymentActive(false);
+                                setFinanceType("Payable");
+                            }}
                         />
                     ))
                 )}
