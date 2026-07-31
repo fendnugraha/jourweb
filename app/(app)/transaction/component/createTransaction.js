@@ -2,13 +2,14 @@ import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
 import { calculateFee, DateTimeNow } from "@/app/utils/format";
 import { AlertCircle, Check, CheckCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const CreateTransaction = ({
     warehouseCashId,
     selectedBankAccount,
     setSelectedBankAccount,
-    accountOptions,
+    accounts,
+    warehouseId,
     mutate,
     mutateBalance,
     isModalOpen,
@@ -18,6 +19,7 @@ const CreateTransaction = ({
 }) => {
     const { today } = DateTimeNow();
     const [newType, setNewType] = useState("transfer");
+    const [isFeeActive, setIsFeeActive] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState("");
@@ -32,6 +34,14 @@ const CreateTransaction = ({
         description: "",
         custName: "",
     });
+
+    const accountOptions = [
+        { value: "", label: "Select Account" },
+        ...accounts
+            .filter((account) => account.account_id === 2 && account.warehouse_id === warehouseId)
+            .map((account) => ({ value: account.id, label: account.group })),
+    ];
+
     const handleAddTxSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -41,13 +51,13 @@ const CreateTransaction = ({
             notification(successMessage);
             setFormData({
                 date_issued: today,
-                debt_id: warehouseCashId,
-                cred_id: formData.cred_id,
+                debt_id: newType === "transfer" ? warehouseCashId : formData.debt_id,
+                cred_id: newType === "transfer" ? formData.cred_id : warehouseCashId,
                 amount: "",
-                trx_type: "Transfer Uang",
+                trx_type: newType === "transfer" ? "Transfer Uang" : "Tarik Tunai",
                 fee_amount: "",
                 description: "",
-                custName: "",
+                custName: newType === "transfer" ? "" : "Walk In Customer",
             });
             mutate();
             mutateBalance();
@@ -63,6 +73,34 @@ const CreateTransaction = ({
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleToggleFee = () => {
+        const nextState = !isFeeActive;
+        setIsFeeActive(nextState);
+
+        setFormData((prev) => {
+            // Jika diaktifkan, fee_amount disamakan dengan amount
+            const newFeeAmount = nextState ? prev.amount : feeAuto ? calculateFee(prev.amount) : prev.fee_amount;
+
+            return {
+                ...prev,
+                fee_amount: newFeeAmount,
+                trx_type: nextState ? "Bank Fee" : "Tarik Tunai",
+            };
+        });
+    };
+
+    const handleAmountChange = (eOrValue) => {
+        // Cek apakah eOrValue itu event HTML (punya e.target.value) atau langsung value
+        const newAmount = eOrValue?.target ? eOrValue.target.value : eOrValue;
+
+        setFormData((prev) => ({
+            ...prev,
+            amount: newAmount,
+            // Jika mode Fee aktif, samakan fee_amount dengan amount baru
+            fee_amount: isFeeActive ? newAmount : prev.fee_amount,
+        }));
     };
 
     return (
@@ -100,7 +138,7 @@ const CreateTransaction = ({
                                 trx_type: "Tarik Tunai",
                                 debt_id: selectedBankAccount,
                                 cred_id: warehouseCashId,
-                                custName: "General Customer",
+                                custName: "Walk In Customer",
                             }));
                         }}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
@@ -144,7 +182,7 @@ const CreateTransaction = ({
                     <Dropdown
                         id="tx-category"
                         label="Transaction Category Selector"
-                        options={accountOptions}
+                        options={[{ value: "", label: "Select Account" }, ...accountOptions.filter((option) => option.value !== "")]}
                         selectedValue={newType === "transfer" ? formData.cred_id : formData.debt_id}
                         onChange={(val) => {
                             setSelectedBankAccount(val);
@@ -179,6 +217,7 @@ const CreateTransaction = ({
                                         // 3. Masukkan 'numericAmount' yang baru, BUKAN 'formData.amount' yang lama
                                         fee_amount: feeAuto ? calculateFee(numericAmount) : formData.fee_amount,
                                     });
+                                    handleAmountChange(val);
                                 }}
                                 placeholder="50000"
                                 className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
@@ -195,7 +234,9 @@ const CreateTransaction = ({
                             Fee (Rp IDR)
                         </label>
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
+                            <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${feeAuto ? "text-white" : "text-slate-400"} font-mono text-xs`}>
+                                Rp
+                            </span>
                             <input
                                 id="tx-fee"
                                 type="number"
@@ -207,8 +248,9 @@ const CreateTransaction = ({
                                         fee_amount: e.target.value,
                                     })
                                 }
-                                placeholder="50000"
-                                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                                min={0}
+                                placeholder={feeAuto ? "Auto" : "0"}
+                                className={`w-full rounded-xl border py-2 pl-9 pr-3.5 text-sm font-mono focus:outline-hidden focus-visible:ring-2 ${feeAuto ? "border-indigo-500 focus-visible:ring-indigo-500 bg-indigo-500 text-white font-bold" : "border-slate-300 dark:border-slate-600 bg-white text-slate-800 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"}`}
                             />
                         </div>
                         {formData.fee_amount && !isNaN(parseFloat(formData.fee_amount)) && (
@@ -217,6 +259,48 @@ const CreateTransaction = ({
                             </p>
                         )}
                     </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className={`border ${
+                            isFeeActive
+                                ? "border-indigo-400 dark:border-indigo-700 text-slate-500 dark:text-slate-300"
+                                : "border-slate-400 dark:border-slate-600 text-slate-500 dark:text-slate-400"
+                        } rounded-full p-1 flex items-center cursor-pointer transition-colors`}
+                        onClick={handleToggleFee}
+                        hidden={newType === "transfer"}
+                    >
+                        <span
+                            className={`ms-1 w-2 h-2 rounded-full ${isFeeActive ? "bg-emerald-600 dark:bg-emerald-400" : "bg-slate-400 dark:bg-slate-500"}`}
+                        />
+                        <span
+                            className={`ml-2 text-xs mr-1 ${
+                                isFeeActive ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-400 dark:text-slate-500"
+                            }`}
+                        >
+                            Fee/Bunga Bank
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`border ${feeAuto ? "border-indigo-400 dark:border-indigo-700 text-slate-500 dark:text-slate-300" : "border-slate-400 dark:border-slate-600 text-slate-500 dark:text-slate-400"} rounded-full p-1 flex items-center`}
+                        onClick={() => {
+                            setPersonalSetting((prev) => ({ ...prev, feeAdminAuto: !feeAuto }));
+                            setFormData((prev) => ({
+                                ...prev,
+                                fee_amount: isFeeActive ? prev.amount : feeAuto ? calculateFee(prev.amount) : prev.fee_amount,
+                            }));
+                        }}
+                    >
+                        <span className={`ms-1 w-2 h-2 rounded-full ${feeAuto ? "bg-emerald-600 dark:bg-emerald-400" : "bg-slate-400 dark:bg-slate-500"}`} />
+                        <span
+                            className={`ml-2 text-xs mr-1 ${feeAuto ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-400 dark:text-slate-500"}`}
+                        >
+                            Fee Admin Auto
+                        </span>
+                    </button>
                 </div>
 
                 {/* Description input */}
@@ -250,24 +334,13 @@ const CreateTransaction = ({
                     />
                 </div>
 
-                <div>
-                    <button
-                        type="button"
-                        className={`border ${feeAuto ? "border-indigo-400 dark:border-indigo-700 text-slate-500 dark:text-slate-300" : "border-slate-400 dark:border-slate-600 text-slate-500 dark:text-slate-400"} rounded-full p-1 flex items-center`}
-                        onClick={() => setPersonalSetting((prev) => ({ ...prev, feeAdminAuto: !feeAuto }))}
-                    >
-                        <span>
-                            <Check className={`h-4 w-4 ${feeAuto ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"}`} />
-                        </span>
-                        <span className="ml-2 text-xs mr-1">Fee Admin Auto</span>
-                    </button>
-                </div>
-
                 {/* Form Actions */}
                 <div className="flex justify-end gap-2 pt-2">
                     <button
                         type="button"
-                        onClick={() => isModalOpen(false)}
+                        onClick={() => {
+                            isModalOpen(false);
+                        }}
                         className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
                         Cancel

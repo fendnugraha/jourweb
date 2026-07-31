@@ -45,15 +45,10 @@ const TransactionContent = () => {
 
     const whAccounts = accounts.filter((account) => account.warehouse_id === warehouseId);
     const hqAccounts = accounts.filter((account) => account.warehouse_id === 1);
+    const hqAccountIds = hqAccounts.map((account) => account.id);
 
-    const accountOptions = [{ value: "all", label: "All Accounts" }, ...whAccounts.map((account) => ({ value: account.id, label: account.group }))];
-    const categoryOptions = [
-        { value: "all", label: "All Type" },
-        { value: "Transfer Uang", label: "Transfer Uang" },
-        { value: "Tarik Tunai", label: "Tarik Tunai" },
-        { value: "Mutasi Kas", label: "Mutasi Kas" },
-        { value: "Pengeluaran", label: "Pengeluaran" },
-    ];
+    const accountOptions = whAccounts.map((account) => ({ value: account.id, label: account.group }));
+
     // --- Search & Filter State ---
     const [searchTerm, setSearchTerm] = useState("");
     const [accountFilter, setAccountFilter] = useState("all");
@@ -98,6 +93,21 @@ const TransactionContent = () => {
             return true;
         });
     }, [journalByWarehouse, accountFilter, searchTerm, categoryFilter]);
+
+    // 1. Deklarasikan fungsi pembantu terlebih dahulu
+    const lengthByType = (type) => {
+        return filteredTransactions.filter((t) => t.trx_type === type).length;
+    };
+
+    // 2. Deklarasikan array options tanpa kurung kurawal ekstra di property label
+    const categoryOptions = [
+        { value: "all", label: "All Type" },
+        { value: "Bank Fee", label: `Fee/Bunga Bank (${lengthByType("Bank Fee")})` },
+        { value: "Mutasi Kas", label: `Mutasi Kas (${lengthByType("Mutasi Kas")})` },
+        { value: "Pengeluaran", label: `Pengeluaran (${lengthByType("Pengeluaran")})` },
+        { value: "Tarik Tunai", label: `Tarik Tunai (${lengthByType("Tarik Tunai")})` },
+        { value: "Transfer Uang", label: `Transfer Uang (${lengthByType("Transfer Uang")})` },
+    ];
 
     const [personalSetting, setPersonalSetting] = useState(() => {
         // 1. Baca langsung dari localStorage saat pertama kali state dibuat
@@ -204,7 +214,7 @@ const TransactionContent = () => {
                                         <Dropdown
                                             id="stock-account-filter"
                                             label="Stock Account Filter"
-                                            options={accountOptions}
+                                            options={[{ value: "all", label: "All Accounts" }, ...accountOptions]}
                                             selectedValue={accountFilter}
                                             onChange={(val) => setAccountFilter(val)}
                                             ariaLabel="Filter inventory by account"
@@ -248,10 +258,13 @@ const TransactionContent = () => {
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
                                 <div className="sm:col-span-3">
                                     <JournalTable
+                                        selectedBankAccount={selectedBankAccount}
                                         filteredTransactions={filteredTransactions}
                                         setTxToDelete={setTxToDelete}
                                         warehouseCashId={warehouseCashId}
                                         warehouseId={warehouseId}
+                                        userRole={userRole}
+                                        hqAccountIds={hqAccountIds}
                                     />
                                 </div>
                                 <div className="">
@@ -338,7 +351,8 @@ const TransactionContent = () => {
                         warehouseCashId={warehouseCashId}
                         selectedBankAccount={selectedBankAccount}
                         setSelectedBankAccount={setSelectedBankAccount}
-                        accountOptions={accountOptions}
+                        accounts={accounts}
+                        warehouseId={warehouseId}
                         mutate={mutate}
                         mutateBalance={mutateBalance}
                         isModalOpen={setIsModalAddTransactionOpen}
