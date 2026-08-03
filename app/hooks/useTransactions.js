@@ -15,7 +15,7 @@ export function useTransactions({ selectedWarehouse, startDate, endDate }) {
     // SWR hanya jalan jika warehouse terpilih
     const shouldFetch = selectedWarehouse && finalStartDate && finalEndDate;
 
-    const { data, error, isValidating, mutate } = useSWR(
+    const { data, error, isLoading, isValidating, mutate } = useSWR(
         shouldFetch ? `/api/get-journal-by-warehouse/${selectedWarehouse}/${finalStartDate}/${finalEndDate}` : null,
         fetcher,
         {
@@ -27,8 +27,9 @@ export function useTransactions({ selectedWarehouse, startDate, endDate }) {
 
     return {
         journalByWarehouse: data, // Sudah otomatis default [] karena fallbackData
-        loading: isValidating,
-        error: error?.response?.data?.errors || (error ? ["Something went wrong."] : null),
+        isLoading,
+        isValidating,
+        error,
         mutate, // Berhasil diexport dengan nama asli agar fleksibel di komponen
     };
 }

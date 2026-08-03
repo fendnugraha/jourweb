@@ -1,8 +1,10 @@
 import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
 import { calculateFee, DateTimeNow } from "@/app/utils/format";
-import { AlertCircle, Check, CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, Loader2, Sparkles, ArrowRightLeft, Banknote, ArrowUp, ArrowDown } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import TabSwitcher from "@/app/components/TabSwitcher";
 
 const CreateTransaction = ({
     warehouseCashId,
@@ -23,7 +25,6 @@ const CreateTransaction = ({
 
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState("");
-    const [errors, setErrors] = useState([]);
     const [formData, setFormData] = useState({
         date_issued: today,
         debt_id: warehouseCashId,
@@ -36,7 +37,7 @@ const CreateTransaction = ({
     });
 
     const accountOptions = [
-        { value: "", label: "Select Account" },
+        { value: "", label: "-- Select Account --" },
         ...accounts
             .filter((account) => account.account_id === 2 && account.warehouse_id === warehouseId)
             .map((account) => ({ value: account.id, label: account.group })),
@@ -45,10 +46,13 @@ const CreateTransaction = ({
     const handleAddTxSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setFormError("");
+
         try {
             const response = await axios.post("/api/create-transfer", formData);
             const successMessage = response.data.message;
             notification(successMessage);
+
             setFormData({
                 date_issued: today,
                 debt_id: newType === "transfer" ? warehouseCashId : formData.debt_id,
@@ -59,17 +63,13 @@ const CreateTransaction = ({
                 description: "",
                 custName: newType === "transfer" ? "" : "Walk In Customer",
             });
+
             mutate();
             mutateBalance();
-            // isModalOpen(false);
-            // setErrors([]);
-            setFormError("");
-            setLoading(false);
-            setNewType(newType);
         } catch (error) {
-            // setErrors(error.response.data.errors);
-            setFormError(error.response?.data?.message);
-            notification("Error: " + error.response?.data?.message, "error");
+            const errMsg = error.response?.data?.message || "Terjadi kesalahan saat menyimpan transaksi.";
+            setFormError(errMsg);
+            notification("Error: " + errMsg, "error");
         } finally {
             setLoading(false);
         }
@@ -80,8 +80,8 @@ const CreateTransaction = ({
         setIsFeeActive(nextState);
 
         setFormData((prev) => {
-            // Jika diaktifkan, fee_amount disamakan dengan amount
-            const newFeeAmount = nextState ? prev.amount : feeAuto ? calculateFee(prev.amount) : prev.fee_amount;
+            const numAmount = Number(prev.amount) || 0;
+            const newFeeAmount = nextState ? prev.amount : feeAuto ? calculateFee(numAmount) : prev.fee_amount;
 
             return {
                 ...prev,
@@ -91,77 +91,86 @@ const CreateTransaction = ({
         });
     };
 
-    const handleAmountChange = (eOrValue) => {
-        // Cek apakah eOrValue itu event HTML (punya e.target.value) atau langsung value
-        const newAmount = eOrValue?.target ? eOrValue.target.value : eOrValue;
+    const handleAmountChange = (e) => {
+        const val = e.target.value;
+        const numVal = Number(val) || 0;
 
         setFormData((prev) => ({
             ...prev,
-            amount: newAmount,
-            // Jika mode Fee aktif, samakan fee_amount dengan amount baru
-            fee_amount: isFeeActive ? newAmount : prev.fee_amount,
+            amount: val,
+            fee_amount: isFeeActive ? val : feeAuto ? calculateFee(numVal) : prev.fee_amount,
         }));
     };
 
-    return (
-        <>
-            {/* Type selection toggle tabs */}
-            <div className="mb-2">
-                <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Transaction Type</span>
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setNewType("transfer");
-                            setFormData((prevData) => ({
-                                ...prevData,
-                                trx_type: "Transfer Uang",
-                                debt_id: warehouseCashId,
-                                cred_id: selectedBankAccount,
-                                custName: "",
-                            }));
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            newType === "transfer"
-                                ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Transfer Uang
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setNewType("tarik tunai");
-                            setFormData((prevData) => ({
-                                ...prevData,
-                                trx_type: "Tarik Tunai",
-                                debt_id: selectedBankAccount,
-                                cred_id: warehouseCashId,
-                                custName: "Walk In Customer",
-                            }));
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            newType === "tarik tunai"
-                                ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Tarik Tunai
-                    </button>
-                </div>
-            </div>
-            <form onSubmit={handleAddTxSubmit} className="space-y-4">
-                {formError && (
-                    <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        <span>{formError}</span>
-                    </div>
-                )}
+    const handleToggleFeeAuto = () => {
+        const nextFeeAuto = !feeAuto;
+        setPersonalSetting((prev) => ({ ...prev, feeAdminAuto: nextFeeAuto }));
 
-                {/* Date input */}
+        setFormData((prev) => {
+            const numAmount = Number(prev.amount) || 0;
+            return {
+                ...prev,
+                fee_amount: isFeeActive ? prev.amount : nextFeeAuto ? calculateFee(numAmount) : prev.fee_amount,
+            };
+        });
+    };
+
+    const buttonList = [
+        {
+            icon: ArrowUp,
+            value: "transfer",
+            label: "Transfer Uang",
+            onClick: () =>
+                setFormData((prev) => ({
+                    ...prev,
+                    trx_type: "Transfer Uang",
+                    debt_id: warehouseCashId,
+                    cred_id: selectedBankAccount,
+                    custName: "",
+                })),
+        },
+        {
+            icon: ArrowDown,
+            value: "withdrawal",
+            label: "Tarik Tunai",
+            onClick: () =>
+                setFormData((prev) => ({
+                    ...prev,
+                    trx_type: "Tarik Tunai",
+                    debt_id: selectedBankAccount,
+                    cred_id: warehouseCashId,
+                    custName: "Walk In Customer",
+                })),
+        },
+    ];
+
+    return (
+        <div className="space-y-4">
+            {/* Tipe Transaksi Tab Switcher (dengan Smooth Sliding Indicator) */}
+            <div className="space-y-1.5">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipe Transaksi</span>
+                <TabSwitcher buttonList={buttonList} activeTab={newType} setActiveTab={setNewType} />
+            </div>
+
+            <form onSubmit={handleAddTxSubmit} className="space-y-4">
+                {/* Alert Error Animation */}
+                <AnimatePresence>
+                    {formError && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, y: -6 }}
+                            animate={{ opacity: 1, height: "auto", y: 0 }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40 overflow-hidden"
+                        >
+                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+                            <span>{formError}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Input Tanggal */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-date" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <label htmlFor="tx-date" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                         Date Registered
                     </label>
                     <input
@@ -170,19 +179,19 @@ const CreateTransaction = ({
                         required
                         value={formData.date_issued}
                         onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                     />
                 </div>
 
-                {/* Category drop down */}
+                {/* Dropdown Akun Bank */}
                 <div className="space-y-1">
-                    <label id="tx-category-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Account
+                    <label id="tx-category-label" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Bank Account
                     </label>
                     <Dropdown
                         id="tx-category"
                         label="Transaction Category Selector"
-                        options={[{ value: "", label: "Select Account" }, ...accountOptions.filter((option) => option.value !== "")]}
+                        options={accountOptions}
                         selectedValue={newType === "transfer" ? formData.cred_id : formData.debt_id}
                         onChange={(val) => {
                             setSelectedBankAccount(val);
@@ -194,47 +203,48 @@ const CreateTransaction = ({
                     />
                 </div>
 
-                {/* Amount and Date input rows */}
-                <div className="grid gap-4 sm:grid-cols-3">
+                {/* Nominal & Fee Admin Inputs */}
+                <div className="grid gap-3 sm:grid-cols-3">
                     <div className="space-y-1 sm:col-span-2">
-                        <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                             Amount (Rp IDR)
                         </label>
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-mono text-xs select-none">Rp</span>
                             <input
                                 id="tx-amount"
                                 type="number"
                                 required
                                 value={formData.amount}
-                                onChange={(e) => {
-                                    const val = e.target.value; // 1. Ambil nilai ketikan paling baru
-                                    const numericAmount = Number(val) || 0; // 2. Ubah jadi angka bersih
-
-                                    setFormData({
-                                        ...formData,
-                                        amount: val,
-                                        // 3. Masukkan 'numericAmount' yang baru, BUKAN 'formData.amount' yang lama
-                                        fee_amount: feeAuto ? calculateFee(numericAmount) : formData.fee_amount,
-                                    });
-                                    handleAmountChange(val);
-                                }}
+                                onChange={handleAmountChange}
                                 placeholder="50000"
-                                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-3.5 text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                             />
                         </div>
-                        {formData.amount && !isNaN(parseFloat(formData.amount)) && (
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                Preview: Rp {parseFloat(formData.amount).toLocaleString("id-ID")}
-                            </p>
-                        )}
+                        <AnimatePresence>
+                            {formData.amount && !isNaN(parseFloat(formData.amount)) && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold"
+                                >
+                                    Preview: Rp {parseFloat(formData.amount).toLocaleString("id-ID")}
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
                     </div>
+
                     <div className="space-y-1">
-                        <label htmlFor="tx-fee" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Fee (Rp IDR)
+                        <label htmlFor="tx-fee" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            Fee Admin
                         </label>
                         <div className="relative">
-                            <span className={`absolute inset-y-0 left-0 flex items-center pl-3 ${feeAuto ? "text-white" : "text-slate-400"} font-mono text-xs`}>
+                            <span
+                                className={`absolute inset-y-0 left-0 flex items-center pl-3.5 font-mono text-xs select-none transition-colors ${
+                                    feeAuto ? "text-white/80" : "text-slate-400"
+                                }`}
+                            >
                                 Rp
                             </span>
                             <input
@@ -250,78 +260,86 @@ const CreateTransaction = ({
                                 }
                                 min={0}
                                 placeholder={feeAuto ? "Auto" : "0"}
-                                className={`w-full rounded-xl border py-2 pl-9 pr-3.5 text-sm font-mono focus:outline-hidden focus-visible:ring-2 ${feeAuto ? "border-indigo-500 focus-visible:ring-indigo-500 bg-indigo-500 text-white font-bold" : "border-slate-300 dark:border-slate-600 bg-white text-slate-800 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"}`}
+                                className={`w-full rounded-xl border py-2 pl-10 pr-3 text-sm font-mono transition-all focus:outline-hidden focus-visible:ring-2 ${
+                                    feeAuto
+                                        ? "border-indigo-600 bg-indigo-600 text-white font-bold placeholder-white/60 focus-visible:ring-indigo-400"
+                                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus-visible:ring-indigo-500"
+                                }`}
                             />
                         </div>
-                        {formData.fee_amount && !isNaN(parseFloat(formData.fee_amount)) && (
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                Preview: Rp {parseFloat(formData.fee_amount).toLocaleString("id-ID")}
-                            </p>
-                        )}
+                        <AnimatePresence>
+                            {formData.fee_amount && !isNaN(parseFloat(formData.fee_amount)) && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold"
+                                >
+                                    Preview: Rp {parseFloat(formData.fee_amount).toLocaleString("id-ID")}
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <button
+                {/* Filter / Toggle Pills */}
+                <div className="flex flex-wrap gap-2 pt-1">
+                    <AnimatePresence>
+                        {newType === "withdrawal" && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                whileTap={{ scale: 0.95 }}
+                                type="button"
+                                onClick={handleToggleFee}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                                    isFeeActive
+                                        ? "border-indigo-500/40 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
+                                        : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400"
+                                }`}
+                            >
+                                <span className={`w-2 h-2 rounded-full ${isFeeActive ? "bg-emerald-500" : "bg-slate-400"}`} />
+                                Fee/Bunga Bank
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
                         type="button"
-                        className={`border ${
-                            isFeeActive
-                                ? "border-indigo-400 dark:border-indigo-700 text-slate-500 dark:text-slate-300"
-                                : "border-slate-400 dark:border-slate-600 text-slate-500 dark:text-slate-400"
-                        } rounded-full p-1 flex items-center cursor-pointer transition-colors`}
-                        onClick={handleToggleFee}
-                        hidden={newType === "transfer"}
+                        onClick={handleToggleFeeAuto}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                            feeAuto
+                                ? "border-indigo-500/40 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
+                                : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400"
+                        }`}
                     >
-                        <span
-                            className={`ms-1 w-2 h-2 rounded-full ${isFeeActive ? "bg-emerald-600 dark:bg-emerald-400" : "bg-slate-400 dark:bg-slate-500"}`}
-                        />
-                        <span
-                            className={`ml-2 text-xs mr-1 ${
-                                isFeeActive ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-400 dark:text-slate-500"
-                            }`}
-                        >
-                            Fee/Bunga Bank
-                        </span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`border ${feeAuto ? "border-indigo-400 dark:border-indigo-700 text-slate-500 dark:text-slate-300" : "border-slate-400 dark:border-slate-600 text-slate-500 dark:text-slate-400"} rounded-full p-1 flex items-center`}
-                        onClick={() => {
-                            setPersonalSetting((prev) => ({ ...prev, feeAdminAuto: !feeAuto }));
-                            setFormData((prev) => ({
-                                ...prev,
-                                fee_amount: isFeeActive ? prev.amount : feeAuto ? calculateFee(prev.amount) : prev.fee_amount,
-                            }));
-                        }}
-                    >
-                        <span className={`ms-1 w-2 h-2 rounded-full ${feeAuto ? "bg-emerald-600 dark:bg-emerald-400" : "bg-slate-400 dark:bg-slate-500"}`} />
-                        <span
-                            className={`ml-2 text-xs mr-1 ${feeAuto ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-slate-400 dark:text-slate-500"}`}
-                        >
-                            Fee Admin Auto
-                        </span>
-                    </button>
+                        <span className={`w-2 h-2 rounded-full ${feeAuto ? "bg-emerald-500" : "bg-slate-400"}`} />
+                        <Sparkles className="w-3 h-3 text-indigo-500" />
+                        Fee Admin Auto
+                    </motion.button>
                 </div>
 
-                {/* Description input */}
+                {/* Nama Customer */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-desc" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <label htmlFor="cust-name" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                         Customer Name
                     </label>
                     <input
-                        id="tx-desc"
+                        id="cust-name"
                         type="text"
                         required
                         value={formData.custName}
                         onChange={(e) => setFormData({ ...formData, custName: e.target.value })}
                         placeholder="e.g. Leonardo Da Vinci"
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                     />
                 </div>
 
-                {/* Description input */}
+                {/* Description / Memo */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-desc" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <label htmlFor="tx-desc" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                         Description / Memo
                     </label>
                     <input
@@ -330,31 +348,41 @@ const CreateTransaction = ({
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="e.g. BRIVA, PLN, BPJS, etc."
-                        className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                     />
                 </div>
 
-                {/* Form Actions */}
-                <div className="flex justify-end gap-2 pt-2">
-                    <button
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
                         type="button"
-                        onClick={() => {
-                            isModalOpen(false);
-                        }}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        onClick={() => isModalOpen(false)}
+                        className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer transition-colors"
                     >
                         Cancel
-                    </button>
-                    <button
+                    </motion.button>
+
+                    <motion.button
+                        whileHover={{ scale: loading ? 1 : 1.02 }}
+                        whileTap={{ scale: loading ? 1 : 0.97 }}
                         type="submit"
-                        className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
                         disabled={loading}
+                        className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-xs"
                     >
-                        {loading ? "Adding..." : "Add Entry"}
-                    </button>
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Adding...</span>
+                            </>
+                        ) : (
+                            <span>Add Entry</span>
+                        )}
+                    </motion.button>
                 </div>
             </form>
-        </>
+        </div>
     );
 };
 

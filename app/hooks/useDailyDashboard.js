@@ -10,6 +10,7 @@ export const useDailyDashboard = (warehouse, startDate, endDate) => {
     const {
         data: dailyDashboard,
         error,
+        isLoading,
         isValidating,
         mutate,
     } = useSWR(shouldFetch ? ["/api/daily-dashboard", { warehouse, startDate, endDate }] : null, fetcher, {
@@ -19,7 +20,7 @@ export const useDailyDashboard = (warehouse, startDate, endDate) => {
     });
 
     if (error) return { error: error.response?.data?.errors };
-    if (!dailyDashboard && !isValidating) return { loading: true };
+    if (!dailyDashboard && !isValidating) return { isLoading: true };
 
-    return { dailyDashboard, loading: isValidating, error, mutateDailyDashboard: mutate };
+    return { dailyDashboard, isLoading, isValidating, error, mutate };
 };

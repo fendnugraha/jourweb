@@ -1,7 +1,8 @@
 import Dropdown from "@/app/components/Dropdown";
+import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Landmark, Warehouse } from "lucide-react";
 import { useState } from "react";
 const CreateMutation = ({ accounts, mutate, mutateBalance, isModalOpen, warehouseId, notification, warehouses, userRole }) => {
     const [newType, setNewType] = useState("self");
@@ -83,42 +84,14 @@ const CreateMutation = ({ accounts, mutate, mutateBalance, isModalOpen, warehous
         <>
             <div className="mb-2">
                 <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">Mutation To</span>
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setNewType("self");
-                            setFormData({
-                                ...formData,
-                                debt_id: "",
-                            });
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            newType === "self"
-                                ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Ke Akun Sendiri
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setNewType("other");
-                            setFormData({
-                                ...formData,
-                                debt_id: "",
-                            });
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            newType === "other"
-                                ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Ke Cabang Lain
-                    </button>
-                </div>
+                <TabSwitcher
+                    buttonList={[
+                        { icon: Warehouse, value: "self", label: "Ke Akun Sendiri" },
+                        { icon: Landmark, value: "other", label: "Ke Cabang Lain" },
+                    ]}
+                    activeTab={newType}
+                    setActiveTab={setNewType}
+                />
             </div>
             <form onSubmit={handleAddMutationSubmit} className="space-y-4">
                 {formError && (
@@ -143,23 +116,21 @@ const CreateMutation = ({ accounts, mutate, mutateBalance, isModalOpen, warehous
                     />
                 </div>
 
-                {newType !== "self" && (
-                    <div className="space-y-1">
-                        <label id="tx-category-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Cabang Tujuan Mutasi
-                        </label>
-                        <Dropdown
-                            id="tx-category"
-                            label="Warehouse Selector"
-                            options={warehouseOptions}
-                            selectedValue={selectedDestinationWarehouseId}
-                            onChange={(val) => {
-                                setSelectedDestinationWarehouseId(val);
-                            }}
-                            disabled={!["Administrator", "Super Admin"].includes(userRole)}
-                        />
-                    </div>
-                )}
+                <div className="space-y-1">
+                    <label id="tx-category-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Cabang Tujuan Mutasi
+                    </label>
+                    <Dropdown
+                        id="tx-category"
+                        label="Warehouse Selector"
+                        options={warehouseOptions}
+                        selectedValue={selectedDestinationWarehouseId}
+                        onChange={(val) => {
+                            setSelectedDestinationWarehouseId(val);
+                        }}
+                        disabled={!["Administrator", "Super Admin"].includes(userRole) || newType === "self"}
+                    />
+                </div>
 
                 {/* Category drop down */}
                 <div className="grid sm:grid-cols-2 gap-2">

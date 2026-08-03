@@ -16,7 +16,7 @@ function generateUniqueId(prefix) {
     return `${prefix}-${Math.floor(Math.random() * 1000000)}`;
 }
 
-const SalesTable = ({ warehouseId, startDate, endDate, notification }) => {
+const SalesTable = ({ warehouseId, startDate, endDate, notification, mutateJournal }) => {
     const { txByWarehouse, loading, error, mutate } = useSales({ selectedWarehouse: warehouseId, startDate, endDate });
     const { products, loading: loadingProducts, error: errorProducts } = useProducts();
 
@@ -62,6 +62,7 @@ const SalesTable = ({ warehouseId, startDate, endDate, notification }) => {
             const response = await axios.post("/api/transactions", { cart, transaction_type: "Sales" });
             notification("POS Sale finalized & Stock decremented!");
             mutate();
+            mutateJournal();
         } catch (e) {
             console.error("Failed to sync POS checkout via API:", e);
         }
@@ -137,7 +138,7 @@ const SalesTable = ({ warehouseId, startDate, endDate, notification }) => {
             </div>
 
             {activeSubTab === "pos" && <PointOfSale stockItems={products} onPOSCheckout={handlePOSCheckout} />}
-            {activeSubTab === "ledger" && <SalesLog txByWarehouse={txByWarehouse} />}
+            {activeSubTab === "ledger" && <SalesLog txByWarehouse={txByWarehouse} mutate={mutate} mutateJournal={mutateJournal} notification={notification} />}
             {activeSubTab === "summary" && <SalesSummary txByWarehouse={txByWarehouse} />}
         </>
     );

@@ -1,9 +1,11 @@
+import ConfirmDialog from "@/app/components/ConfirmDialog";
 import Dropdown from "@/app/components/Dropdown";
+import axios from "@/app/utils/axios";
 import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlertCircle, Box, Calendar, Search, Tag } from "lucide-react";
+import { AlertCircle, Box, Calendar, Search, Tag, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const SalesLog = ({ txByWarehouse }) => {
+const SalesLog = ({ txByWarehouse, mutate, mutateJournal, notification }) => {
     const categoryOptions = [
         { value: "all", label: "All Categories" },
         { value: "Voucher & SP", label: "Voucher & SP" },
@@ -29,6 +31,20 @@ const SalesLog = ({ txByWarehouse }) => {
             }) ?? []
         ); // 3. Kembalikan array kosong jika sales belum ada, supaya UI tidak error (.map is not a function)
     }, [txByWarehouse.list, searchTerm, categoryFilter]);
+
+    const [txToDelete, setTxToDelete] = useState(null);
+
+    const handleDeleteTrx = async (id) => {
+        try {
+            const response = await axios.delete(`/api/transactions/${id}`);
+            notification(response.data.message);
+            mutate();
+            mutateJournal();
+        } catch (error) {
+            notification(error.response?.data?.message || "Something went wrong.");
+            console.log(error);
+        }
+    };
 
     return (
         <>
@@ -150,7 +166,9 @@ const SalesLog = ({ txByWarehouse }) => {
                                         <td className="px-6 py-4 text-right">{formatNumber(tx.cost)}</td>
                                         <td className="px-6 py-4 text-right font-bold text-green-500">{formatRupiah(tx.price - tx.cost)}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <button className="text-indigo-600 hover:text-indigo-900">Details</button>
+                                            <button className="text-red-600 hover:text-red-900" onClick={() => setTxToDelete(tx.id)}>
+                                                <Trash2 size={16} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -159,6 +177,18 @@ const SalesLog = ({ txByWarehouse }) => {
                     </table>
                 </div>
             </div>
+            <ConfirmDialog
+                isOpen={txToDelete !== null}
+                onClose={() => setTxToDelete(null)}
+                onConfirm={() => {
+                    if (txToDelete) {
+                        handleDeleteTrx(txToDelete);
+                        setTxToDelete(null);
+                    }
+                }}
+                title="Hapus Transaksi"
+                description="Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan."
+            />
         </>
     );
 };

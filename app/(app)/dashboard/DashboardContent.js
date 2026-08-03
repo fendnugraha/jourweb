@@ -3,15 +3,18 @@ import { useDailyDashboard } from "@/app/hooks/useDailyDashboard";
 import { useAuth } from "@/app/utils/auth";
 import { DateTimeNow } from "@/app/utils/format";
 import DailyDashboardGrid from "./DailyDashboard";
+import HeaderProfile from "../HeaderProfile";
 
 const DashboardContent = () => {
-    const { today } = DateTimeNow();
     const { user } = useAuth({ middleware: "auth" });
-    const { dailyDashboard, loading, error } = useDailyDashboard(user?.warehouse_id, today, today);
+    const warehouseId = user.warehouse_id;
+    const userRole = user.role;
 
     return (
-        <div>
-            <DailyDashboardGrid dailyDashboard={dailyDashboard} isLoading={loading} />
+        <div className="space-y-6">
+            {/* HEADER WELCOME BANNER */}
+            <HeaderProfile />
+            <DailyDashboardGrid userRole={userRole} warehouseId={warehouseId} />
         </div>
     );
 };

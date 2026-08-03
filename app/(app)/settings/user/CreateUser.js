@@ -166,7 +166,8 @@ const CreateUser = ({ contacts, warehouses, isModalOpen, notification, mutate })
                         options={[
                             { value: "", label: "Select Role" },
                             { value: "Administrator", label: "Administrator" },
-                            { value: "Kasir", label: "Kasir" },
+                            { value: "Cashier", label: "Kasir" },
+                            { value: "Co-Cashier", label: "Co Kasir" },
                             { value: "Courier", label: "Kurir" },
                         ]}
                         selectedValue={formData.role}

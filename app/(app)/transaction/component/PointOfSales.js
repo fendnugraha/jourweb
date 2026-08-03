@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { ShoppingCart, Search, Plus, Minus, Trash2, Check, Receipt, Printer, CheckCircle2, Coffee, User, Store, ChevronRight } from "lucide-react";
+import { ShoppingCart, Search, Plus, Minus, Trash2, Check, Receipt, Printer, CheckCircle2, Coffee, User, Store, ChevronRight, Eye, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatRupiah } from "@/app/utils/format";
 
@@ -20,15 +20,15 @@ export default function PointOfSale({
     const [paymentAccount, setPaymentAccount] = useState("Cash");
     const [isPrinting, setIsPrinting] = useState(false);
 
-    // Receipt modal state
+    // State Modal Preview & Receipt
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
     const [lastReceipt, setLastReceipt] = useState(null);
 
-    // 1. Build POS catalog combining fresh café menu and actual sellable inventory items
+    // 1. Build POS catalog
     const posProducts = useMemo(() => {
-        // Retail inventory products (price > 0, or default cost * 1.8 markup if 0)
         const inventoryProducts = stockItems.map((item) => {
-            const retailPrice = item.price > 0 ? item.price : Math.round((item.cost * 1.8) / 100) * 100; // Round to nearest 100 Rp
+            const retailPrice = item.price > 0 ? item.price : Math.round((item.cost * 1.8) / 100) * 100;
             return {
                 id: item.id,
                 name: item.name,
@@ -45,7 +45,7 @@ export default function PointOfSale({
         return [...inventoryProducts];
     }, [stockItems]);
 
-    // 2. Filter products based on search query and selected category tab
+    // 2. Filter products
     const filteredProducts = useMemo(() => {
         return posProducts.filter((product) => {
             const skuVal = "sku" in product ? product.sku : "";
@@ -63,12 +63,10 @@ export default function PointOfSale({
         setCart((prevCart) => {
             const existing = prevCart.find((item) => item.id === product.id);
 
-            // Stock limit check
             if (!allowOverdraft && !product.isCafeMenu && "currentStock" in product) {
                 const currentQtyInCart = existing ? existing.quantity : 0;
                 const currentStockVal = product.currentStock;
                 if (currentQtyInCart >= currentStockVal) {
-                    // Cannot add more than in stock
                     return prevCart;
                 }
             }
@@ -102,11 +100,10 @@ export default function PointOfSale({
                 return prevCart.filter((item) => item.id !== id);
             }
 
-            // If stock item, check limits
             if (!allowOverdraft && !existing.isCafeMenu && existing.stockItemId) {
                 const matchedStockItem = stockItems.find((s) => s.id === existing.stockItemId);
                 if (matchedStockItem && newQty > matchedStockItem.quantity) {
-                    return prevCart; // Exceeds available stock
+                    return prevCart;
                 }
             }
 
@@ -124,16 +121,22 @@ export default function PointOfSale({
     }, [cart]);
 
     const tax = useMemo(() => {
-        return enableTax ? subtotal * 0.08 : 0; // 8% local food/beverage tax rate
+        return enableTax ? subtotal * 0.08 : 0;
     }, [subtotal, enableTax]);
 
     const total = useMemo(() => {
         return subtotal + tax;
     }, [subtotal, tax]);
 
-    // Handle Checkout
-    const handleCheckout = (e) => {
+    // Buka Modal Preview Pesanan
+    const handleOpenPreview = (e) => {
         e.preventDefault();
+        if (cart.length === 0) return;
+        setIsPreviewOpen(true);
+    };
+
+    // Eksekusi Checkout sesungguhnya dari Modal Preview
+    const handleFinalCheckout = () => {
         if (cart.length === 0) return;
 
         const receiptId = "REC-" + Math.floor(100000 + Math.random() * 900000);
@@ -141,7 +144,6 @@ export default function PointOfSale({
         const formattedDate = date.toISOString().split("T")[0];
         const formattedTime = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-        // 2. Format transaction to book in sales ledger
         const memo = `POS Sale #${receiptId} (${customerName || "Walk-in customer"})`;
         const transaction = {
             description: memo,
@@ -152,10 +154,10 @@ export default function PointOfSale({
             account: paymentAccount,
         };
 
-        // 3. Invoke checkout callback to synchronize with general ledger and deduct stock levels
+        // Invoke checkout callback
         onPOSCheckout(transaction, cart);
 
-        // 4. Save details for Receipt Modal preview
+        // Save receipt data
         setLastReceipt({
             id: receiptId,
             timestamp: `${formattedDate} ${formattedTime}`,
@@ -167,10 +169,11 @@ export default function PointOfSale({
             payment: paymentAccount,
         });
 
+        // Tutup modal preview & buka modal bukti transaksi/receipt
+        setIsPreviewOpen(false);
         setIsReceiptOpen(true);
     };
 
-    // Clear cart and prepare for next order
     const handleNewOrder = () => {
         setCart([]);
         setCustomerName("");
@@ -233,7 +236,6 @@ export default function PointOfSale({
                 {/* Product Grid */}
                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 max-h-145 overflow-y-auto pr-1">
                     {filteredProducts.map((product) => {
-                        // Check stock limits if applicable
                         const isStockItem = !product.isCafeMenu;
                         const currentStock = "currentStock" in product ? product.currentStock : Infinity;
                         const inCart = cart.find((item) => item.id === product.id);
@@ -256,7 +258,6 @@ export default function PointOfSale({
                                           : "border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 hover:shadow-xs cursor-pointer group"
                                 }`}
                             >
-                                {/* Product Name & Category Badge */}
                                 <div className="w-full">
                                     <div className="flex justify-between items-start gap-1">
                                         <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{product.category}</span>
@@ -275,8 +276,7 @@ export default function PointOfSale({
                                     </h4>
                                 </div>
 
-                                {/* Pricing & Stock indicators */}
-                                <div className="flex items-end justify-between mt-auto pt-2 w-full border-t border-slate-50 dark:border-slate-800/40">
+                                <div className="flex items-end justify-between mt-auto pt-2 w-full border-t border-slate-200 dark:border-slate-600/40">
                                     <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">{formatRupiah(product.price)}</span>
 
                                     <div className="text-right">
@@ -306,7 +306,7 @@ export default function PointOfSale({
             {/* RIGHT SECTION: Cart Area & Payment Selection (Col span 5) */}
             <div className="lg:col-span-5 flex flex-col h-full">
                 <form
-                    onSubmit={handleCheckout}
+                    onSubmit={handleOpenPreview}
                     className="p-5 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800 flex flex-col justify-between min-h-145 shadow-xs"
                 >
                     {/* Cart Header */}
@@ -331,7 +331,7 @@ export default function PointOfSale({
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-50 bg-slate-50/45 dark:bg-slate-950/15 dark:border-slate-800"
+                                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-200/45 dark:bg-slate-800/15 dark:border-slate-800"
                                 >
                                     <div className="flex-1 min-w-0">
                                         <h5 className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">{item.name}</h5>
@@ -380,9 +380,8 @@ export default function PointOfSale({
                         )}
                     </div>
 
-                    {/* Customer reference & Payment method (only if items present) */}
+                    {/* Customer reference */}
                     <div className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4 mb-4">
-                        {/* Customer Name */}
                         <div className="space-y-1">
                             <label
                                 htmlFor="customer-name"
@@ -399,49 +398,9 @@ export default function PointOfSale({
                                 className="w-full rounded-xl border border-slate-200 bg-white dark:bg-slate-600 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-850 dark:text-slate-100"
                             />
                         </div>
-
-                        {/* Settle to Account Choice */}
-                        {/* <div className="space-y-2">
-                            <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Settle POS Sale to Account
-                            </span>
-                            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="POS Settle Accounts">
-                                {accounts.map((acc) => {
-                                    let icon = CreditCard;
-                                    let label = acc;
-                                    if (acc === "Cash") {
-                                        icon = Coins;
-                                        label = "Cash Drawer";
-                                    } else if (acc === "Other Account") {
-                                        icon = ArrowRight;
-                                    }
-                                    const IconComp = icon;
-                                    const isSelected = paymentAccount === acc;
-                                    return (
-                                        <button
-                                            key={acc}
-                                            type="button"
-                                            role="radio"
-                                            aria-checked={isSelected}
-                                            onClick={() => setPaymentAccount(acc)}
-                                            className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
-                                                isSelected
-                                                    ? "border-indigo-600 bg-indigo-50/40 text-indigo-900 dark:border-indigo-500 dark:bg-indigo-950/20 dark:text-indigo-300 ring-2 ring-indigo-500/20"
-                                                    : "border-slate-100 bg-white hover:bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                                            }`}
-                                        >
-                                            <IconComp
-                                                className={`h-4 w-4 shrink-0 ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`}
-                                            />
-                                            <span className="text-[11px] font-semibold truncate">{label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div> */}
                     </div>
 
-                    {/* Pricing calculations & submit */}
+                    {/* Pricing calculations & Preview button */}
                     <div className="bg-slate-50 p-4 rounded-xl dark:bg-slate-950/40 border border-slate-100/50 dark:border-slate-800/50 space-y-2">
                         <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Subtotal</span>
@@ -450,13 +409,13 @@ export default function PointOfSale({
                                 {subtotal.toLocaleString()}
                             </span>
                         </div>
-                        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                        {/* <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Local Sales Tax (8%)</span>
                             <span className="font-mono">
                                 {currency}
                                 {tax.toLocaleString()}
                             </span>
-                        </div>
+                        </div> */}
                         <div className="h-px bg-slate-200 dark:bg-slate-800 my-1" />
                         <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-slate-50">
                             <span>Total Due</span>
@@ -466,6 +425,7 @@ export default function PointOfSale({
                             </span>
                         </div>
 
+                        {/* TOMBOL UNTUK BUKA PREVIEW */}
                         <button
                             type="submit"
                             disabled={cart.length === 0}
@@ -475,149 +435,258 @@ export default function PointOfSale({
                                     : "bg-indigo-600 hover:bg-indigo-500 cursor-pointer shadow-md"
                             }`}
                         >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Complete Transaction Checkout
+                            <Eye className="h-4 w-4" />
+                            Preview & Ringkasan Pesanan
                         </button>
                     </div>
                 </form>
-            </div>
 
-            {/* RECEIPT SUCCESS DIALOG/MODAL */}
-            <AnimatePresence>
-                {isReceiptOpen && lastReceipt && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        {/* Backdrop */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={handleNewOrder}
-                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity dark:bg-slate-950/85"
-                        />
+                {/* MODAL 1: PREVIEW BARANG SEBELUM CHECKOUT */}
+                <AnimatePresence>
+                    {isPreviewOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity dark:bg-slate-950/85"
+                            />
 
-                        {/* Receipt container card */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            className="relative w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
-                        >
-                            {/* Receipt Header styling */}
-                            <div className="text-center pb-4 border-b border-dashed border-slate-200 dark:border-slate-800">
-                                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-2">
-                                    <Receipt className="h-5 w-5" />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
+                            >
+                                <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                            <Eye className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Ringkasan Pesanan</h3>
+                                            <p className="text-[10px] text-slate-400">Periksa item sebelum menyelesaikan transaksi</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPreviewOpen(false)}
+                                        className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
                                 </div>
-                                <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wide">BRILink THREEKOMUNIKA</h2>
-                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">128 Sourdough Lane, Hearthstone CA</p>
-                                <div className="mt-3 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 py-1 px-2.5 rounded-lg inline-flex items-center gap-1 text-[10px] font-bold">
-                                    <Check className="h-3 w-3" /> Sale Finalized & Registered
-                                </div>
-                            </div>
 
-                            {/* Transaction details read-out */}
-                            <div className="py-4 space-y-1.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                                <div className="flex justify-between">
-                                    <span>Receipt No:</span>
-                                    <span className="font-semibold text-slate-800 dark:text-slate-200">{lastReceipt.id}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Timestamp:</span>
-                                    <span>{lastReceipt.timestamp}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Customer:</span>
-                                    <span className="truncate max-w-37.5">{lastReceipt.customer}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Payment Method:</span>
-                                    <span>{getPaymentLabel(lastReceipt.payment)}</span>
-                                </div>
-                            </div>
-
-                            {/* Items listing table */}
-                            <div className="flex-1 overflow-y-auto py-4 space-y-2.5 max-h-55">
-                                <table className="w-full text-[11px] font-mono">
-                                    <thead>
-                                        <tr className="text-slate-400 border-b border-dashed border-slate-200 dark:border-slate-800 pb-1">
-                                            <th className="text-left font-normal py-1">Item Description</th>
-                                            <th className="text-center font-normal py-1">Qty</th>
-                                            <th className="text-right font-normal py-1">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/30">
-                                        {lastReceipt.items.map((item) => (
-                                            <tr key={item.id} className="text-slate-700 dark:text-slate-300">
-                                                <td className="py-1.5 pr-2 max-w-40 truncate">{item.name}</td>
-                                                <td className="py-1.5 text-center">{item.quantity}</td>
-                                                <td className="py-1.5 text-right font-semibold">
-                                                    {currency}
-                                                    {(item.price * item.quantity).toLocaleString()}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Receipt Totals pricing summary */}
-                            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 font-mono text-xs space-y-1.5 text-slate-500 dark:text-slate-400">
-                                <div className="flex justify-between">
-                                    <span>Subtotal:</span>
-                                    <span>
-                                        {currency}
-                                        {lastReceipt.subtotal.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Tax (8%):</span>
-                                    <span>
-                                        {currency}
-                                        {lastReceipt.tax.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-slate-900 dark:text-slate-55 font-bold text-sm pt-1 border-t border-slate-100 dark:border-slate-800/50">
-                                    <span>Grand Total:</span>
-                                    <span>
-                                        {currency}
-                                        {lastReceipt.total.toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Receipt Footer Message */}
-                            <div className="text-center pt-5 mt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
-                                <p>Thank you for supporting our craft bakery & kitchen!</p>
-                                <p className="mt-0.5">Please visit us again soon.</p>
-                                {isPrinting && (
-                                    <p className="text-indigo-500 dark:text-indigo-400 font-semibold mt-2 animate-pulse">
-                                        Sending invoice payload to network printer...
+                                <div className="py-3 text-xs space-y-1 text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800">
+                                    <p>
+                                        <span className="text-slate-400">Pelanggan:</span> {customerName || "Walk-in Customer"}
                                     </p>
-                                )}
-                            </div>
+                                    <p>
+                                        <span className="text-slate-400">Metode Pembayaran:</span> {paymentAccount}
+                                    </p>
+                                </div>
 
-                            {/* POS control buttons */}
-                            <div className="grid grid-cols-2 gap-3 mt-5">
-                                <button
-                                    type="button"
-                                    onClick={handlePrint}
-                                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-                                >
-                                    <Printer className="h-3.5 w-3.5" />
-                                    Print Invoice
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleNewOrder}
-                                    className="inline-flex items-center justify-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow-xs transition-colors"
-                                >
-                                    New POS Order
-                                    <ChevronRight className="h-3.5 w-3.5" />
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                {/* Items List Preview */}
+                                <div className="flex-1 overflow-y-auto py-3 my-2 space-y-2 max-h-52">
+                                    {cart.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="flex justify-between items-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-xs"
+                                        >
+                                            <div>
+                                                <p className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</p>
+                                                <p className="text-[10px] text-slate-400 font-mono">
+                                                    {formatRupiah(item.price)} x {item.quantity}
+                                                </p>
+                                            </div>
+                                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                                                {currency}
+                                                {(item.price * item.quantity).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Pricing Breakdown */}
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1 text-xs">
+                                    <div className="flex justify-between text-slate-500">
+                                        <span>Subtotal</span>
+                                        <span className="font-mono">
+                                            {currency}
+                                            {subtotal.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {enableTax && (
+                                        <div className="flex justify-between text-slate-500">
+                                            <span>Pajak (8%)</span>
+                                            <span className="font-mono">
+                                                {currency}
+                                                {tax.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between text-sm font-bold text-slate-900 dark:text-slate-100 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                        <span>Total Bayar</span>
+                                        <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                                            {currency}
+                                            {total.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Modal Actions */}
+                                <div className="grid grid-cols-2 gap-3 mt-5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPreviewOpen(false)}
+                                        className="py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                    >
+                                        Kembali & Ubah
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleFinalCheckout}
+                                        className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md"
+                                    >
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Checkout Sekarang
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* MODAL 2: RECEIPT SUCCESS DIALOG */}
+                <AnimatePresence>
+                    {isReceiptOpen && lastReceipt && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={handleNewOrder}
+                                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity dark:bg-slate-950/85"
+                            />
+
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                                className="relative w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
+                            >
+                                <div className="text-center pb-4 border-b border-dashed border-slate-200 dark:border-slate-800">
+                                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 mb-2">
+                                        <Receipt className="h-5 w-5" />
+                                    </div>
+                                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 uppercase tracking-wide">BRILink THREEKOMUNIKA</h2>
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">128 Sourdough Lane, Hearthstone CA</p>
+                                    <div className="mt-3 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 py-1 px-2.5 rounded-lg inline-flex items-center gap-1 text-[10px] font-bold">
+                                        <Check className="h-3 w-3" /> Sale Finalized & Registered
+                                    </div>
+                                </div>
+
+                                <div className="py-4 space-y-1.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
+                                    <div className="flex justify-between">
+                                        <span>Receipt No:</span>
+                                        <span className="font-semibold text-slate-800 dark:text-slate-200">{lastReceipt.id}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Timestamp:</span>
+                                        <span>{lastReceipt.timestamp}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Customer:</span>
+                                        <span className="truncate max-w-37.5">{lastReceipt.customer}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Payment Method:</span>
+                                        <span>{getPaymentLabel(lastReceipt.payment)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto py-4 space-y-2.5 max-h-55">
+                                    <table className="w-full text-[11px] font-mono">
+                                        <thead>
+                                            <tr className="text-slate-400 border-b border-dashed border-slate-200 dark:border-slate-800 pb-1">
+                                                <th className="text-left font-normal py-1">Item Description</th>
+                                                <th className="text-center font-normal py-1">Qty</th>
+                                                <th className="text-right font-normal py-1">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100/50 dark:divide-slate-800/30">
+                                            {lastReceipt.items.map((item) => (
+                                                <tr key={item.id} className="text-slate-700 dark:text-slate-300">
+                                                    <td className="py-1.5 pr-2 max-w-40 truncate">{item.name}</td>
+                                                    <td className="py-1.5 text-center">{item.quantity}</td>
+                                                    <td className="py-1.5 text-right font-semibold">
+                                                        {currency}
+                                                        {(item.price * item.quantity).toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 font-mono text-xs space-y-1.5 text-slate-500 dark:text-slate-400">
+                                    <div className="flex justify-between">
+                                        <span>Subtotal:</span>
+                                        <span>
+                                            {currency}
+                                            {lastReceipt.subtotal.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Tax (8%):</span>
+                                        <span>
+                                            {currency}
+                                            {lastReceipt.tax.toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-900 dark:text-slate-55 font-bold text-sm pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                                        <span>Grand Total:</span>
+                                        <span>
+                                            {currency}
+                                            {lastReceipt.total.toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="text-center pt-5 mt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400">
+                                    <p>Thank you for supporting our craft bakery & kitchen!</p>
+                                    <p className="mt-0.5">Please visit us again soon.</p>
+                                    {isPrinting && (
+                                        <p className="text-indigo-500 dark:text-indigo-400 font-semibold mt-2 animate-pulse">
+                                            Sending invoice payload to network printer...
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mt-5">
+                                    <button
+                                        type="button"
+                                        onClick={handlePrint}
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        <Printer className="h-3.5 w-3.5" />
+                                        Print Invoice
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNewOrder}
+                                        className="inline-flex items-center justify-center gap-1 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow-xs transition-colors"
+                                    >
+                                        New POS Order
+                                        <ChevronRight className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 }

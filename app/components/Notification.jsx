@@ -19,9 +19,9 @@ export default function Notification({ message, onClose, duration = 3000 }) {
             {message && (
                 <div className="fixed bottom-4 right-4 z-900" id="toast-notification-banner">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
                         className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs text-white shadow-lg dark:bg-slate-50 dark:text-slate-950 font-semibold border border-slate-800 dark:border-slate-200"
                         role="status"
                         aria-live="polite"

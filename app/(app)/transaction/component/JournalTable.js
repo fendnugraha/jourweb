@@ -1,10 +1,18 @@
 import DropdownMenu from "@/app/components/DropdownMenu";
 import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
-import { FileText, Tag, CreditCard, Coins, MoreHorizontal, Calendar, ArrowRightLeft, FileWarning, AlertCircle, Ellipsis } from "lucide-react";
+import { FileText, Tag, CreditCard, Coins, MoreHorizontal, Calendar, ArrowRightLeft, FileWarning, AlertCircle, Ellipsis, RefreshCw } from "lucide-react";
 
-const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete, warehouseCashId, warehouseId, userRole, hqAccountIds }) => {
+const JournalTable = ({ filteredTransactions, setTxToDelete, warehouseCashId, warehouseId, userRole, hqAccountIds, isJournalLoading, isJournalValidating }) => {
     return (
-        <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            {/* BACKGROUND REVALIDATING INDICATOR */}
+            {isJournalValidating && !isJournalLoading && (
+                <div className="absolute top-3 right-5 z-10 flex items-center gap-1.5 rounded-full bg-indigo-50/90 dark:bg-indigo-950/80 px-2.5 py-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-xs">
+                    <RefreshCw className="h-3 w-3 animate-spin text-indigo-500" />
+                    <span>Syncing...</span>
+                </div>
+            )}
+
             <div className="overflow-x-auto rounded-2xl">
                 <table className="w-full border-collapse text-left">
                     <thead>
@@ -42,7 +50,36 @@ const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
-                        {filteredTransactions.length === 0 ? (
+                        {/* 1. STATE LOADING (SKELETON ROWS) */}
+                        {isJournalLoading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <tr key={index} className="animate-pulse">
+                                    {/* Column 1: Description & Date */}
+                                    <td className="px-5 py-4 space-y-2">
+                                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-3/4" />
+                                        <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded-md w-1/3" />
+                                    </td>
+                                    {/* Column 2: Category */}
+                                    <td className="px-5 py-4">
+                                        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-24" />
+                                    </td>
+                                    {/* Column 3: Settle Channel */}
+                                    <td className="px-5 py-4">
+                                        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-32" />
+                                    </td>
+                                    {/* Column 4: Amount */}
+                                    <td className="px-5 py-4 text-right space-y-1">
+                                        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-24 ml-auto" />
+                                        <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded-md w-12 ml-auto" />
+                                    </td>
+                                    {/* Column 5: Action */}
+                                    <td className="px-5 py-4 text-center">
+                                        <div className="h-6 w-6 bg-slate-200 dark:bg-slate-800 rounded-lg mx-auto" />
+                                    </td>
+                                </tr>
+                            ))
+                        ) : filteredTransactions.length === 0 ? (
+                            /* 2. STATE EMPTY (DATA KOSONG) */
                             <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                                     <div className="flex flex-col items-center justify-center space-y-2">
@@ -53,10 +90,11 @@ const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete
                                 </td>
                             </tr>
                         ) : (
+                            /* 3. STATE HAS DATA (DAFTAR TRANSAKSI) */
                             filteredTransactions.map((tx) => {
                                 const accountToCheck = Number(warehouseCashId);
                                 const isInflow = Number(tx.debt_id) === accountToCheck;
-                                const isOutflow = Number(tx.cred_id) === accountToCheck;
+
                                 return (
                                     <tr key={tx.id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150">
                                         {/* 1. Description & Date */}
@@ -116,7 +154,11 @@ const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete
                                         <td className="px-5 py-4 text-right whitespace-nowrap font-mono">
                                             <div className="font-semibold text-slate-800 dark:text-slate-100">
                                                 <span
-                                                    className={`text-sm font-bold px-2 py-1 rounded-lg inline-block border ${!isInflow ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/30" : "text-red-600 dark:text-red-400 bg-red-50/70 dark:bg-red-950/30 border-red-100/30"}`}
+                                                    className={`text-sm font-bold px-2 py-1 rounded-lg inline-block border ${
+                                                        !isInflow
+                                                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/30"
+                                                            : "text-red-600 dark:text-red-400 bg-red-50/70 dark:bg-red-950/30 border-red-100/30"
+                                                    }`}
                                                 >
                                                     {!isInflow ? "+" : "-"} {formatNumber(tx.amount)}
                                                 </span>
@@ -135,41 +177,33 @@ const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete
                                                             <Ellipsis className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" />
                                                         </div>
                                                     }
-                                                    position="auto" // Menggunakan Smart Position agar jika di bawah otomatis naik ke atas
+                                                    position="auto"
                                                     items={[
-                                                        {
+                                                        ["Deposit"].includes(tx.trx_type) && {
                                                             type: "button",
-                                                            attributes: {
-                                                                hidden: !["Deposit"].includes(tx.trx_type),
-                                                            },
                                                             label: "Edit Deposit",
                                                             onClick: () => {
                                                                 setSelectedJournalId(tx.id);
                                                                 setIsModalEditDepositOpen(true);
                                                             },
                                                         },
-                                                        {
+                                                        ["Transfer Uang", "Tarik Tunai"].includes(tx.trx_type) && {
                                                             type: "button",
-                                                            attributes: {
-                                                                hidden: !["Transfer Uang", "Tarik Tunai"].includes(tx.trx_type),
-                                                            },
                                                             label: "Edit Transaksi",
                                                             onClick: () => {
                                                                 setSelectedJournalId(tx.id);
                                                                 setIsModalEditJournalOpen(true);
                                                             },
                                                         },
-                                                        {
-                                                            type: "button",
-                                                            attributes: {
-                                                                hidden: !["Mutasi Kas"].includes(tx.trx_type) || hqAccountIds.includes(tx.cred_id),
+                                                        ["Mutasi Kas"].includes(tx.trx_type) &&
+                                                            !hqAccountIds.includes(tx.cred_id) && {
+                                                                type: "button",
+                                                                label: "Edit Mutasi",
+                                                                onClick: () => {
+                                                                    setSelectedJournalId(tx.id);
+                                                                    setIsModalEditMutationJournalOpen(true);
+                                                                },
                                                             },
-                                                            label: "Edit Mutasi",
-                                                            onClick: () => {
-                                                                setSelectedJournalId(tx.id);
-                                                                setIsModalEditMutationJournalOpen(true);
-                                                            },
-                                                        },
                                                         {
                                                             type: "button",
                                                             attributes: {
@@ -182,7 +216,7 @@ const JournalTable = ({ selectedBankAccount, filteredTransactions, setTxToDelete
                                                                 setTxToDelete(tx.id);
                                                             },
                                                         },
-                                                    ]}
+                                                    ].filter(Boolean)}
                                                 />
                                             </div>
                                         </td>

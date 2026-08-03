@@ -10,7 +10,7 @@ import { navMenu } from "../constants/NavMenu";
 const Navigation = ({ user, logout }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathName = usePathname();
-    const userRole = user?.role?.role || user.role;
+    const userRole = user.role;
     const userPhoto = user?.attendances?.[0]?.photo_url || "/default.png";
     const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || process.env.APP_VERSION;
 
@@ -27,7 +27,11 @@ const Navigation = ({ user, logout }) => {
                             className="w-10 h-10 flex items-center justify-center shrink-0 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shadow-xs cursor-pointer hover:ring-2 hover:ring-blue-500/30 transition-all"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                         >
-                            {userPhoto ? <Image src={userPhoto} alt="" width={40} height={40} className="w-full h-full object-cover" /> : <Menu size={20} />}
+                            {userPhoto ? (
+                                <Image src={userPhoto} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
+                            ) : (
+                                <Menu size={20} />
+                            )}
                         </div>
 
                         {/* Title Text */}

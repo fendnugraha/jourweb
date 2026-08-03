@@ -25,14 +25,21 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                 }
             }, 100);
 
-            // Disable scrolling on background
+            // Mencegah background scroll & layout shift
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
             document.body.style.overflow = "hidden";
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
 
             return () => {
                 clearTimeout(timer);
+                document.body.style.overflow = "";
+                document.body.style.paddingRight = "";
             };
         } else {
             document.body.style.overflow = "";
+            document.body.style.paddingRight = "";
             if (previousFocusRef.current) {
                 previousFocusRef.current.focus();
             }
@@ -73,7 +80,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -96,25 +103,25 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         tabIndex={-1}
-                        className={`relative w-full ${maxWidth} overflow-hidden rounded-xl bg-white p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800`}
+                        className={`relative w-full ${maxWidth} overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800`}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4 dark:border-slate-800">
-                            <h2 id="modal-title" className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4 dark:border-slate-800">
+                            <h2 id="modal-title" className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
                                 {title}
                             </h2>
                             <button
                                 type="button"
                                 onClick={onClose}
                                 aria-label="Close modal"
-                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300 cursor-pointer"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        {/* Body */}
-                        <div className={`${maxWidth} overflow-y-auto pr-1`}>{children}</div>
+                        {/* Body (Bisa di-scroll jika konten tinggi) */}
+                        <div className="max-h-[calc(100vh-11rem)] overflow-y-auto pr-1 no-scrollbar">{children}</div>
                     </motion.div>
                 </div>
             )}

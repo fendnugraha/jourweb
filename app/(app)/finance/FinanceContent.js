@@ -14,6 +14,9 @@ import FinanceMutationHistory from "./FinanceMutationHistory";
 import PaymentForm from "./PaymentForm";
 import Dropdown from "@/app/components/Dropdown";
 import CreateSaving from "./CreateSaving";
+import axios from "@/app/utils/axios";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 
 const FinanceContent = () => {
     const { today } = DateTimeNow();
@@ -21,7 +24,20 @@ const FinanceContent = () => {
     const [selectedContactId, setSelectedContactId] = useState("All");
     const [financeType, setFinanceType] = useState("Payable");
     const [notification, setNotification] = useState(null);
-    const { finances, financeGroup, loading, error, mutate } = useFinances({ contact: selectedContactId, financeType, start: today, end: today });
+
+    const [dateFilter, setDateFilter] = useState({
+        preset: "today",
+        startDate: "",
+        endDate: "",
+    });
+
+    const { finances, financeGroup, loading, error, mutate } = useFinances({
+        contact: selectedContactId,
+        financeType,
+        start: dateFilter.startDate || today,
+        end: dateFilter.endDate || today,
+    });
+
     const { accounts, error: accountsError } = useAccounts();
     const { contacts, error: contactsError } = useContacts();
     // --- Search & Filter State ---
@@ -68,56 +84,81 @@ const FinanceContent = () => {
             ? financeGroup?.find((f) => f.contact_id === selectedContactId) || { contact_name: "Tidak Ditemukan", sisa: "-" }
             : { contact_name: "All", sisa: "-" };
 
+    const [journalToDelete, setJournalToDelete] = useState(null);
+
+    const handleDeleteFinance = async (id) => {
+        try {
+            const response = await axios.delete(`/api/finance/${id}`);
+            setNotification(response.data.message);
+            fetchFinance();
+        } catch (error) {
+            console.log(error);
+            setNotification(error.response?.data?.message || "Gagal menghapus data keuangan.");
+        }
+    };
+
     return (
-        <>
+        <div className="space-y-6">
             <Notification message={notification} onClose={() => setNotification(null)} />
-            <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                <button
-                    type="button"
-                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Payable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => {
-                        setFinanceType("Payable");
-                        setSelectedContactId("All");
-                    }}
-                >
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Hutang Usaha</h2>
-                    {financeType === "Payable" && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
-                        </p>
-                    )}
-                </button>
-                <button
-                    type="button"
-                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Receivable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => {
-                        setFinanceType("Receivable");
-                        setSelectedContactId("All");
-                    }}
-                >
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Piutang Usaha</h2>
-                    {financeType === "Receivable" && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
-                        </p>
-                    )}
-                </button>
-                <button
-                    type="button"
-                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "Saving" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => {
-                        setFinanceType("Saving");
-                        setSelectedContactId("All");
-                    }}
-                >
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Simpanan Karyawan</h2>
-                    {financeType === "Saving" && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
-                        </p>
-                    )}
-                </button>
-            </div>
+            <motion.div
+                className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+                initial="hidden"
+                animate="show"
+                variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                        opacity: 1,
+                        transition: {
+                            staggerChildren: 0.08, // Tombol muncul bergantian
+                        },
+                    },
+                }}
+            >
+                {[
+                    { id: "payable", title: "Hutang Usaha", type: "Payable" },
+                    { id: "receivable", title: "Piutang Usaha", type: "Receivable" },
+                    { id: "saving", title: "Tabungan", type: "Saving" },
+                ].map((item) => {
+                    const isSelected = financeType === item.type;
+
+                    return (
+                        <motion.button
+                            key={item.id}
+                            type="button"
+                            whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                            whileTap={{ scale: 0.98 }}
+                            variants={{
+                                hidden: { opacity: 0, y: 15 },
+                                show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+                            }}
+                            className={`relative flex flex-col gap-4 text-left cursor-pointer sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs transition-colors ${
+                                isSelected ? "ring-2 ring-blue-500 border-transparent" : ""
+                            }`}
+                            onClick={() => {
+                                setFinanceType(item.type);
+                                setSelectedContactId("All");
+                            }}
+                        >
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">{item.title}</h2>
+
+                            {/* Animasi smooth saat Sisa Saldo muncul / hilang */}
+                            <AnimatePresence mode="wait">
+                                {isSelected && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -6 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="text-xs font-medium text-slate-500 dark:text-slate-400"
+                                    >
+                                        Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
+                    );
+                })}
+            </motion.div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 {/* Left Side Filters */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
@@ -144,6 +185,15 @@ const FinanceContent = () => {
                             selectedValue={status}
                             onChange={(val) => setStatus(val)}
                             ariaLabel="Filter inventory by status"
+                        />
+                    </div>
+                    <div>
+                        <DateFilterDropdown
+                            selectedPreset={dateFilter.preset}
+                            customStartDate={dateFilter.startDate}
+                            customEndDate={dateFilter.endDate}
+                            onChange={(val) => setDateFilter(val)}
+                            label="Transaction Date"
                         />
                     </div>
                 </div>
@@ -176,65 +226,28 @@ const FinanceContent = () => {
                     </button>
                 </div>
             </div>
-            <div className="space-y-6">
-                <div className="border-b border-slate-200 dark:border-slate-800 flex gap-6 pb-px pt-4 px-4">
-                    {/* Sub-Tab Buttons */}
-                    {[
-                        { id: "payables", label: "Financial Statements", icon: CreditCard },
-                        { id: "history", label: `History Log ${findContact.contact_name}`, icon: Clock11 },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveSubTab(tab.id)}
-                            className={`pb-3 text-sm font-bold relative transition-colors ${
-                                activeSubTab === tab.id
-                                    ? "text-indigo-600 dark:text-indigo-400"
-                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                            }`}
-                        >
-                            <span className="flex items-center gap-1.5">
-                                <tab.icon className="h-4 w-4" />
-                                {tab.label}
-                            </span>
-                            {activeSubTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400" />}
-                        </button>
-                    ))}
+            <div className="grid sm:grid-cols-3 gap-4">
+                <div>
+                    <PayableTable
+                        finances={finances}
+                        financeGroup={filteredFinances}
+                        selectedContactId={selectedContactId}
+                        setSelectedContactId={setSelectedContactId}
+                        searchTerm={searchTerm}
+                        setIsPaymentActive={setIsPaymentActive}
+                        setIsModalOpen={setIsModalOpen}
+                        setModalTitle={setModalTitle}
+                        setJournalToDelete={setJournalToDelete}
+                    />
                 </div>
-                <AnimatePresence mode="wait">
-                    {activeSubTab === "payables" && (
-                        <motion.div
-                            key="payables"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.15 }}
-                            className="space-y-6"
-                        >
-                            <PayableTable
-                                finances={finances}
-                                financeGroup={filteredFinances}
-                                selectedContactId={selectedContactId}
-                                setSelectedContactId={setSelectedContactId}
-                                searchTerm={searchTerm}
-                                setIsPaymentActive={setIsPaymentActive}
-                                setIsModalOpen={setIsModalOpen}
-                                setModalTitle={setModalTitle}
-                            />
-                        </motion.div>
-                    )}
-                    {activeSubTab === "history" && (
-                        <motion.div
-                            key="history"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.15 }}
-                            className="space-y-6"
-                        >
-                            <FinanceMutationHistory finances={finances} findContact={findContact} selectedContactId={selectedContactId} />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <div className="space-y-4 sm:col-span-2">
+                    <FinanceMutationHistory
+                        finances={finances}
+                        findContact={findContact}
+                        selectedContactId={selectedContactId}
+                        setJournalToDelete={setJournalToDelete}
+                    />
+                </div>
             </div>
             <Modal
                 isOpen={isModalOpen}
@@ -284,7 +297,19 @@ const FinanceContent = () => {
                     ))
                 )}
             </Modal>
-        </>
+            <ConfirmDialog
+                isOpen={journalToDelete !== null}
+                onClose={() => setJournalToDelete(null)}
+                onConfirm={() => {
+                    if (journalToDelete) {
+                        handleDeleteFinance(journalToDelete);
+                        setJournalToDelete(null);
+                    }
+                }}
+                title="Hapus Jurnal Hutang/Piutang"
+                description="Apakah Anda yakin ingin menghapus entri buku besar ini? Tindakan ini akan memengaruhi laporan pendapatan kumulatif dan bersifat irreversibel."
+            />
+        </div>
     );
 };
 

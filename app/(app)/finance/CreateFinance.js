@@ -1,8 +1,9 @@
 "use client";
 import Dropdown from "@/app/components/Dropdown";
+import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CreditCard, Wallet2 } from "lucide-react";
 import { useState } from "react";
 
 const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
@@ -64,45 +65,35 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
         }
     };
 
+    const tabList = [
+        {
+            icon: CreditCard,
+            value: "Payable",
+            label: "Hutang Usaha",
+            onClick: () => {
+                setFormData({
+                    ...formData,
+                    type: "Payable",
+                });
+            },
+        },
+        {
+            icon: Wallet2,
+            value: "Receivable",
+            label: "Piutang Usaha",
+            onClick: () => {
+                setFormData({
+                    ...formData,
+                    type: "Receivable",
+                });
+            },
+        },
+    ];
+
     return (
         <>
             <div className="mb-2">
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setType("Payable");
-                            setFormData({
-                                ...formData,
-                                type: "Payable",
-                            });
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            type === "Payable"
-                                ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Hutang Usaha
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setType("Receivable");
-                            setFormData({
-                                ...formData,
-                                type: "Receivable",
-                            });
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
-                            type === "Receivable"
-                                ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
-                                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
-                        }`}
-                    >
-                        Piutang Usaha
-                    </button>
-                </div>
+                <TabSwitcher buttonList={tabList} activeTab={type} setActiveTab={setType} />
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
                 {formError && (

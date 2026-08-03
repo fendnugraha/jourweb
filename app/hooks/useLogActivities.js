@@ -26,7 +26,7 @@ export function useLogActivities({ warehouse, startDate, endDate } = {}) {
 
     return {
         logActivities: data,
-        loading: isLoading, // 👈 Lebih tepat pakai isLoading untuk fetching awal (agar UI tidak flicker saat revalidate)
+        isLoading, // 👈 Lebih tepat pakai isLoading untuk fetching awal (agar UI tidak flicker saat revalidate)
         isValidating, // 👈 Tetap diexport jika butuh indikator "refreshing background"
         error: error?.response?.data?.errors || (error ? ["Something went wrong."] : null),
         mutate,

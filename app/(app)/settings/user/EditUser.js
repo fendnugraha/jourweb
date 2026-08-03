@@ -34,7 +34,8 @@ const EditUser = ({ isModalOpen, contacts, warehouses, notification, user, mutat
     // Opsi Role (termasuk kondisi Super Admin)
     const roleOptions = [
         { value: "Administrator", label: "Administrator" },
-        { value: "Kasir", label: "Kasir" },
+        { value: "Cashier", label: "Kasir" },
+        { value: "Co-Cashier", label: "Co Kasir" },
         { value: "Courier", label: "Kurir" },
         ...(userRole === "Super Admin" ? [{ value: "Super Admin", label: "Super Admin" }] : []),
     ];

@@ -368,3 +368,57 @@ export function calculateContractTillEnd(contractEnd) {
 
     return parts.join(" ");
 }
+
+/**
+ * Menghitung estimasi waktu pengiriman berdasarkan koordinat Kurir dan Tujuan
+ *
+ * @param {number} lat1 Latitude Kurir
+ * @param {number} lon1 Longitude Kurir
+ * @param {number} lat2 Latitude Tujuan
+ * @param {number} lon2 Longitude Tujuan
+ * @param {number} speedKmH Kecepatan rata-rata kurir (default: 25 km/jam untuk motor di perkotaan)
+ * @returns {{ distanceKm: string, durationMinutes: number, estimatedText: string }}
+ */
+export function calculateDeliveryETA(lat1, lon1, lat2, lon2, speedKmH = 25) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) {
+        return { distanceKm: "0", durationMinutes: 0, estimatedText: "-" };
+    }
+
+    const R = 6371; // Jari-jari bumi dalam Kilometer
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const straightDistanceKm = R * c;
+
+    // Koreksi rute jalan darat (~35% lebih jauh dari garis lurus)
+    const estimatedRoadDistanceKm = straightDistanceKm * 1.35;
+
+    // Waktu dalam jam = Jarak / Kecepatan
+    const timeInHours = estimatedRoadDistanceKm / speedKmH;
+
+    // Konversi ke menit (minimal 5 menit jika sangat dekat)
+    let durationMinutes = Math.round(timeInHours * 60);
+    if (durationMinutes < 5 && estimatedRoadDistanceKm > 0.1) {
+        durationMinutes = 5;
+    }
+
+    // Format teks durasi
+    let estimatedText = "";
+    if (durationMinutes >= 60) {
+        const hours = Math.floor(durationMinutes / 60);
+        const mins = durationMinutes % 60;
+        estimatedText = mins > 0 ? `~${hours} jam ${mins} mnt` : `~${hours} jam`;
+    } else {
+        estimatedText = `~${durationMinutes} mnt`;
+    }
+
+    return {
+        distanceKm: estimatedRoadDistanceKm.toFixed(1), // contoh: "4.2"
+        durationMinutes,
+        estimatedText, // contoh: "~15 mnt"
+    };
+}

@@ -20,91 +20,55 @@ const CashBankSummary = ({ journals, accountBalance, warehouseId }) => {
 
     const mutationOutSum = accountBalance?.data?.chartOfAccounts?.reduce((sum, acc) => sum + mutationOutSumById(acc.id), 0);
     return (
-        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 w-full">
+            {/* CONTAINER SCROLL TABLE */}
+            <div className="overflow-x-auto no-scrollbar w-full">
+                <table className="w-full border-collapse text-left table-fixed sm:table-auto">
+                    {/* COLGROUP (Membagi porsi lebar kolom secara presisi di mobile) */}
+                    <colgroup>
+                        <col className="w-[40%] sm:w-auto" />
+                        <col className="w-[20%] sm:w-auto" />
+                        <col className="w-[20%] sm:w-auto" />
+                        <col className="w-[20%] sm:w-auto" />
+                    </colgroup>
+
+                    {/* HEADER TABLE */}
                     <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                            <th scope="col" className="px-6 py-4">
+                            {/* Padding kiri-kanan disamakan (px-3 sm:px-6) */}
+                            <th scope="col" className="px-3 sm:px-6 py-3.5">
                                 Akun
                             </th>
-                            <th scope="col" className="px-6 py-4">
+                            <th scope="col" className="px-2 sm:px-6 py-3.5 text-right">
                                 Saldo
                             </th>
-                            <th scope="col" className="px-6 py-4">
+                            <th scope="col" className="px-2 sm:px-6 py-3.5 text-right">
                                 Masuk
                             </th>
-                            <th scope="col" className="px-6 py-4">
+                            <th scope="col" className="px-3 sm:px-6 py-3.5 text-right pr-4 sm:pr-6">
                                 Keluar
                             </th>
                         </tr>
                     </thead>
-                    <tfoot>
-                        <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                            <th scope="col" className="px-6 py-4">
-                                Total
-                            </th>
-                            <th scope="col" className="px-6 py-4 text-right">
-                                {formatNumber(accountBalance?.data?.chartOfAccounts?.reduce((sum, acc) => sum + acc.balance, 0))}
-                            </th>
-                            <th scope="col" className="px-6 py-4 text-right">
-                                {formatNumber(mutationInSum)}
-                            </th>
-                            <th scope="col" className="px-6 py-4 text-right">
-                                {formatNumber(mutationOutSum)}
-                            </th>
-                        </tr>
-                    </tfoot>
-                    <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
-                        {accountBalance?.data?.chartOfAccounts?.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                                    <div className="flex flex-col items-center justify-center space-y-2">
-                                        <AlertCircle className="h-6 w-6 text-slate-300 dark:text-slate-700" />
-                                        <p className="font-semibold text-xs">No matching transactions found</p>
-                                        <p className="text-[10px] text-slate-400">Try adjusting your filters or search query</p>
-                                    </div>
+
+                    {/* BODY TABLE */}
+                    <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                        {accountBalance?.data?.chartOfAccounts?.map((account, index) => (
+                            <tr key={account.id || index} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                {/* Kolom 1: Akun */}
+                                <td className="px-3 sm:px-6 py-3.5 font-medium text-slate-800 dark:text-slate-100 wrap-break-word">{account.name}</td>
+                                {/* Kolom 2: Saldo */}
+                                <td className="px-2 sm:px-6 py-3.5 text-right font-medium whitespace-nowrap">{formatNumber(account.balance)}</td>
+                                {/* Kolom 3: Masuk */}
+                                <td className="px-2 sm:px-6 py-3.5 text-right text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
+                                    {formatNumber(mutationInSumById(account.id))}
+                                </td>
+                                {/* Kolom 4: Keluar (Beri padding kanan ekstra 'pr-4' agar simetris dengan kiri) */}
+                                <td className="px-3 sm:px-6 py-3.5 text-right text-rose-600 dark:text-rose-400 font-medium whitespace-nowrap pr-4 sm:pr-6">
+                                    {formatNumber(mutationOutSumById(account.id))}
                                 </td>
                             </tr>
-                        ) : (
-                            accountBalance?.data?.chartOfAccounts?.map((account, index) => (
-                                <tr key={index} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
-                                    <td className="px-6 py-4">{account.name}</td>
-                                    <td className="px-6 py-4 text-right">{formatNumber(account.balance)}</td>
-                                    <td className="px-6 py-4 text-right">{formatNumber(mutationInSumById(account.id))}</td>
-                                    <td className="px-6 py-4 text-right">{formatNumber(mutationOutSumById(account.id))}</td>
-                                </tr>
-                            ))
-                        )}
-                        <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50">
-                            <td className="font-bold px-6 py-4">
-                                {Number(warehouseId) === 1 ? "Penambahan saldo ke Cabang" : "Penambahan saldo dari HQ"}
-                                <h1 className="font-bold text-blue-500 block sm:hidden">
-                                    {(() => {
-                                        const remaining = mutationInSum - mutationOutSum;
-
-                                        if (remaining === 0) {
-                                            return <span className="text-green-600">Completed</span>;
-                                        }
-
-                                        return <span className="text-red-600 dark:text-red-400">{formatNumber(remaining)}</span>;
-                                    })()}
-                                </h1>
-                            </td>
-                            <td className="px-6 py-4 text-end font-bold hidden sm:table-cell"></td>
-                            <td className="px-6 py-4 text-end font-bold hidden sm:table-cell"></td>
-                            <td className="px-6 py-4 text-end font-bold hidden sm:table-cell">
-                                {(() => {
-                                    const remaining = mutationInSum - mutationOutSum;
-
-                                    if (remaining === 0) {
-                                        return "Completed";
-                                    }
-
-                                    return <span className="text-red-600 dark:text-red-400">{formatNumber(remaining)}</span>;
-                                })()}
-                            </td>
-                        </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>

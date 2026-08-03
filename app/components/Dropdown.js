@@ -136,7 +136,8 @@ export default function Dropdown({ id, label, options, selectedValue, onChange, 
                 onKeyDown={handleKeyDown}
                 onClick={toggleOpen}
                 disabled={props.disabled}
-                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-left text-sm font-medium text-slate-700 shadow-xs hover:bg-slate-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80"
+                hidden={props.hidden}
+                className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-left text-sm font-medium text-slate-700 shadow-xs hover:bg-slate-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 disabled:bg-slate-200 disabled:text-slate-500 disabled:hover:bg-slate-200 disabled:dark:bg-slate-800 disabled:hover:dark:bg-slate-800"
             >
                 <span className="truncate">{selectedOption?.label}</span>
                 <ChevronDown className={`ml-2 h-4 w-4 shrink-0 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
