@@ -5,6 +5,7 @@ import { useFinances } from "@/app/hooks/useFinance";
 import { DateTimeNow, formatRupiah } from "@/app/utils/format";
 import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import PayableTable from "../finance/PayableTable";
 import FinanceMutationHistory from "../finance/FinanceMutationHistory";
 
@@ -61,39 +62,45 @@ const EmployeeReceivable = () => {
             ? financeGroup?.find((f) => f.contact_id === selectedContactId) || { contact_name: "Tidak Ditemukan", sisa: "-" }
             : { contact_name: "All", sisa: "-" };
     return (
-        <>
+        <div className="space-y-6">
             <Notification message={notification} onClose={() => setNotification(null)} />
-            <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                <button
-                    type="button"
-                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "EmployeeReceivable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => {
-                        setFinanceType("EmployeeReceivable");
-                        setSelectedContactId("All");
-                    }}
-                >
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Piutang Karyawan</h2>
-                    {financeType === "EmployeeReceivable" && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
-                        </p>
-                    )}
-                </button>
-                <button
-                    type="button"
-                    className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs ${financeType === "InstallmentReceivable" ? "ring-2 ring-blue-500" : ""}`}
-                    onClick={() => {
-                        setFinanceType("InstallmentReceivable");
-                        setSelectedContactId("All");
-                    }}
-                >
-                    <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">Piutang Cicilan</h2>
-                    {financeType === "InstallmentReceivable" && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
-                        </p>
-                    )}
-                </button>
+            <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                    { id: "EmployeeReceivable", title: "Piutang Karyawan" },
+                    { id: "InstallmentReceivable", title: "Piutang Cicilan" },
+                ].map((item) => {
+                    const isSelected = financeType === item.id;
+                    return (
+                        <motion.button
+                            key={item.id}
+                            type="button"
+                            whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`flex flex-col gap-4 text-left cursor-pointer sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs transition-colors ${
+                                isSelected ? "ring-2 ring-indigo-500 border-transparent" : ""
+                            }`}
+                            onClick={() => {
+                                setFinanceType(item.id);
+                                setSelectedContactId("All");
+                            }}
+                        >
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">{item.title}</h2>
+                            <AnimatePresence mode="wait">
+                                {isSelected && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -4 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
+                                    >
+                                        Sisa: {formatRupiah(financeGroup?.reduce((acc, f) => acc + Number(f.sisa), 0) || 0)}
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
+                    );
+                })}
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 {/* Left Side Filters */}
@@ -155,7 +162,7 @@ const EmployeeReceivable = () => {
                     <FinanceMutationHistory finances={finances} findContact={findContact} selectedContactId={selectedContactId} />
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 

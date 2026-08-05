@@ -1,17 +1,19 @@
+import Modal from "@/app/components/Modal";
 import { useUserAttendance } from "@/app/hooks/useUserAttendance";
 import { useAuth } from "@/app/utils/auth";
 import { DateTimeNow, diffTimeHuman } from "@/app/utils/format";
 import { AlarmClockPlus, Check, ChevronRight, ClockAlert, Star } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import AttendanceDetail from "./AttendanceDetail";
 
-const AttendanceTable = ({ userAttendance }) => {
-    const { user } = useAuth();
+const AttendanceTable = ({ userAttendance, userRole, mutate }) => {
     const { today } = DateTimeNow();
-    const userRole = user.role;
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
-    const [isModalWarehouseDetailOpen, setIsModalWarehouseDetailOpen] = useState(false);
+    const [notification, setNotification] = useState("");
+
     const [selectedZone, setSelectedZone] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const filteredWarehouses = userAttendance.filter((warehouse) => {
         const zoneMatch = Number(warehouse.warehouse_zone_id) === Number(selectedZone);
@@ -67,6 +69,7 @@ const AttendanceTable = ({ userAttendance }) => {
                                                             width={40}
                                                             height={40}
                                                             className="h-10 w-10 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800"
+                                                            unoptimized
                                                         />
                                                     ) : (
                                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
@@ -162,7 +165,7 @@ const AttendanceTable = ({ userAttendance }) => {
                                                 type="button"
                                                 onClick={() => {
                                                     setSelectedWarehouse(warehouse);
-                                                    setIsModalWarehouseDetailOpen(true);
+                                                    setIsModalOpen(true);
                                                 }}
                                                 className="inline-flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 text-slate-700 dark:text-slate-300 px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer border border-transparent hover:border-indigo-200 dark:hover:border-indigo-800"
                                             >
@@ -177,6 +180,15 @@ const AttendanceTable = ({ userAttendance }) => {
                     </table>
                 </div>
             </div>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Attendance Detail">
+                <AttendanceDetail
+                    selectedWarehouse={selectedWarehouse}
+                    mutate={mutate}
+                    notification={setNotification}
+                    isModalOpen={setIsModalOpen}
+                    userRole={userRole}
+                />
+            </Modal>
         </>
     );
 };
