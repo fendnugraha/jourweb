@@ -14,6 +14,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
     // React 19 transition hook untuk penanganan async loading yang seamless
     const [isPending, startTransition] = useTransition();
@@ -49,6 +50,7 @@ const Login = () => {
                 password,
                 setErrors,
                 setMessage,
+                setLoading,
             });
         });
     };

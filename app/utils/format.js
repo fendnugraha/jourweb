@@ -1,4 +1,12 @@
-import { differenceInDays, differenceInMinutes, formatDistanceToNow, getMonth, getYear, intervalToDuration, parse } from "date-fns";
+import {
+  differenceInDays,
+  differenceInMinutes,
+  formatDistanceToNow,
+  getMonth,
+  getYear,
+  intervalToDuration,
+  parse,
+} from "date-fns";
 import { enUS, id } from "date-fns/locale";
 
 /**
@@ -7,7 +15,7 @@ import { enUS, id } from "date-fns/locale";
  * @returns {string}
  */
 export const formatNumber = (value) => {
-    return new Intl.NumberFormat("id-ID").format(value);
+  return new Intl.NumberFormat("id-ID").format(value);
 };
 
 /**
@@ -16,12 +24,12 @@ export const formatNumber = (value) => {
  * @returns {string}
  */
 export const formatRupiah = (value) => {
-    return new Intl.NumberFormat("id-ID", {
-        style: "currency",
-        currency: "IDR",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value);
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 };
 
 /**
@@ -30,22 +38,43 @@ export const formatRupiah = (value) => {
  * @returns {string}
  */
 export const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("id-ID");
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID");
 };
 
 /**
  * Format tanggal ke format 'DD MMMM YYYY'.
  * @param {Date | string} date
+ * @param {boolean} withDayName - Format tanggal dengan nama hari.
  * @returns {string}
  */
-export const formatLongDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-    });
+export const formatLongDate = (date, withDayName = false) => {
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    weekday: withDayName ? "long" : undefined,
+  });
+};
+
+export const formatMonthYear = (date) => {
+  return new Date(date).toLocaleDateString("id-ID", {
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
+};
+
+export const formatMonthYearTime = (date) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 /**
@@ -54,319 +83,332 @@ export const formatLongDate = (date) => {
  * @returns {string}
  */
 export const formatDateTime = (dateString, withDayName = false) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-        weekday: withDayName ? "long" : undefined,
-        hour12: false, // Use 12-hour format; set to false for 24-hour format
-        timeZone: "Asia/Jakarta",
-    });
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    weekday: withDayName ? "long" : undefined,
+    hour12: false, // Use 12-hour format; set to false for 24-hour format
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 export const formatDateVertical = (dateString) => {
-    const date = new Date(dateString);
+  const date = new Date(dateString);
 
-    const day = date.toLocaleString("en-US", {
-        day: "numeric",
-        timeZone: "Asia/Jakarta",
-    });
+  const day = date.toLocaleString("en-US", {
+    day: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
 
-    const month = date.toLocaleString("en-US", {
-        month: "short",
-        timeZone: "Asia/Jakarta",
-    });
+  const month = date.toLocaleString("en-US", {
+    month: "short",
+    timeZone: "Asia/Jakarta",
+  });
 
-    const year = date.toLocaleString("en-US", {
-        year: "2-digit",
-        timeZone: "Asia/Jakarta",
-    });
+  const year = date.toLocaleString("en-US", {
+    year: "2-digit",
+    timeZone: "Asia/Jakarta",
+  });
 
-    const time = date.toLocaleString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Asia/Jakarta",
-    });
+  const time = date.toLocaleString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Jakarta",
+  });
 
-    return (
-        <div>
-            <div>{day}</div>
+  return (
+    <div>
+      <div>{day}</div>
 
-            <span className="block">
-                {month} {year}
-            </span>
+      <span className="block">
+        {month} {year}
+      </span>
 
-            <span className="block text-sm">{time}</span>
-        </div>
-    );
+      <span className="block text-sm">{time}</span>
+    </div>
+  );
 };
 
 export const getDayName = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString("id-ID", { weekday: "long" });
+  const d = new Date(date);
+  return d.toLocaleDateString("id-ID", { weekday: "long" });
 };
 
 export const todayDate = () => {
-    const now = new Date();
+  const now = new Date();
 
-    // Fungsi untuk memastikan angka memiliki dua digit (misal: 5 menjadi 05)
-    const pad = (n) => `0${n}`.slice(-2);
+  // Fungsi untuk memastikan angka memiliki dua digit (misal: 5 menjadi 05)
+  const pad = (n) => `0${n}`.slice(-2);
 
-    const year = now.getFullYear();
-    const month = pad(now.getMonth() + 1); // getMonth() dimulai dari 0
-    const day = pad(now.getDate());
-    const hours = pad(now.getHours());
-    const minutes = pad(now.getMinutes());
+  const year = now.getFullYear();
+  const month = pad(now.getMonth() + 1); // getMonth() dimulai dari 0
+  const day = pad(now.getDate());
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
 
-    return `${year}-${month}-${day}`;
+  return `${year}-${month}-${day}`;
 };
 
 export const TimeAgo = ({ timestamp, suffix = true, locale = "en" }) => {
-    const localeMap = {
-        id: id,
-        en: enUS,
-    };
-    return <span>{formatDistanceToNow(new Date(timestamp), { addSuffix: suffix, locale: localeMap[locale] })}</span>;
+  const localeMap = {
+    id: id,
+    en: enUS,
+  };
+  return (
+    <span>
+      {formatDistanceToNow(new Date(timestamp), {
+        addSuffix: suffix,
+        locale: localeMap[locale],
+      })}
+    </span>
+  );
 };
 
 export function formatNumberToK(num) {
-    const absNum = Math.abs(num); // Ambil angka absolut (tanpa minus) untuk perhitungan
-    let formatted;
+  const absNum = Math.abs(num); // Ambil angka absolut (tanpa minus) untuk perhitungan
+  let formatted;
 
-    if (absNum >= 1_000_000_000) {
-        formatted = (absNum / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
-    } else if (absNum >= 1_000_000) {
-        formatted = (absNum / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-    } else if (absNum >= 1_000) {
-        formatted = (absNum / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-    } else {
-        formatted = absNum.toString(); // Di bawah 1000, tampilkan angka apa adanya
-    }
+  if (absNum >= 1_000_000_000) {
+    formatted = (absNum / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B";
+  } else if (absNum >= 1_000_000) {
+    formatted = (absNum / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  } else if (absNum >= 1_000) {
+    formatted = (absNum / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  } else {
+    formatted = absNum.toString(); // Di bawah 1000, tampilkan angka apa adanya
+  }
 
-    // Tambahkan minus jika angka awalnya negatif
-    return num < 0 ? `-${formatted}` : formatted;
+  // Tambahkan minus jika angka awalnya negatif
+  return num < 0 ? `-${formatted}` : formatted;
 }
 
 export function formatDuration(toDate = new Date(), fromDate) {
-    const days = differenceInDays(toDate, new Date(fromDate));
+  const days = differenceInDays(toDate, new Date(fromDate));
 
-    if (days < 7) {
-        return `${days} Day${days > 1 ? "s" : ""}`;
-    } else if (days < 30) {
-        const weeks = Math.floor(days / 7);
-        return `${weeks} Week${weeks > 1 ? "s" : ""}`;
-    } else if (days < 365) {
-        const months = Math.floor(days / 30);
-        return `${months} Bln ${days % 30} Hr`;
-    } else {
-        const years = Math.floor(days / 365);
-        return `${years} Year${years > 1 ? "s" : ""}`;
-    }
+  if (days < 7) {
+    return `${days} Day${days > 1 ? "s" : ""}`;
+  } else if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return `${weeks} Week${weeks > 1 ? "s" : ""}`;
+  } else if (days < 365) {
+    const months = Math.floor(days / 30);
+    return `${months} Bln ${days % 30} Hr`;
+  } else {
+    const years = Math.floor(days / 365);
+    return `${years} Year${years > 1 ? "s" : ""}`;
+  }
 }
 
 export const DateTimeNow = () => {
-    const timeZone = "Asia/Jakarta";
+  const timeZone = "Asia/Jakarta";
 
-    const now = new Date(
-        new Intl.DateTimeFormat("en-US", {
-            timeZone,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-        }).format(new Date()),
-    );
+  const now = new Date(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date()),
+  );
 
-    const pad = (n) => n.toString().padStart(2, "0");
+  const pad = (n) => n.toString().padStart(2, "0");
 
-    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-    const thisMonth = now.getMonth() + 1;
-    const lastMonth = `${now.getFullYear()}-${pad(now.getMonth())}-01T00:00`;
-    const thisYear = now.getFullYear();
-    const lastYear = `${now.getFullYear() - 1}-01-01T00:00`;
+  const thisMonth = now.getMonth() + 1;
+  const lastMonth = `${now.getFullYear()}-${pad(now.getMonth())}-01T00:00`;
+  const thisYear = now.getFullYear();
+  const lastYear = `${now.getFullYear() - 1}-01-01T00:00`;
 
-    const thisTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const thisTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-    return {
-        today,
-        thisMonth,
-        lastMonth,
-        thisYear,
-        lastYear,
-        thisTime,
-    };
+  return {
+    today,
+    thisMonth,
+    lastMonth,
+    thisYear,
+    lastYear,
+    thisTime,
+  };
 };
 
 export const formatDurationTime = (to, from) => {
-    const diffMs = new Date(to) - new Date(from); // selisih dalam milidetik
-    const totalSeconds = Math.floor(diffMs / 1000);
+  const diffMs = new Date(to) - new Date(from); // selisih dalam milidetik
+  const totalSeconds = Math.floor(diffMs / 1000);
 
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
-    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-    if (minutes > 0) return `${minutes}m ${seconds}s`;
-    return `${seconds}s`;
+  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
 };
 
-export const calculateFee = (amount, chunkSize = 2500000, feePerChunk = 5000, minFee = 3000, minAmount = 100000) => {
-    if (amount < 10000 || amount === "") {
-        return "";
-    }
+export const calculateFee = (
+  amount,
+  chunkSize = 2500000,
+  feePerChunk = 5000,
+  minFee = 3000,
+  minAmount = 100000,
+) => {
+  if (amount < 10000 || amount === "") {
+    return "";
+  }
 
-    if (amount <= minAmount) {
-        return minFee;
-    }
+  if (amount <= minAmount) {
+    return minFee;
+  }
 
-    const chunkCount = Math.ceil(amount / chunkSize);
-    return chunkCount * feePerChunk;
+  const chunkCount = Math.ceil(amount / chunkSize);
+  return chunkCount * feePerChunk;
 };
 
 export const formatTime = (time) => {
-    return new Date(time).toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-    });
+  return new Date(time).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 };
 
 export const formatTimeWithSecond = (time) => {
-    return new Date(time).toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-    });
+  return new Date(time).toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 };
 
 export function diffTimeHuman(t1, t2) {
-    const time1 = parse(t1, "HH:mm:ss", new Date());
-    const time2 = parse(t2, "HH:mm:ss", new Date());
+  const time1 = parse(t1, "HH:mm:ss", new Date());
+  const time2 = parse(t2, "HH:mm:ss", new Date());
 
-    const diff = differenceInMinutes(time2, time1);
-    if (diff < 0) {
-        return "";
-    }
-    const hours = Math.floor(diff / 60);
-    const minutes = diff % 60;
+  const diff = differenceInMinutes(time2, time1);
+  if (diff < 0) {
+    return "";
+  }
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
 
-    if (hours === 0) {
-        return `${minutes} menit`;
-    } else if (minutes === 0) {
-        return `${hours} jam`;
-    } else if (hours === 0 && minutes === 0) {
-        return "";
-    } else {
-        return `${hours} jam ${minutes} menit`;
-    }
+  if (hours === 0) {
+    return `${minutes} menit`;
+  } else if (minutes === 0) {
+    return `${hours} jam`;
+  } else if (hours === 0 && minutes === 0) {
+    return "";
+  } else {
+    return `${hours} jam ${minutes} menit`;
+  }
 }
 
 export function getMonthYear(monthNumber, year) {
-    const date = new Date(year, monthNumber - 1);
-    // date.setMonth(monthNumber - 1);
-    return date.toLocaleString("default", { month: "long", year: "numeric" });
+  const date = new Date(year, monthNumber - 1);
+  // date.setMonth(monthNumber - 1);
+  return date.toLocaleString("default", { month: "long", year: "numeric" });
 }
 
 export function getDay(date, weekday) {
-    if (!weekday) {
-        return new Date(date).getDate();
-    }
+  if (!weekday) {
+    return new Date(date).getDate();
+  }
 }
 
 export function dateToMonthYear(date) {
-    const d = new Date(date);
-    return d.toLocaleString("default", { month: "long", year: "numeric" });
+  const d = new Date(date);
+  return d.toLocaleString("default", { month: "long", year: "numeric" });
 }
 
 export function formatDateTimeColumn(date) {
-    const d = new Date(date);
+  const d = new Date(date);
 
-    const day = d.getDate();
-    const shortMonth = d.toLocaleString("default", { month: "short" });
-    const month = d.toLocaleString("default", { month: "long" });
-    const shortYear = d.getFullYear().toString().slice(-2);
-    const hours = d.getHours();
-    const minutes = d.getMinutes();
+  const day = d.getDate();
+  const shortMonth = d.toLocaleString("default", { month: "short" });
+  const month = d.toLocaleString("default", { month: "long" });
+  const shortYear = d.getFullYear().toString().slice(-2);
+  const hours = d.getHours();
+  const minutes = d.getMinutes();
 
-    return (
-        <div className="flex flex-col items-center">
-            <span className="font-bold text-xl">{day}</span>
-            <span className="text-xs">
-                {shortMonth} {shortYear}
-            </span>
-        </div>
-    );
+  return (
+    <div className="flex flex-col items-center">
+      <span className="font-bold text-xl">{day}</span>
+      <span className="text-xs">
+        {shortMonth} {shortYear}
+      </span>
+    </div>
+  );
 }
 
 export function toOrdinal(n) {
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 export function calculateWorkDuration(startDateString) {
-    const startDate = new Date(startDateString);
-    const today = new Date();
+  const startDate = new Date(startDateString);
+  const today = new Date();
 
-    let years = today.getFullYear() - startDate.getFullYear();
-    let months = today.getMonth() - startDate.getMonth();
-    let days = today.getDate() - startDate.getDate();
+  let years = today.getFullYear() - startDate.getFullYear();
+  let months = today.getMonth() - startDate.getMonth();
+  let days = today.getDate() - startDate.getDate();
 
-    // Kalau hari negatif, pinjam bulan
-    if (days < 0) {
-        months--;
-        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-        days += prevMonth.getDate();
-    }
+  // Kalau hari negatif, pinjam bulan
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
 
-    // Kalau bulan negatif, pinjam tahun
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
+  // Kalau bulan negatif, pinjam tahun
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
 
-    const parts = [];
+  const parts = [];
 
-    if (years > 0) parts.push(`${years} thn`);
-    if (months > 0) parts.push(`${months} bln`);
-    if (days > 0) parts.push(`${days} hr`);
+  if (years > 0) parts.push(`${years} thn`);
+  if (months > 0) parts.push(`${months} bln`);
+  if (days > 0) parts.push(`${days} hr`);
 
-    // Kalau semuanya 0 (misalnya start hari ini)
-    if (parts.length === 0) {
-        return "0 hari";
-    }
+  // Kalau semuanya 0 (misalnya start hari ini)
+  if (parts.length === 0) {
+    return "0 hari";
+  }
 
-    return parts.join(" ");
+  return parts.join(" ");
 }
 
 export function calculateContractTillEnd(contractEnd) {
-    const today = new Date();
-    const end = new Date(contractEnd);
+  const today = new Date();
+  const end = new Date(contractEnd);
 
-    if (end <= today) {
-        return "Kontrak berakhir";
-    }
+  if (end <= today) {
+    return "Kontrak berakhir";
+  }
 
-    const duration = intervalToDuration({
-        start: today,
-        end,
-    });
+  const duration = intervalToDuration({
+    start: today,
+    end,
+  });
 
-    const parts = [];
+  const parts = [];
 
-    if (duration.years) parts.push(`${duration.years} thn`);
-    if (duration.months) parts.push(`${duration.months} bln`);
-    if (duration.days) parts.push(`${duration.days} hr`);
+  if (duration.years) parts.push(`${duration.years} thn`);
+  if (duration.months) parts.push(`${duration.months} bln`);
+  if (duration.days) parts.push(`${duration.days} hr`);
 
-    return parts.join(" ");
+  return parts.join(" ");
 }
 
 /**
@@ -380,45 +422,49 @@ export function calculateContractTillEnd(contractEnd) {
  * @returns {{ distanceKm: string, durationMinutes: number, estimatedText: string }}
  */
 export function calculateDeliveryETA(lat1, lon1, lat2, lon2, speedKmH = 25) {
-    if (!lat1 || !lon1 || !lat2 || !lon2) {
-        return { distanceKm: "0", durationMinutes: 0, estimatedText: "-" };
-    }
+  if (!lat1 || !lon1 || !lat2 || !lon2) {
+    return { distanceKm: "0", durationMinutes: 0, estimatedText: "-" };
+  }
 
-    const R = 6371; // Jari-jari bumi dalam Kilometer
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const R = 6371; // Jari-jari bumi dalam Kilometer
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const straightDistanceKm = R * c;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const straightDistanceKm = R * c;
 
-    // Koreksi rute jalan darat (~35% lebih jauh dari garis lurus)
-    const estimatedRoadDistanceKm = straightDistanceKm * 1.35;
+  // Koreksi rute jalan darat (~35% lebih jauh dari garis lurus)
+  const estimatedRoadDistanceKm = straightDistanceKm * 1.35;
 
-    // Waktu dalam jam = Jarak / Kecepatan
-    const timeInHours = estimatedRoadDistanceKm / speedKmH;
+  // Waktu dalam jam = Jarak / Kecepatan
+  const timeInHours = estimatedRoadDistanceKm / speedKmH;
 
-    // Konversi ke menit (minimal 5 menit jika sangat dekat)
-    let durationMinutes = Math.round(timeInHours * 60);
-    if (durationMinutes < 5 && estimatedRoadDistanceKm > 0.1) {
-        durationMinutes = 5;
-    }
+  // Konversi ke menit (minimal 5 menit jika sangat dekat)
+  let durationMinutes = Math.round(timeInHours * 60);
+  if (durationMinutes < 5 && estimatedRoadDistanceKm > 0.1) {
+    durationMinutes = 5;
+  }
 
-    // Format teks durasi
-    let estimatedText = "";
-    if (durationMinutes >= 60) {
-        const hours = Math.floor(durationMinutes / 60);
-        const mins = durationMinutes % 60;
-        estimatedText = mins > 0 ? `~${hours} jam ${mins} mnt` : `~${hours} jam`;
-    } else {
-        estimatedText = `~${durationMinutes} mnt`;
-    }
+  // Format teks durasi
+  let estimatedText = "";
+  if (durationMinutes >= 60) {
+    const hours = Math.floor(durationMinutes / 60);
+    const mins = durationMinutes % 60;
+    estimatedText = mins > 0 ? `~${hours} jam ${mins} mnt` : `~${hours} jam`;
+  } else {
+    estimatedText = `~${durationMinutes} mnt`;
+  }
 
-    return {
-        distanceKm: estimatedRoadDistanceKm.toFixed(1), // contoh: "4.2"
-        durationMinutes,
-        estimatedText, // contoh: "~15 mnt"
-    };
+  return {
+    distanceKm: estimatedRoadDistanceKm.toFixed(1), // contoh: "4.2"
+    durationMinutes,
+    estimatedText, // contoh: "~15 mnt"
+  };
 }
