@@ -3,7 +3,7 @@ import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle, Landmark, Warehouse } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 const CreateMutation = ({
   accounts,
   mutate,
@@ -101,6 +101,13 @@ const CreateMutation = ({
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (newType) {
+      setFormData({ ...formData, debt_id: "" });
+    }
+  }, [newType]);
+
   return (
     <>
       <div className="mb-2">

@@ -5,6 +5,7 @@ import CashBankSummary from "../component/CashBankSummary";
 import { motion, AnimatePresence } from "motion/react";
 import MutationHistoryLog from "./MutationHistoryLog";
 import Notification from "@/app/components/Notification";
+import { se } from "date-fns/locale";
 
 const CashBankMutation = ({
   journals,
@@ -20,7 +21,7 @@ const CashBankMutation = ({
   const [activeSubTab, setActiveSubTab] = useState("balances");
 
   const accountOptions = [
-    { value: "all", label: "All Accounts" },
+    { value: "all", label: "Semua akun" },
     ...accounts
       .filter((account) => account.warehouse_id === warehouseId)
       .map((account) => ({ value: account.id, label: account.group })),
@@ -129,6 +130,8 @@ const CashBankMutation = ({
               warehouseId={warehouseId}
               setNotification={setNotification}
               mutate={mutate}
+              searchTerm={searchTerm}
+              accountFilter={accountFilter}
             />
           </motion.div>
         )}

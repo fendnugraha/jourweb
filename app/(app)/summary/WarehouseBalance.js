@@ -38,6 +38,65 @@ const WarehouseBalance = () => {
     })),
   ];
 
+  const getLimitColor = (percent) => {
+    if (percent >= 80) return "bg-green-500";
+    if (percent >= 40) return "bg-yellow-400";
+    return "bg-red-500";
+  };
+
+  // 2. Helper Warna Teks menyesuaikan warna bar
+  const getLimitTextColor = (percent) => {
+    if (percent >= 80)
+      return "text-emerald-600 dark:text-emerald-400 font-semibold";
+    if (percent >= 40) return "text-amber-600 dark:text-amber-400 font-medium";
+    return "text-rose-600 dark:text-rose-400 font-bold";
+  };
+
+  // 3. Sub-komponen Visual Limit Progress Bar
+  const CashLimitProgress = ({
+    cash = 0,
+    limit = 0,
+    adjust = 2.1,
+    calculateLimitPercentage,
+  }) => {
+    if (!limit || limit <= 0) {
+      return (
+        <span className="text-slate-400 font-sans text-[10px]">No Limit</span>
+      );
+    }
+
+    const percentage = calculateLimitPercentage(cash, limit, adjust);
+
+    return (
+      <div className="flex flex-col items-end gap-1 min-w-25">
+        {/* Teks Persentase */}
+        <div className="flex items-center gap-1 text-[10px] font-mono">
+          <span className="text-slate-400 font-sans text-[9px]">Stock:</span>
+          <span className={getLimitTextColor(percentage)}>{percentage}%</span>
+        </div>
+
+        {/* Track & Bar */}
+        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-300 ${getLimitColor(percentage)}`}
+            style={{ width: `${Math.min(100, percentage)}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const calculateLimitPercentage = (cash, limit, adjust = 1) => {
+    // Cegah pembagian dengan nol atau limit invalid
+    if (!limit || limit <= 0 || adjust <= 0) return 0;
+
+    const effectiveLimit = limit * adjust;
+    const percentage = (cash / effectiveLimit) * 100;
+
+    // Mengembalikan angka bulat (number) tanpa batas atas 100%
+    return Math.round(percentage);
+  };
+
   const { warehouseBalance, error, isLoading, isValidating, mutate } =
     useWarehouseBalance(selectedDate);
   const filteredWarehouseBalance = useMemo(() => {
@@ -158,7 +217,7 @@ const WarehouseBalance = () => {
         ) : (
           <>
             {/* ========================================================= */}
-            {/* 2. SUMMARY CARDS TOTAL RINGKASAN (MUNCUL DI ALL SCREEN) */}
+            {/* 2. SUMMARY CARDS TOTAL RINGKASAN */}
             {/* ========================================================= */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Total Kas Tunai */}
@@ -241,28 +300,43 @@ const WarehouseBalance = () => {
                       </div>
 
                       {/* Body Card */}
-                      <div className="bg-slate-50/50 dark:bg-slate-850/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 grid grid-cols-2 gap-2 text-xs font-mono">
-                        <div>
-                          <span className="text-[10px] font-sans text-slate-400 block">
-                            Tunai
-                          </span>
-                          <span className="text-slate-700 dark:text-slate-300">
-                            {formatNumber(w.cash)}
-                          </span>
+                      <div className="bg-slate-50/50 dark:bg-slate-850/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 space-y-2.5">
+                        {/* Tunai + Limit Progress */}
+                        <div className="flex justify-between items-center text-xs">
+                          <div>
+                            <span className="text-[10px] font-sans text-slate-400 block">
+                              Tunai
+                            </span>
+                            <span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">
+                              {formatNumber(w.cash)}
+                            </span>
+                          </div>
+
+                          <CashLimitProgress
+                            cash={w.cash}
+                            limit={w.total_cash_limit}
+                            calculateLimitPercentage={calculateLimitPercentage}
+                          />
                         </div>
-                        <div>
-                          <span className="text-[10px] font-sans text-slate-400 block">
-                            Bank
-                          </span>
-                          <span className="text-slate-700 dark:text-slate-300">
-                            {formatNumber(w.bank)}
-                          </span>
+
+                        {/* Bank */}
+                        <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/40 dark:border-slate-800/50">
+                          <div>
+                            <span className="text-[10px] font-sans text-slate-400 block">
+                              Bank
+                            </span>
+                            <span className="text-slate-700 dark:text-slate-300 font-mono">
+                              {formatNumber(w.bank)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="col-span-2 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center">
+
+                        {/* Total Saldo */}
+                        <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center">
                           <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400">
                             Total Saldo
                           </span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
                             {formatNumber((w.cash || 0) + (w.bank || 0))}
                           </span>
                         </div>
@@ -312,17 +386,109 @@ const WarehouseBalance = () => {
                           className="group hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150 font-sans"
                         >
                           <td className="px-6 py-4 font-medium text-slate-800 dark:text-slate-200">
-                            {i + 1}. {w.name.replace(/^konter\s*/i, "")}
+                            <div className="flex items-center gap-3">
+                              {/* Avatar / Numbered Badge */}
+                              <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-mono text-xs font-bold flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40 shadow-2xs">
+                                {String(i + 1).padStart(2, "0")}
+                              </div>
+
+                              {/* Nama Cabang & Sub-info */}
+                              <div className="min-w-0">
+                                <span className="font-bold text-slate-800 dark:text-slate-100 block truncate leading-snug">
+                                  {w.name.replace(/^konter\s*/i, "")}
+                                </span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block">
+                                  ID: #{w.id}
+                                </span>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-right font-mono text-slate-600 dark:text-slate-300">
-                            {formatNumber(w.cash)}
+
+                          {/* Kolom Kas (Tunai) + Visual Progress Bar */}
+                          <td className="px-6 py-4 text-right font-mono">
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-slate-700 dark:text-slate-200 font-semibold">
+                                {formatNumber(w.cash)}
+                              </span>
+                              <CashLimitProgress
+                                cash={w.cash}
+                                limit={w.total_cash_limit}
+                                calculateLimitPercentage={
+                                  calculateLimitPercentage
+                                }
+                              />
+                            </div>
                           </td>
-                          <td className="px-6 py-4 text-right font-mono text-slate-600 dark:text-slate-300">
-                            {formatNumber(w.bank)}
+
+                          <td className="px-6 py-4 text-right font-mono">
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-slate-700 dark:text-slate-200 font-semibold">
+                                {formatNumber(w.bank)}
+                              </span>
+                              <CashLimitProgress
+                                cash={w.bank}
+                                limit={w.total_bank_limit}
+                                adjust={1}
+                                calculateLimitPercentage={
+                                  calculateLimitPercentage
+                                }
+                              />
+                            </div>
                           </td>
+
                           <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
-                            {formatNumber((w.cash || 0) + (w.bank || 0))}
+                            {/* Nominal Total Saldo */}
+                            <span>
+                              {formatNumber(
+                                (Number(w.cash) || 0) + (Number(w.bank) || 0),
+                              )}
+                            </span>
+
+                            {(() => {
+                              // 1. Ambil nilai saldo & limit dengan konversi ke Number yang aman
+                              const cash = Number(w.cash) || 0;
+                              const bank = Number(w.bank) || 0;
+                              const totalBalance = cash + bank;
+                              const limit = Number(w.total_limit) || 0;
+
+                              // 2. Jika total_limit tidak diisi atau 0, tampilkan "No Limit"
+                              if (!limit || limit <= 0) {
+                                return (
+                                  <span className="text-[10px] text-slate-400 font-sans block font-normal">
+                                    No Limit
+                                  </span>
+                                );
+                              }
+
+                              // 3. Hitung persentase terpakai
+                              const percentUsed = Math.round(
+                                (totalBalance / limit) * 100,
+                              );
+                              const isOver = percentUsed > 100;
+                              const remainingPercent = 100 - percentUsed;
+
+                              return (
+                                <div className="flex items-center justify-end gap-1 mt-0.5 font-sans">
+                                  {/* Status Over / Sisa */}
+                                  {isOver ? (
+                                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                                      +{Math.abs(remainingPercent)}%
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                      -{remainingPercent}%
+                                    </span>
+                                  )}
+
+                                  {/* Persentase Terpakai dalam kurung */}
+                                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
+                                    ({percentUsed}%)
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </td>
+
                           <td className="px-6 py-4 text-center">
                             {w.id !== 1 && (
                               <div className="flex items-center justify-center">
@@ -353,6 +519,7 @@ const WarehouseBalance = () => {
                               </div>
                             )}
                           </td>
+
                           <td className="px-6 py-4 text-center">
                             {getStorePerformanceRating(w.average_profit)}
                           </td>

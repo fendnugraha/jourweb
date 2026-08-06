@@ -22,6 +22,7 @@ import {
   Plus,
   Edit3,
   AlertCircle,
+  Bike,
 } from "lucide-react";
 import {
   calculateDeliveryETA,
@@ -34,65 +35,6 @@ import DeliveryForm from "./DeliveryForm";
 import useEmployee from "@/app/hooks/useEmployee";
 import Notification from "@/app/components/Notification";
 import { useDeliveries } from "@/app/hooks/useDeliveries";
-
-const HEADQUARTER_NAME = "Headquarter (HQ Pusat)";
-
-// 1. DATA DUMMY AWAL
-const DUMMY_DELIVERIES = [
-  {
-    id: "DEL-001",
-    reference_no: "TRF/2026/08/0012",
-    created_at: "2026-08-02 14:30",
-    amount: 15000000,
-    fee: 6500,
-    status: "in_transit",
-    sender_name: "Tim Kas Vault HQ",
-    source_warehouse: { name: HEADQUARTER_NAME },
-    source_account: "Vault Utama (Kas Besar)",
-    receiver_name: "Bendahara Utama",
-    destination_warehouse: {
-      name: "Bank BCA Pusat",
-      lat: -6.917464,
-      lng: 107.619122,
-    },
-    destination_account: "BCA - 8830123991",
-    courier_name: "Budi Santoso",
-    courier_phone: "081234567890",
-    courier_location: { lat: -6.89148, lng: 107.61065 },
-  },
-  {
-    id: "DEL-002",
-    reference_no: "TRF/2026/08/0013",
-    created_at: "2026-08-02 15:10",
-    amount: 8500000,
-    fee: 0,
-    status: "delivered",
-    sender_name: "Tim Kas Vault HQ",
-    source_warehouse: { name: HEADQUARTER_NAME },
-    source_account: "Vault Utama (Kas Besar)",
-    receiver_name: "Spv Operational",
-    destination_warehouse: { name: "Konter Cabang Dago" },
-    destination_account: "Kas Vault Brankas",
-    courier_name: "Eko Prasetyo",
-    courier_phone: "085712349988",
-  },
-  {
-    id: "DEL-003",
-    reference_no: "TRF/2026/08/0014",
-    created_at: "2026-08-02 16:00",
-    amount: 25000000,
-    fee: 12500,
-    status: "pending",
-    sender_name: "Tim Kas Vault HQ",
-    source_warehouse: { name: HEADQUARTER_NAME },
-    source_account: "Vault Utama (Kas Besar)",
-    receiver_name: "Admin Bank",
-    destination_warehouse: { name: "Bank Mandiri" },
-    destination_account: "Mandiri - 13100098231",
-    courier_name: "Petugas Pick-up Bank",
-    courier_phone: "-",
-  },
-];
 
 export default function DeliveryContent() {
   // 2. MENGGUNAKAN SWR DENGAN FALLBACK DATA DUMMY (TANPA EFFECT)
@@ -144,8 +86,6 @@ export default function DeliveryContent() {
       : null,
   }));
 
-  console.log(deliveries);
-
   const [notification, setNotification] = useState(null);
 
   const { warehouses } = useWarehouse();
@@ -161,12 +101,6 @@ export default function DeliveryContent() {
 
   // State Modal Buat Pengiriman Baru
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newDeliveryForm, setNewDeliveryForm] = useState({
-    destination_id: "",
-    amount: "",
-    courier_id: "",
-    receiver_id: "",
-  });
 
   // 3. STATISTIK (Dihitung Reaktif dari Data SWR)
   const stats = useMemo(() => {
@@ -227,39 +161,6 @@ export default function DeliveryContent() {
     setUpdateReason("");
   };
 
-  // 7. TAMBAH PENGIRIMAN BARU VIA SWR MUTATE
-  const handleCreateSubmit = (e) => {
-    e.preventDefault();
-    const newEntry = {
-      id: `DEL-${Date.now().toString().slice(-3)}`,
-      reference_no: `TRF/2026/08/00${Math.floor(10 + Math.random() * 90)}`,
-      created_at: new Date().toISOString().replace("T", " ").slice(0, 16),
-      amount: Number(newDeliveryForm.amount) || 0,
-      fee: 0,
-      status: "pending",
-      sender_name: "Tim Kas Vault HQ",
-      source_warehouse: { name: HEADQUARTER_NAME },
-      source_account: "Vault Utama (Kas Besar)",
-      receiver_name: newDeliveryForm.receiver_name || "Penerima",
-      destination_warehouse: { name: newDeliveryForm.destination_name },
-      destination_account: newDeliveryForm.destination_account,
-      courier_name: newDeliveryForm.courier_name || "Belum Ditentukan",
-      courier_phone: "-",
-    };
-
-    // Tambah data baru ke SWR cache
-    mutate([newEntry, ...deliveriesData], false);
-
-    setIsCreateModalOpen(false);
-    setNewDeliveryForm({
-      destination_name: "",
-      destination_account: "",
-      amount: "",
-      courier_name: "",
-      receiver_name: "",
-    });
-  };
-
   const renderStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case "delivered":
@@ -273,7 +174,7 @@ export default function DeliveryContent() {
       case "dalam_proses":
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40">
-            <Truck className="w-3 h-3 animate-pulse" /> Proses
+            <Bike className="w-3 h-3 animate-pulse" /> Proses
           </span>
         );
       case "cancelled":
@@ -297,7 +198,7 @@ export default function DeliveryContent() {
     {
       key: "in_transit",
       label: "Proses",
-      icon: Truck,
+      icon: Bike,
       count: statusCounts.in_transit,
     },
     {
@@ -441,7 +342,7 @@ export default function DeliveryContent() {
         </div>
 
         {/* STATUS FILTER PILLS */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
+        <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-1 flex items-center gap-1 shrink-0 select-none">
             <Filter className="w-3 h-3 text-indigo-500" /> Status:
           </span>
@@ -564,14 +465,14 @@ export default function DeliveryContent() {
 
                   <div className="bg-slate-50/40 dark:bg-slate-850/20 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
+                      {/* <div className="space-y-0.5">
                         <span className="text-[10px] text-indigo-500 font-bold uppercase inline-flex items-center gap-0.5">
                           <Building className="w-2.5 h-2.5" /> HQ Pusat
                         </span>
                         <span className="font-semibold text-slate-700 dark:text-slate-300 block">
                           Vault Utama
                         </span>
-                      </div>
+                      </div> */}
                       <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 mx-2" />
                       <div className="space-y-0.5 text-right">
                         <span className="text-[10px] text-slate-400 uppercase font-semibold block">

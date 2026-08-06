@@ -290,25 +290,24 @@ export const formatTimeWithSecond = (time) => {
 };
 
 export function diffTimeHuman(t1, t2) {
+  if (!t1 || !t2) return "";
+
   const time1 = parse(t1, "HH:mm:ss", new Date());
   const time2 = parse(t2, "HH:mm:ss", new Date());
 
   const diff = differenceInMinutes(time2, time1);
-  if (diff < 0) {
+
+  if (diff <= 0) {
     return "";
   }
+
   const hours = Math.floor(diff / 60);
   const minutes = diff % 60;
 
-  if (hours === 0) {
-    return `${minutes} menit`;
-  } else if (minutes === 0) {
-    return `${hours} jam`;
-  } else if (hours === 0 && minutes === 0) {
-    return "";
-  } else {
-    return `${hours} jam ${minutes} menit`;
-  }
+  if (hours === 0) return `${minutes} menit`;
+  if (minutes === 0) return `${hours} jam`;
+
+  return `${hours} jam ${minutes} menit`;
 }
 
 export function getMonthYear(monthNumber, year) {
