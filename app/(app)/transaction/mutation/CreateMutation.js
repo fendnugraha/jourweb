@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import Dropdown from "@/app/components/Dropdown";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
@@ -104,7 +105,10 @@ const CreateMutation = ({
 
   useEffect(() => {
     if (newType) {
-      setFormData({ ...formData, debt_id: "" });
+      setFormData((prev) => ({
+        ...prev,
+        debt_id: "",
+      }));
     }
   }, [newType]);
 
@@ -112,12 +116,12 @@ const CreateMutation = ({
     <>
       <div className="mb-2">
         <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">
-          Mutation To
+          Mutasi Ke
         </span>
         <TabSwitcher
           buttonList={[
-            { icon: Warehouse, value: "self", label: "Ke Akun Sendiri" },
-            { icon: Landmark, value: "other", label: "Ke Cabang Lain" },
+            { icon: Warehouse, value: "self", label: "Akun Sendiri" },
+            { icon: Landmark, value: "other", label: "Cabang Lain / Pusat" },
           ]}
           activeTab={newType}
           setActiveTab={setNewType}
@@ -132,7 +136,7 @@ const CreateMutation = ({
         )}
 
         {/* Date input */}
-        <div className="space-y-1">
+        <div className="space-y-1" hidden>
           <label
             htmlFor="tx-date"
             className="text-xs font-semibold text-slate-500 dark:text-slate-400"
@@ -180,7 +184,7 @@ const CreateMutation = ({
               id="tx-category-label"
               className="text-xs font-semibold text-slate-500 dark:text-slate-400"
             >
-              Dari
+              Rekening Asal (Dari)
             </label>
             <Dropdown
               id="tx-category"
@@ -197,7 +201,7 @@ const CreateMutation = ({
               id="tx-category-label"
               className="text-xs font-semibold text-slate-500 dark:text-slate-400"
             >
-              Ke {newType === "self" ? "Akun" : "(Cabang Lain)"}
+              Ke {newType === "self" ? "Akun" : "Cabang Lain / Pusat"}
             </label>
             <Dropdown
               id="tx-category"

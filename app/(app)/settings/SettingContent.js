@@ -2,10 +2,10 @@
 import { ContactRound, Package, Scale, UserCog, Warehouse } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import UserTable from "./UserTable";
-import ContactTable from "./ContactTable";
-import AccountTable from "./AccountTable";
-import ProductTable from "./ProductTable";
+import UserTable from "./user/UserTable";
+import ContactTable from "./contact/ContactTable";
+import AccountTable from "./account/AccountTable";
+import ProductTable from "./product/ProductTable";
 import MobileNavDrawer from "@/app/components/MobileNavDrawer";
 import WarehouseTable from "./warehouse/WarehouseTable";
 

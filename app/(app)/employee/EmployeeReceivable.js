@@ -8,6 +8,8 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import PayableTable from "../finance/PayableTable";
 import FinanceMutationHistory from "../finance/FinanceMutationHistory";
+import Modal from "@/app/components/Modal";
+import ReceivableForm from "./ReceivableForm";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
@@ -15,8 +17,12 @@ const EmployeeReceivable = () => {
     const [financeType, setFinanceType] = useState("EmployeeReceivable");
     const [notification, setNotification] = useState(null);
     const { contacts, error: contactsError } = useContacts();
-    const { finances, financeGroup, loading, error, mutate } = useFinances({ contact: selectedContactId, financeType, start: today, end: today });
-    console.log(finances, financeGroup);
+    const { finances, financeGroup, loading, error, mutate } = useFinances({
+        contact: selectedContactId,
+        financeType,
+        start: today,
+        end: today,
+    });
 
     // --- Search & Filter State ---
     const [searchTerm, setSearchTerm] = useState("");
@@ -59,7 +65,10 @@ const EmployeeReceivable = () => {
     // ✅ Berikan properti default agar tidak undefined saat diakses
     const findContact =
         selectedContactId !== "All"
-            ? financeGroup?.find((f) => f.contact_id === selectedContactId) || { contact_name: "Tidak Ditemukan", sisa: "-" }
+            ? financeGroup?.find((f) => f.contact_id === selectedContactId) || {
+                  contact_name: "Tidak Ditemukan",
+                  sisa: "-",
+              }
             : { contact_name: "All", sisa: "-" };
     return (
         <div className="space-y-6">
@@ -162,6 +171,10 @@ const EmployeeReceivable = () => {
                     <FinanceMutationHistory finances={finances} findContact={findContact} selectedContactId={selectedContactId} />
                 </div>
             </div>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
+                <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
+            </Modal>
         </div>
     );
 };

@@ -54,9 +54,9 @@ export const navMenu = {
       role: ["Administrator", "Cashier", "Co-Cashier", "Super Admin"],
     },
     {
-      name: "Profile",
-      path: "/profile",
-      href: "/profile",
+      name: "My Profile",
+      path: "/settings/myprofile",
+      href: "/settings/myprofile",
       icon: UserCheck,
       role: ["Administrator", "Cashier", "Co-Cashier", "Super Admin"],
     },

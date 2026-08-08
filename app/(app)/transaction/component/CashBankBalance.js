@@ -23,13 +23,143 @@ const itemVariants = {
   exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
-const CashBankBalance = ({ accountBalance, isLoading, isValidating }) => {
+const CashBankBalance = ({
+  accountBalance,
+  isLoading,
+  isValidating,
+  dailyDashboard,
+}) => {
   const summarizeBalance =
     accountBalance?.data?.chartOfAccounts?.reduce(
       (total, account) => total + account.balance,
       0,
     ) || 0;
   const accounts = accountBalance?.data?.chartOfAccounts || [];
+
+  const copyData = async () => {
+    await navigator.clipboard.writeText(copyDailyReport());
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 9000);
+  };
+
+  const copySalesVoucher = async () => {
+    await navigator.clipboard.writeText(formatVoucherText());
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 3000);
+  };
+
+  const copyDailyReport = () => {
+    const dailyReportData = [
+      {
+        name: "Kas",
+        value: formatNumber(dailyDashboard?.data?.totalCash - openingCash),
+      },
+      {
+        name: "Voucher",
+        value: formatNumber(dailyDashboard?.data?.totalVoucher?.total),
+      },
+      {
+        name: "Deposit",
+        value: formatNumber(dailyDashboard?.data?.totalCashDeposit?.total),
+      },
+      {
+        name: "Koreksi",
+        value: formatNumber(dailyDashboard?.data?.totalCorrection ?? 0),
+      },
+      {
+        name: "Acc",
+        value: formatNumber(dailyDashboard?.data?.totalAccessories?.total),
+      },
+      { name: "Laba", value: formatNumber(dailyDashboard?.data?.profit) },
+    ];
+
+    const lines = dailyReportData.map(({ name, value }) => `${name}: ${value}`);
+
+    return `${formatDateTime(today)}\nReport ${warehouseName}:\n\n${lines.join("\n")}\n\nTotal Setoran: ${formatNumber(
+      dailyDashboard?.data?.totalCash > openingCash
+        ? totalSetoran - openingCash
+        : totalSetoran,
+    )}`;
+  };
+
+  const closingStatus = () => {
+    setIsClosingComplete(true);
+    setStatusText("Selesai.");
+    setTimeout(() => {
+      setIsClosingComplete(false);
+      setStatusText("");
+    }, 300000);
+  };
+
+  const handleClosing = async () => {
+    // Variabel menggunakan bahasa Inggris pro (isConfirmed)
+    const isConfirmed = confirm(
+      "Anda yakin ingin menutup shift, pastikan semua data sudah diinput?\n(Semua input data akan terkunci setelah kas disetor)",
+    );
+    if (!isConfirmed) return;
+
+    setLoading(true);
+    setStatusText("Menutup shift...");
+
+    try {
+      await copyData();
+
+      setStatusText("Mengunci cabang...");
+      await changeLockStatus(warehouse);
+
+      setStatusText("Mengambil data transaksi...");
+      const latestTransactions = await fetchTransaction();
+
+      const result = await closingShift({
+        cred_id: warehouseCashId,
+        amount: dailyDashboard?.data?.totalCash - openingCash,
+        warehouse: warehouseName,
+        message: copyDailyReport(),
+        warehouseId: warehouse,
+      });
+
+      const telegramResponseObj = result.telegramData.data;
+      setRawTelegramData(telegramResponseObj);
+      localStorage.setItem(
+        "last_telegram_data",
+        JSON.stringify(telegramResponseObj),
+      );
+
+      setStatusText("Mengirim laporan...");
+      await sendTelegramAlert({
+        title: "PENJUALAN BARANG", // Kembali ke teks asli Anda
+        source: warehouseName,
+        message: formatVoucherText(latestTransactions),
+        // forwardChatId: 986761281,
+        forwardChatId: 851552604,
+      });
+
+      // set duration in milliseconds
+      const LOCK_DURATION_MS = 1 * 60 * 1000;
+      const lockTargetTime = Date.now() + LOCK_DURATION_MS;
+
+      localStorage.setItem("target_lock_time", lockTargetTime);
+      localStorage.setItem("lock_warehouse_id", warehouse);
+
+      setCountdown(LOCK_DURATION_MS / 1000); // Menghitung detik
+      setIsLocking(true);
+
+      // Timer otomatis menggunakan durasi milidetik yang benar
+      setTimeout(() => {
+        setRawTelegramData(null);
+        localStorage.removeItem("last_telegram_data");
+      }, LOCK_DURATION_MS);
+
+      setStatusText("Menutup shift...");
+      alert("Shift berhasil ditutup!");
+      closingStatus();
+    } catch (error) {
+      console.error("Closing shift error:", error);
+      alert("Terjadi kesalahan saat menutup shift.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-5 rounded-2xl shadow-sm space-y-4">

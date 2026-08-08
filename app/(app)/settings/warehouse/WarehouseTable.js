@@ -15,15 +15,15 @@ import {
   MapPin,
   Wallet,
   Edit2,
-  ShieldCheck,
-  MoreHorizontal,
-  Compass,
+  Calendar,
+  CheckCircle2,
 } from "lucide-react";
 import { useState } from "react";
 import { useAccounts } from "@/app/hooks/useAccounts";
 import EditWarehouse from "./EditWarehouse";
 import AssignAccount from "./AssignAccount";
 import CreateWarehouse from "./CreateWarehouse";
+import { calculateContractTillEnd, formatRupiah } from "@/app/utils/format";
 
 const WarehouseTable = () => {
   const { warehouses, loading, mutate } = useWarehouse();
@@ -46,7 +46,7 @@ const WarehouseTable = () => {
     ...zones?.map((zone) => ({ value: zone.id, label: zone.zone_name })),
   ];
 
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(1);
   const [zone, setZone] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -60,8 +60,6 @@ const WarehouseTable = () => {
       .includes(searchTerm.toLowerCase());
     return matchesStatus && matchesZone && matchesSearch;
   });
-
-  console.log(filteredWarehouse);
 
   const toggleLockStatus = async (id) => {
     try {
@@ -124,12 +122,12 @@ const WarehouseTable = () => {
         </div>
 
         {/* Action Button */}
-        <div className="flex gap-2 items-center">
-          <Warehouse size={28} strokeWidth={2} />
-          <h1 className="text-xl font-bold">
-            {filteredWarehouse?.length || 0}{" "}
-            <span className="text-slate-500 font-semibold">Warehouses</span>
-          </h1>
+        <div className="flex items-center gap-3 self-start sm:self-center">
+          <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3.5 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/50 text-xs font-bold shrink-0">
+            <Warehouse className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <span>{filteredWarehouse?.length || 0}</span>
+            <span className="text-indigo-500/80 font-medium">Warehouses</span>
+          </div>
           <button
             type="button"
             onClick={() => {
@@ -144,171 +142,196 @@ const WarehouseTable = () => {
           </button>
         </div>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+
+      <div className="w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/80 shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
+            {/* Header Minimalis */}
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                <th scope="col" className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Warehouse</span>
-                  </div>
+              <tr className="border-b border-slate-100 bg-slate-50/40 text-[10px] font-semibold tracking-wider text-slate-400 dark:border-slate-800/60 dark:bg-slate-950/30 uppercase">
+                <th scope="col" className="py-3 px-4 font-medium">
+                  Cabang / Warehouse
                 </th>
-                <th scope="col" className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Jam Buka</span>
-                  </div>
+                <th scope="col" className="py-3 px-4 font-medium">
+                  Status Kepemilikan
                 </th>
-                <th scope="col" className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <Compass className="w-3.5 h-3.5" />
-                    <span>Zona</span>
-                  </div>
+                <th scope="col" className="py-3 px-4 font-medium">
+                  Jam Buka & Zona
                 </th>
-                <th scope="col" className="px-5 py-3.5">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Alamat</span>
-                  </div>
+                <th scope="col" className="py-3 px-4 font-medium">
+                  Alamat
                 </th>
-                <th scope="col" className="px-5 py-3.5 text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Akses</span>
-                  </div>
+                <th scope="col" className="py-3 px-4 text-center font-medium">
+                  Akses Operasional
                 </th>
-                <th scope="col" className="px-5 py-3.5 text-center">
+                <th scope="col" className="py-3 px-4 text-center font-medium">
                   Status
                 </th>
-                <th scope="col" className="px-5 py-3.5 text-center">
+                <th scope="col" className="py-3 px-4 text-right font-medium">
                   Aksi
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
+
+            {/* Body Tabel */}
+            <tbody className="divide-y divide-slate-100/80 text-xs dark:divide-slate-800/50">
               {filteredWarehouse?.length > 0 ? (
-                filteredWarehouse.map((warehouse) => (
-                  <tr
-                    key={warehouse.id}
-                    className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150"
-                  >
-                    {/* 1. Nama & Primary Cash */}
-                    <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                        {warehouse.name}
-                      </div>
-                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        <Wallet className="w-3 h-3 text-indigo-500 shrink-0" />
-                        <span>
-                          Kas Utama:{" "}
-                          <strong className="font-medium text-slate-700 dark:text-slate-300">
-                            {warehouse.primary_cash?.name || "N/A"}
-                          </strong>
-                        </span>
-                      </div>
-                    </td>
+                filteredWarehouse.map((wh) => {
+                  const isLeased = wh.ownership_status === "leased";
 
-                    {/* 2. Opening Time */}
-                    <td className="px-5 py-4 font-medium text-slate-600 dark:text-slate-300">
-                      <div className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1 border border-slate-200/50 dark:border-slate-700/50">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>{warehouse.opening_time || "-"}</span>
-                      </div>
-                    </td>
-
-                    {/* 3. Zone */}
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                        <Compass className="w-3 h-3 text-slate-400" />
-                        {warehouse.zone?.zone_name || "Tanpa Zona"}
-                      </span>
-                    </td>
-
-                    {/* 4. Address */}
-                    <td
-                      className="px-5 py-4 max-w-xs text-slate-600 dark:text-slate-400"
-                      title={warehouse.address}
+                  return (
+                    <tr
+                      key={wh.id}
+                      className="group transition-colors duration-150 hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
                     >
-                      <div className="flex items-start gap-1.5 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                        <span className="truncate">
-                          {warehouse.address || "-"}
-                        </span>
-                      </div>
-                    </td>
+                      {/* 1. Nama Cabang & Kas */}
+                      <td className="py-3.5 px-4 align-middle">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            <Building2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 text-[13px] tracking-tight">
+                              {wh.name}
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                              <Wallet className="h-3 w-3 text-indigo-500" />
+                              <span>
+                                Kas:{" "}
+                                <span className="font-medium text-slate-700 dark:text-slate-300">
+                                  {wh.primary_cash?.name || "-"}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-                    {/* 5. Lock / Unlock Toggle Button */}
-                    <td className="px-5 py-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => toggleLockStatus(warehouse.id)}
-                        title={
-                          warehouse.is_open === 0
-                            ? "Buka Kunci Warehouse"
-                            : "Kunci Warehouse"
-                        }
-                        className={`inline-flex items-center justify-center h-8 w-8 rounded-xl transition-all duration-200 cursor-pointer shadow-2xs ${
-                          warehouse.is_open === 1
-                            ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60"
-                            : "bg-amber-50 text-amber-600 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-900/60"
-                        }`}
-                      >
-                        {warehouse.is_open === 0 ? (
-                          <Lock className="h-4 w-4" />
+                      {/* 2. Status Kepemilikan (Clean SaaS Badges) */}
+                      <td className="py-3.5 px-4 align-middle">
+                        {isLeased ? (
+                          <div className="inline-flex flex-col gap-0.5">
+                            <div className="inline-flex items-center gap-1.5 self-start rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                              <Calendar className="h-3 w-3 text-indigo-500" />
+                              <span>
+                                Sewa{" "}
+                                {wh.lease?.lease_type === "yearly"
+                                  ? "Tahunan"
+                                  : "Bulanan"}
+                              </span>
+                            </div>
+                            <div className="pl-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                              Sisa:{" "}
+                              <span className="font-bold text-slate-700 dark:text-slate-200">
+                                {calculateContractTillEnd(
+                                  wh.lease?.lease_end_date,
+                                ) || "-"}
+                              </span>
+                            </div>
+                          </div>
                         ) : (
-                          <Unlock className="h-4 w-4" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                            <span>Milik Sendiri</span>
+                          </div>
                         )}
-                      </button>
-                    </td>
+                      </td>
 
-                    {/* 6. Status Badge */}
-                    <td className="px-5 py-4 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                          warehouse.status
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50"
-                            : "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50"
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${warehouse.status ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}
-                        />
-                        {warehouse.status ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+                      {/* 3. Operasional & Zona */}
+                      <td className="py-3.5 px-4 align-middle">
+                        <div className="space-y-0.5">
+                          <div className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-200">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            <span>{wh.opening_time || "-"}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                            Zona:{" "}
+                            <span className="text-slate-600 dark:text-slate-400 font-medium">
+                              {wh.zone?.zone_name || "Tanpa Zona"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
-                    {/* 7. Action Button */}
-                    <td className="px-5 py-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedWarehouse(warehouse);
-                          setModalName("edit");
-                          setModalTitle(`Edit Warehouse: ${warehouse.name}`);
-                          setIsModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200/60 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer"
+                      {/* 4. Alamat */}
+                      <td
+                        className="py-3.5 px-4 align-middle max-w-50"
+                        title={wh.address}
                       >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        <span>Edit</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                        <div className="flex items-start gap-1 text-slate-500 dark:text-slate-400">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400 mt-0.5" />
+                          <span className="truncate text-[11px] leading-snug">
+                            {wh.address || "-"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* 5. Akses / Kunci Status Toggle */}
+                      <td className="py-3.5 px-4 align-middle text-center">
+                        <button
+                          type="button"
+                          onClick={() => toggleLockStatus(wh.id)}
+                          className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-medium transition-all duration-150 cursor-pointer border ${
+                            wh.is_open === 1
+                              ? "bg-slate-50 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800/50 dark:text-emerald-300"
+                              : "bg-amber-50/60 border-amber-200 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-800/50 dark:text-amber-300"
+                          }`}
+                        >
+                          {wh.is_open === 1 ? (
+                            <>
+                              <Unlock className="h-3 w-3 text-emerald-500" />
+                              <span>Terbuka</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="h-3 w-3 text-amber-500" />
+                              <span>Terkunci</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+
+                      {/* 6. Status Keaktifan Badge */}
+                      <td className="py-3.5 px-4 align-middle text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              wh.status
+                                ? "bg-emerald-500 ring-4 ring-emerald-500/20"
+                                : "bg-slate-300 dark:bg-slate-600"
+                            }`}
+                          />
+                          {wh.status ? "Aktif" : "Non-Aktif"}
+                        </span>
+                      </td>
+
+                      {/* 7. Action Button Ghost Style */}
+                      <td className="py-3.5 px-4 align-middle text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedWarehouse(wh);
+                            setModalName("edit");
+                            setModalTitle(`Edit Cabang: ${wh.name}`);
+                            setIsModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-indigo-400 transition-all cursor-pointer shadow-2xs"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          <span>Edit</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
-                /* Empty State jika data kosong */
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-12 text-center text-slate-400 dark:text-slate-500"
-                  >
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <Building2 className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
-                      <p className="text-xs font-medium">
-                        Tidak ada data warehouse ditemukan.
-                      </p>
+                      <Building2 className="h-8 w-8 text-slate-300 dark:text-slate-600 stroke-[1.25]" />
+                      <span className="text-xs font-medium">
+                        Belum ada data cabang / warehouse
+                      </span>
                     </div>
                   </td>
                 </tr>

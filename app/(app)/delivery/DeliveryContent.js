@@ -23,6 +23,7 @@ import {
   Edit3,
   AlertCircle,
   Bike,
+  Footprints,
 } from "lucide-react";
 import {
   calculateDeliveryETA,
@@ -35,6 +36,7 @@ import DeliveryForm from "./DeliveryForm";
 import useEmployee from "@/app/hooks/useEmployee";
 import Notification from "@/app/components/Notification";
 import { useDeliveries } from "@/app/hooks/useDeliveries";
+import UpdateDelivery from "./UpdateDelivery";
 
 export default function DeliveryContent() {
   // 2. MENGGUNAKAN SWR DENGAN FALLBACK DATA DUMMY (TANPA EFFECT)
@@ -44,6 +46,7 @@ export default function DeliveryContent() {
     id: item.id,
     // Invoice, amount, description ada di relasi journal
     reference_no: item.journal?.invoice ?? "-",
+    journal_id: item.journal?.id ?? "-",
     created_at: item.created_at,
     amount: item.journal?.amount ?? 0,
     fee: item.journal?.fee_amount ?? 0,
@@ -94,13 +97,11 @@ export default function DeliveryContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
-  // State Modal Edit Status
-  const [editingItem, setEditingItem] = useState(null);
-  const [newStatusValue, setNewStatusValue] = useState("");
-  const [updateReason, setUpdateReason] = useState("");
-
   // State Modal Buat Pengiriman Baru
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalName, setModalName] = useState("create");
+  const [modalTitle, setModalTitle] = useState("Buat Pengiriman");
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
 
   // 3. STATISTIK (Dihitung Reaktif dari Data SWR)
   const stats = useMemo(() => {
@@ -125,7 +126,7 @@ export default function DeliveryContent() {
         .length,
       delivered: deliveriesData.filter((i) => i.status === "delivered").length,
       pending: deliveriesData.filter((i) => i.status === "pending").length,
-      cancelled: deliveriesData.filter((i) => i.status === "cancelled").length,
+      picked_up: deliveriesData.filter((i) => i.status === "picked_up").length,
     };
   }, [deliveriesData]);
 
@@ -146,21 +147,6 @@ export default function DeliveryContent() {
     });
   }, [deliveriesData, searchTerm, selectedStatus]);
 
-  // 6. UPDATE STATUS VIA SWR MUTATE
-  const handleSaveStatus = (e) => {
-    e.preventDefault();
-    if (!editingItem) return;
-
-    // Mutate cache SWR lokal secara instan
-    const updatedList = deliveriesData.map((item) =>
-      item.id === editingItem.id ? { ...item, status: newStatusValue } : item,
-    );
-    mutate(updatedList, false);
-
-    setEditingItem(null);
-    setUpdateReason("");
-  };
-
   const renderStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case "delivered":
@@ -177,11 +163,11 @@ export default function DeliveryContent() {
             <Bike className="w-3 h-3 animate-pulse" /> Proses
           </span>
         );
-      case "cancelled":
-      case "batal":
+      case "picked_up":
+      case "diambil":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40">
-            <XCircle className="w-3 h-3" /> Batal
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40">
+            <Footprints className="w-3 h-3" /> Di Ambil
           </span>
         );
       default:
@@ -214,10 +200,10 @@ export default function DeliveryContent() {
       count: statusCounts.pending,
     },
     {
-      key: "cancelled",
-      label: "Batal",
-      icon: XCircle,
-      count: statusCounts.cancelled,
+      key: "picked_up",
+      label: "Di Ambil",
+      icon: Footprints,
+      count: statusCounts.picked_up,
     },
   ];
 
@@ -250,7 +236,12 @@ export default function DeliveryContent() {
           </div>
 
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setModalName("create");
+              setModalTitle("Buat Pengiriman");
+              setSelectedDelivery(null);
+              setIsModalOpen(true);
+            }}
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm shadow-indigo-500/20 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4" />
@@ -429,8 +420,10 @@ export default function DeliveryContent() {
                       {renderStatusBadge(item.status)}
                       <button
                         onClick={() => {
-                          setEditingItem(item);
-                          setNewStatusValue(item.status);
+                          setModalName("edit");
+                          setModalTitle("Edit Pengiriman");
+                          setSelectedDelivery(item);
+                          setIsModalOpen(true);
                         }}
                         className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 rounded-lg transition-colors"
                       >
@@ -596,8 +589,10 @@ export default function DeliveryContent() {
                       <td className="px-6 py-4 text-center whitespace-nowrap font-sans">
                         <button
                           onClick={() => {
-                            setEditingItem(item);
-                            setNewStatusValue(item.status);
+                            setModalName("edit");
+                            setModalTitle("Edit Pengiriman");
+                            setSelectedDelivery(item);
+                            setIsModalOpen(true);
                           }}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-300 rounded-lg transition-colors"
                         >
@@ -624,101 +619,28 @@ export default function DeliveryContent() {
         </div>
       </div>
 
-      {/* MODAL EDIT STATUS */}
-      {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                  <Edit3 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                    Update Status Manual (Pusat)
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    {editingItem.reference_no}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditingItem(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveStatus} className="p-4 space-y-4 text-xs">
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 rounded-xl flex items-start gap-2 text-amber-700 dark:text-amber-400">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p className="text-[11px]">
-                  Status akan diperbarui secara langsung di memori SWR.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block">
-                  Pilih Status Baru:
-                </label>
-                <select
-                  value={newStatusValue}
-                  onChange={(e) => setNewStatusValue(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-slate-800 dark:text-slate-200 focus:outline-none"
-                >
-                  <option value="pending">Pending (Menunggu Pick-up)</option>
-                  <option value="in_transit">Proses (Dalam Pengiriman)</option>
-                  <option value="delivered">Selesai (Sampai Tujuan)</option>
-                  <option value="cancelled">Batal (Dibatalkan Pusat)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block">
-                  Alasan (Opsional):
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Catatan update manual..."
-                  value={updateReason}
-                  onChange={(e) => setUpdateReason(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingItem(null)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold rounded-xl"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-sm"
-                >
-                  Simpan Perubahan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        title="Buat Pengiriman"
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalTitle}
       >
-        <DeliveryForm
-          warehouses={warehouses}
-          employees={employees}
-          isModalOpen={setIsCreateModalOpen}
-          notification={setNotification}
-          mutate={mutate}
-        />
+        {modalName === "create" && (
+          <DeliveryForm
+            warehouses={warehouses}
+            employees={employees}
+            isModalOpen={setIsModalOpen}
+            notification={setNotification}
+            mutate={mutate}
+          />
+        )}
+        {modalName === "edit" && (
+          <UpdateDelivery
+            selectedDelivery={selectedDelivery}
+            isModalOpen={setIsModalOpen}
+            notification={setNotification}
+            mutate={mutate}
+          />
+        )}
       </Modal>
     </div>
   );

@@ -145,7 +145,7 @@ export default function HeaderProfile() {
           ) : (
             <>
               {/* Bento 1: Rank Cabang */}
-              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
                 <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
                   <Trophy className="w-3.5 h-3.5" />
                 </div>
@@ -160,7 +160,7 @@ export default function HeaderProfile() {
               </div>
 
               {/* Bento 2: Rata-rata Profit Bulanan */}
-              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
                 <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
                   <TrendingUp className="w-3.5 h-3.5" />
                 </div>
@@ -175,7 +175,7 @@ export default function HeaderProfile() {
               </div>
 
               {/* Bento 3: Rating Performa Toko */}
-              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
                 <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
                   <Star className="w-3.5 h-3.5" />
                 </div>

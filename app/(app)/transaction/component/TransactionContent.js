@@ -11,6 +11,7 @@ import {
   CreditCard,
   Filter,
   ReceiptText,
+  Loader2,
 } from "lucide-react";
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
@@ -60,6 +61,15 @@ const TransactionContent = () => {
   const [modalName, setModalName] = useState("create-transaction");
 
   // --- Data Fetching ---
+
+  const {
+    cashBankBalanceData,
+    error: balanceError,
+    isLoading,
+    isValidating,
+    mutate: mutateBalance,
+  } = useCashBankBalance(warehouseId, endDate);
+
   const {
     journalByWarehouse,
     isLoading: isJournalLoading,
@@ -71,13 +81,6 @@ const TransactionContent = () => {
     startDate: startDate,
     endDate: endDate,
   });
-  const {
-    cashBankBalanceData,
-    error: balanceError,
-    isLoading,
-    isValidating,
-    mutate: mutateBalance,
-  } = useCashBankBalance(warehouseId, endDate);
 
   const {
     dailyDashboard,
@@ -393,9 +396,15 @@ const TransactionContent = () => {
                       className="inline-flex items-center justify-between gap-1.5 rounded-xl bg-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-lime-300 shadow-xs hover:bg-slate-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 transition-all w-full sm:w-68 truncate col-span-2 sm:col-span-1"
                     >
                       <ReceiptText className="h-4 w-4 shrink-0" />
-                      <span className="truncate">
-                        {formatRupiah(totalSetoran - warehouseOpenCash)}
-                      </span>
+                      {isDashboardLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <span
+                          className={`${isDashboardValidating ? "animate-pulse" : ""} truncate`}
+                        >
+                          {formatRupiah(totalSetoran - warehouseOpenCash)}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -458,6 +467,7 @@ const TransactionContent = () => {
                     accountBalance={cashBankBalanceData}
                     isLoading={isLoading}
                     isValidating={isValidating}
+                    dailyDashboard={dailyDashboard}
                   />
                 </div>
 

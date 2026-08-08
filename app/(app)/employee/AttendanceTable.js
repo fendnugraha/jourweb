@@ -10,6 +10,7 @@ import {
 import Image from "next/image";
 import { useState } from "react";
 import AttendanceDetail from "./AttendanceDetail";
+import Notification from "@/app/components/Notification";
 
 const AttendanceTable = ({ userAttendance, userRole, mutate }) => {
   const { today } = DateTimeNow();
@@ -27,6 +28,10 @@ const AttendanceTable = ({ userAttendance, userRole, mutate }) => {
   });
   return (
     <>
+      <Notification
+        message={notification}
+        onClose={() => setNotification("")}
+      />
       <div className="w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-xs backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">

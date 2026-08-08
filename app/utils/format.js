@@ -467,3 +467,27 @@ export function calculateDeliveryETA(lat1, lon1, lat2, lon2, speedKmH = 25) {
     estimatedText, // contoh: "~15 mnt"
   };
 }
+
+export const getLocationPromise = () =>
+  new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject({ code: 0, message: "Browser tidak mendukung GPS" });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+      },
+      (err) => reject(err),
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      },
+    );
+  });
