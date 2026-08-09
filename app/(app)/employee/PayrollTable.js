@@ -87,7 +87,7 @@ const PayrollTable = () => {
                                         </td>
                                         <td className="px-5 py-4 text-center">
                                             <Link
-                                                href={`/employee/payroll/invoice/${item?.payroll_date}`}
+                                                href={`/employee/invoice/${item?.payroll_date}`}
                                                 className="inline-flex items-center justify-center p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 transition-colors cursor-pointer"
                                                 title="Cetak Slip Gaji"
                                             >
@@ -115,4 +115,3 @@ const PayrollTable = () => {
 };
 
 export default PayrollTable;
-

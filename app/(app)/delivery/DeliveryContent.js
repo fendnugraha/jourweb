@@ -28,6 +28,7 @@ import {
     AlertTriangle,
     ArrowUpRight,
     Minus,
+    Siren,
 } from "lucide-react";
 import { calculateDeliveryETA, formatDateTime, formatNumber } from "@/app/utils/format";
 import useWarehouse from "@/app/hooks/useWarehouse";
@@ -184,7 +185,7 @@ export default function DeliveryContent() {
             },
             urgent: {
                 label: "Urgent",
-                icon: Flame,
+                icon: Siren,
                 className:
                     "bg-rose-50 text-rose-600 ring-rose-300/80 dark:bg-rose-950/50 dark:text-rose-400 dark:ring-rose-800/80 shadow-sm shadow-rose-500/10",
                 isPulse: true,
@@ -361,7 +362,7 @@ export default function DeliveryContent() {
                                 className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shrink-0 select-none ${
                                     isActive
                                         ? "text-white"
-                                        : "text-slate-600 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/70 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700/60"
+                                        : "text-slate-600 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/70 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:text-slate-300 dark:hover:bg-slate-700/60"
                                 }`}
                             >
                                 {/* Background aktif yang meluncur/sliding */}
@@ -579,9 +580,7 @@ export default function DeliveryContent() {
                                                 </td>
 
                                                 {/* Prioritas */}
-                                                <td className="px-6 py-4 text-center whitespace-nowrap">
-                                                    {renderPriorityBadge(item.priority || item.priority_level)}
-                                                </td>
+                                                <td className="px-6 py-4 text-center whitespace-nowrap">{renderPriorityBadge(item.priority)}</td>
 
                                                 {/* Nominal */}
                                                 <td className="px-6 py-4 text-right whitespace-nowrap font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
