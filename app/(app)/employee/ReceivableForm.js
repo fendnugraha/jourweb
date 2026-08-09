@@ -6,7 +6,7 @@ import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle, CalendarCheck, CreditCard } from "lucide-react";
 import { useState } from "react";
 
-export default function ReceivableForm({ isModalOpen, mutate, notification }) {
+export default function ReceivableForm({ setIsModalOpen, mutate, notification }) {
     const { today } = DateTimeNow();
     const [formData, setFormData] = useState({
         date_issued: today,
@@ -38,8 +38,8 @@ export default function ReceivableForm({ isModalOpen, mutate, notification }) {
         try {
             const response = await axios.post("/api/finance", formData);
             notification(response.data.message);
-            isModalOpen(true);
-            fetchFinance();
+            setIsModalOpen(false);
+            mutate();
             setFormData({
                 date_issued: today,
                 contact_id: "",
@@ -50,6 +50,7 @@ export default function ReceivableForm({ isModalOpen, mutate, notification }) {
                 type: "EmployeeReceivable",
             });
         } catch (error) {
+            console.log(error);
             setErrors(error.response?.data?.errors || ["Something went wrong."]);
             notification(error.response?.data?.message || "Something went wrong.");
         } finally {
@@ -172,7 +173,7 @@ export default function ReceivableForm({ isModalOpen, mutate, notification }) {
                 <div className="flex justify-end gap-2 pt-2">
                     <button
                         type="button"
-                        onClick={() => isModalOpen(false)}
+                        onClick={() => setIsModalOpen(false)}
                         className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
                         Cancel

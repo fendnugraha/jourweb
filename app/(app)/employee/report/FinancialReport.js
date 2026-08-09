@@ -322,8 +322,6 @@ export default function FinancialReport() {
         }));
     }, [corpExpense]);
 
-    console.log(corporateExpenses);
-
     const DUMMY_DATA = {
         revenue: totalRevenue,
         branchExpenses: [
@@ -335,7 +333,7 @@ export default function FinancialReport() {
             { label: "Komisi Agen", amount: 24_300_000, icon: Handshake },
         ],
         corporateExpenses,
-        monthlyRevenue: [310, 345, 388, 420, 395, 450, 430, 700, 460, 490, 486, 0].map((v) => v * 1_000_000),
+        monthlyRevenue: [310, 345, 388, 420, 395, 450, 430, 475, 460, 490, 486, 0].map((v) => v * 1_000_000),
     };
 
     const totalBranch = DUMMY_DATA.branchExpenses.reduce((s, e) => s + e.amount, 0);

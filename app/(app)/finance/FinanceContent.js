@@ -90,7 +90,7 @@ const FinanceContent = () => {
         try {
             const response = await axios.delete(`/api/finance/${id}`);
             setNotification(response.data.message);
-            fetchFinance();
+            mutate();
         } catch (error) {
             console.log(error);
             setNotification(error.response?.data?.message || "Gagal menghapus data keuangan.");

@@ -3,7 +3,7 @@ import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 
-export default function CreateExpenseCorp({ setIsModalOpen, notification }) {
+export default function CreateExpenseCorp({ setIsModalOpen, notification, fetchCorpExpense }) {
     const { today } = DateTimeNow();
     const [formData, setFormData] = useState({
         date_issued: today,
@@ -31,6 +31,7 @@ export default function CreateExpenseCorp({ setIsModalOpen, notification }) {
                 amount: "",
                 description: "",
             });
+            fetchCorpExpense();
         } catch (error) {
             notification("Gagal menambahkan pengeluaran. Silakan coba lagi.");
             setFormError("Gagal menambahkan pengeluaran. Silakan coba lagi.");

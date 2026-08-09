@@ -10,6 +10,8 @@ import PayableTable from "../finance/PayableTable";
 import FinanceMutationHistory from "../finance/FinanceMutationHistory";
 import Modal from "@/app/components/Modal";
 import ReceivableForm from "./ReceivableForm";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import axios from "@/app/utils/axios";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
@@ -29,6 +31,7 @@ const EmployeeReceivable = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPaymentActive, setIsPaymentActive] = useState(false);
     const [modalTitle, setModalTitle] = useState("Add Finance Mutation");
+    const [journalToDelete, setJournalToDelete] = useState(null);
     const [status, setStatus] = useState("unpaid");
     const statusOptions = [
         { value: "all", label: "All Status" },
@@ -70,6 +73,17 @@ const EmployeeReceivable = () => {
                   sisa: "-",
               }
             : { contact_name: "All", sisa: "-" };
+
+    const handleDeleteFinance = async (id) => {
+        try {
+            const response = await axios.delete(`/api/finance/${id}`);
+            setNotification(response.data.message);
+            mutate();
+        } catch (error) {
+            console.log(error);
+            setNotification(error.response?.data?.message || "Gagal menghapus data keuangan.");
+        }
+    };
     return (
         <div className="space-y-6">
             <Notification message={notification} onClose={() => setNotification(null)} />
@@ -168,13 +182,31 @@ const EmployeeReceivable = () => {
                     setModalTitle={setModalTitle}
                 />
                 <div className="space-y-4">
-                    <FinanceMutationHistory finances={finances} findContact={findContact} selectedContactId={selectedContactId} />
+                    <FinanceMutationHistory
+                        finances={finances}
+                        findContact={findContact}
+                        selectedContactId={selectedContactId}
+                        setJournalToDelete={setJournalToDelete}
+                    />
                 </div>
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
                 <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
             </Modal>
+
+            <ConfirmDialog
+                isOpen={journalToDelete !== null}
+                onClose={() => setJournalToDelete(null)}
+                onConfirm={() => {
+                    if (journalToDelete) {
+                        handleDeleteFinance(journalToDelete);
+                        setJournalToDelete(null);
+                    }
+                }}
+                title="Hapus Jurnal Hutang/Piutang"
+                description="Apakah Anda yakin ingin menghapus entri buku besar ini? Tindakan ini akan memengaruhi laporan pendapatan kumulatif dan bersifat irreversibel."
+            />
         </div>
     );
 };
