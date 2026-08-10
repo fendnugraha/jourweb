@@ -468,6 +468,7 @@ const TransactionContent = () => {
                                 notification={setNotification}
                                 mutate={mutate}
                                 accounts={accounts}
+                                setTxToDelete={setTxToDelete}
                             />
                         </motion.div>
                     )}

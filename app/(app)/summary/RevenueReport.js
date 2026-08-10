@@ -20,10 +20,12 @@ const RevenueReport = () => {
         startDate: today,
         endDate: today,
     });
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [notification, setNotification] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [corpExpense, setCorpExpense] = useState([]);
+    const [corpExpenseGrouped, setCorpExpenseGrouped] = useState([]);
 
     const { revenue, error, isLoading, isValidating } = useRevenueReport(dateFilter.startDate, dateFilter.endDate);
 
@@ -38,7 +40,9 @@ const RevenueReport = () => {
                     end_date: dateFilter.endDate,
                 },
             });
-            setCorpExpense(response.data);
+            console.log(response.data?.data);
+            setCorpExpense(response.data?.data?.cash_flows);
+            setCorpExpenseGrouped(response.data?.data?.cash_flows_grouped);
         } catch (err) {
             setNotification(err.response?.data?.message || "Failed to fetch corp expense data");
             console.error("Error fetching corp expense data:", err);
@@ -61,6 +65,7 @@ const RevenueReport = () => {
             icon: TrendingUp,
         },
     ];
+
     return (
         <>
             <Notification message={notification} onClose={() => setNotification(null)} />

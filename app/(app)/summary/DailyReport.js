@@ -28,6 +28,8 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
         // console.log(revenue.revenue?.[0][trxType]);
     };
 
+    const filteredCorpExpense = corpExpense.filter((expense) => expense.is_corporate === 1);
+
     const reportRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -92,7 +94,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
 
     const totalReceivable = filteredFinances.reduce((sum, finance) => sum + Number(finance.bill_amount), 0);
     const totalFee = revenue?.revenue?.reduce((sum, item) => sum + Number(item.fee), 0) || 0;
-    const totalCorpExpense = corpExpense.data?.reduce((total, expense) => total + Number(expense.amount), 0) || 0;
+    const totalCorpExpense = filteredCorpExpense.reduce((total, expense) => total + Number(expense.amount), 0) || 0;
     return (
         <div className="space-y-4 font-sans text-slate-800">
             {/* ========================================================= */}
@@ -244,7 +246,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                             <div className="divide-y divide-slate-100 font-mono text-xs">
                                 {filteredFinances?.length > 0 ? (
                                     filteredFinances.map((finance) => (
-                                        <div key={finance.id} className="px-3.5 py-1.5 flex items-center justify-between">
+                                        <div key={finance.id} className="px-3.5 py-2 flex items-center justify-between">
                                             <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
                                             <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
                                         </div>
@@ -267,14 +269,14 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                                     <Receipt className="w-3.5 h-3.5 text-indigo-600" />
                                     <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Corporate Expense</h3>
                                 </div>
-                                <span className="text-[10px] font-mono text-slate-400">{corpExpense.data?.length || 0} Item</span>
+                                <span className="text-[10px] font-mono text-slate-400">{filteredCorpExpense.length || 0} Item</span>
                             </div>
 
                             <div className="divide-y divide-slate-100 font-mono text-xs">
-                                {corpExpense.data?.length > 0 ? (
-                                    corpExpense.data.map((expense) => (
-                                        <div key={expense.id} className="px-3.5 py-1.5 flex items-center justify-between">
-                                            <span className="font-sans text-slate-700 truncate max-w-32.5">{expense.description}</span>
+                                {filteredCorpExpense.length > 0 ? (
+                                    filteredCorpExpense.map((expense) => (
+                                        <div key={expense.id} className="px-3.5 py-2 flex items-center justify-between">
+                                            <span className="font-sans text-slate-700 truncate max-w-54">{expense.description}</span>
                                             <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
                                         </div>
                                     ))

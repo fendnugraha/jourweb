@@ -4,7 +4,7 @@ import { DateTimeNow, formatDateTime, formatNumber, formatRupiah } from "@/app/u
 import { AlertCircle, Calendar, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts }) => {
+const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts, setTxToDelete }) => {
     const { today } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [formError, setFormError] = useState("");

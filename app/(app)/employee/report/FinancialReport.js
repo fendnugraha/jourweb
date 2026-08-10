@@ -12,39 +12,31 @@ import {
     ArrowDownRight,
     FileText,
     Calendar,
-    Users,
-    Settings2,
-    Zap,
-    Printer,
-    Car,
-    Handshake,
-    HomeIcon,
-    BanknoteIcon,
-    ShieldCheck,
-    UserCog,
-    MonitorSmartphone,
-    Megaphone,
     Receipt,
+    Coins,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import useRevenueReport from "@/app/hooks/useRevenueReport";
 import axios from "@/app/utils/axios";
 
-// ─── Dummy Data ─────────────────────────────────────────────────────────────
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-// ─── Animated Counter ─────────────────────────────────────────────────────
+
+// Komponen Reusable Skeleton untuk Loading
+function Skeleton({ className = "" }) {
+    return <div className={`animate-pulse bg-slate-200 dark:bg-slate-800 rounded-md ${className}`} />;
+}
+
 function AnimatedNumber({ value, prefix = "" }) {
     return (
         <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
             {prefix}
-            {formatRupiah(value)}
+            {formatRupiah(value || 0)}
         </motion.span>
     );
 }
 
-// ─── Stat Card ──────────────────────────────────────────────────────────────
-function StatCard({ title, value, icon: Icon, color, trend, trendLabel, delay = 0 }) {
+function StatCard({ title, value, icon: Icon, color, trend, trendLabel, delay = 0, isLoading = false }) {
     const isPositive = trend >= 0;
     const colorMap = {
         indigo: {
@@ -68,13 +60,6 @@ function StatCard({ title, value, icon: Icon, color, trend, trendLabel, delay = 
             border: "border-rose-100 dark:border-rose-900/40",
             value: "text-rose-700 dark:text-rose-300",
         },
-        violet: {
-            bg: "bg-violet-50 dark:bg-violet-950/40",
-            icon: "text-violet-600 dark:text-violet-400",
-            iconBg: "bg-violet-100 dark:bg-violet-900/60",
-            border: "border-violet-100 dark:border-violet-900/40",
-            value: "text-violet-700 dark:text-violet-300",
-        },
         amber: {
             bg: "bg-amber-50 dark:bg-amber-950/40",
             icon: "text-amber-600 dark:text-amber-400",
@@ -92,7 +77,6 @@ function StatCard({ title, value, icon: Icon, color, trend, trendLabel, delay = 
             transition={{ delay, duration: 0.35, ease: "easeOut" }}
             className={`relative overflow-hidden rounded-2xl border ${c.border} ${c.bg} p-4 sm:p-5 flex flex-col gap-3`}
         >
-            {/* Subtle blob */}
             <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full ${c.iconBg} opacity-40 blur-2xl pointer-events-none`} />
 
             <div className="flex items-start justify-between">
@@ -111,18 +95,21 @@ function StatCard({ title, value, icon: Icon, color, trend, trendLabel, delay = 
 
             <div>
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{title}</p>
-                <p className={`text-base sm:text-lg font-bold font-mono ${c.value}`}>
-                    <AnimatedNumber value={value} />
-                </p>
+                {isLoading ? (
+                    <Skeleton className="h-6 w-28 my-1" />
+                ) : (
+                    <p className={`text-base sm:text-lg font-bold font-mono ${c.value}`}>
+                        <AnimatedNumber value={value} />
+                    </p>
+                )}
                 {trendLabel && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{trendLabel}</p>}
             </div>
         </motion.div>
     );
 }
 
-// ─── Expense Row ─────────────────────────────────────────────────────────────
 function ExpenseRow({ item, total, delay = 0 }) {
-    const pct = ((item.amount / total) * 100).toFixed(1);
+    const pct = total > 0 ? ((item.amount / total) * 100).toFixed(1) : "0.0";
     return (
         <motion.div
             initial={{ opacity: 0, x: -8 }}
@@ -152,8 +139,7 @@ function ExpenseRow({ item, total, delay = 0 }) {
     );
 }
 
-// ─── Collapsible Section ─────────────────────────────────────────────────────
-function CollapsibleSection({ title, subtitle, total, items, icon: Icon, iconColor, delay = 0 }) {
+function CollapsibleSection({ title, subtitle, total, items, icon: Icon, iconColor, delay = 0, isLoading = false }) {
     const [open, setOpen] = useState(true);
     return (
         <motion.div
@@ -177,7 +163,11 @@ function CollapsibleSection({ title, subtitle, total, items, icon: Icon, iconCol
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">{formatRupiah(total)}</span>
+                    {isLoading ? (
+                        <Skeleton className="h-5 w-20" />
+                    ) : (
+                        <span className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">{formatRupiah(total)}</span>
+                    )}
                     <motion.span animate={{ rotate: open ? 0 : -90 }} transition={{ duration: 0.2 }}>
                         <ChevronDown size={16} className="text-slate-400" />
                     </motion.span>
@@ -194,9 +184,16 @@ function CollapsibleSection({ title, subtitle, total, items, icon: Icon, iconCol
                         className="overflow-hidden"
                     >
                         <div className="px-5 pb-4 divide-y divide-slate-100 dark:divide-slate-800">
-                            {items.map((item, i) => (
-                                <ExpenseRow key={item.label} item={item} total={total} delay={i * 0.04} />
-                            ))}
+                            {isLoading ? (
+                                <div className="py-3 space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                </div>
+                            ) : items.length > 0 ? (
+                                items.map((item, i) => <ExpenseRow key={item.label} item={item} total={total} delay={i * 0.04} />)
+                            ) : (
+                                <p className="text-xs text-slate-400 dark:text-slate-500 py-3 text-center">Tidak ada pengeluaran</p>
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -205,41 +202,115 @@ function CollapsibleSection({ title, subtitle, total, items, icon: Icon, iconCol
     );
 }
 
-// ─── Mini Bar Chart ──────────────────────────────────────────────────────────
-function MiniBarChart({ data }) {
-    const max = Math.max(...data.filter(Boolean));
+function MiniLineChart({ data, isLoading = false }) {
+    const gradientId = useId();
+
+    if (isLoading) {
+        return (
+            <div className="w-full pt-2">
+                <div className="h-24 w-full bg-slate-100/70 dark:bg-slate-800/40 animate-pulse rounded-xl flex items-center justify-center">
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500">Memuat grafik...</span>
+                </div>
+                <div className="flex justify-between items-center mt-2 px-1">
+                    {MONTHS.map((m) => (
+                        <span key={m} className="text-[9px] font-medium text-slate-300 dark:text-slate-700">
+                            {m}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    const validData = data.filter((v) => v > 0);
+    const max = Math.max(...validData, 1);
+    const min = Math.min(...validData, 0);
+
+    const height = 90;
+    const width = 300;
+
+    const points = data.map((val, i) => {
+        const x = (i / (data.length - 1)) * width;
+
+        let y = height - 10;
+        if (val > 0) {
+            const range = max - min;
+            const normalized = range > 0 ? (val - min) / range : 0.5;
+            y = height - 15 - normalized * (height - 30);
+        }
+        return { x, y, val };
+    });
+
+    const linePath = points.reduce((acc, point, i, arr) => {
+        if (i === 0) return `M ${point.x},${point.y}`;
+        const prev = arr[i - 1];
+        const cx = (prev.x + point.x) / 2;
+        return `${acc} C ${cx},${prev.y} ${cx},${point.y} ${point.x},${point.y}`;
+    }, "");
+
+    const areaPath = `${linePath} L ${width},${height} L 0,${height} Z`;
+
     return (
-        <div className="flex items-end gap-1.5 h-20">
-            {data.map((val, i) => {
-                const height = val > 0 ? Math.max((val / max) * 100, 6) : 0;
-                const isLast = val === 0;
-                return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: `${height}%` }}
-                            transition={{ delay: i * 0.04, duration: 0.45, ease: "easeOut" }}
-                            className={`w-full rounded-t-sm ${isLast ? "bg-slate-200 dark:bg-slate-700" : "bg-indigo-400/70 dark:bg-indigo-500/70"}`}
-                            style={{ height: `${height}%`, minHeight: val > 0 ? 4 : 0 }}
-                        />
-                        <span className="text-[8px] text-slate-400 dark:text-slate-600 font-medium">{MONTHS[i]}</span>
-                    </div>
-                );
-            })}
+        <div className="w-full pt-2">
+            <div className="relative h-24 w-full">
+                <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                        </linearGradient>
+                    </defs>
+
+                    <motion.path initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} d={areaPath} fill={`url(#${gradientId})`} />
+
+                    <motion.path
+                        initial={{ pathLength: 0, opacity: 0 }}
+                        animate={{ pathLength: 1, opacity: 1 }}
+                        transition={{ duration: 1.2, ease: "easeInOut" }}
+                        d={linePath}
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                    />
+
+                    {points.map((p, i) => (
+                        <g key={i}>
+                            <motion.circle
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.5 + i * 0.04, duration: 0.3 }}
+                                cx={p.x}
+                                cy={p.y}
+                                r={p.val > 0 ? "4" : "2"}
+                                className={
+                                    p.val > 0 ? "fill-indigo-600 dark:fill-indigo-400 stroke-white dark:stroke-slate-900" : "fill-slate-300 dark:fill-slate-700"
+                                }
+                                strokeWidth="2"
+                            />
+                        </g>
+                    ))}
+                </svg>
+            </div>
+
+            <div className="flex justify-between items-center mt-2 px-1">
+                {MONTHS.map((m) => (
+                    <span key={m} className="text-[9px] font-medium text-slate-400 dark:text-slate-500">
+                        {m}
+                    </span>
+                ))}
+            </div>
         </div>
     );
 }
 
-// ─── P&L Summary Row ─────────────────────────────────────────────────────────
-function PLRow({ label, value, indent = false, bold = false, color, separator = false, delay = 0 }) {
+function PLRow({ label, value, indent = false, bold = false, color, separator = false, delay = 0, isLoading = false }) {
     const colorClass =
         color === "green"
             ? "text-emerald-600 dark:text-emerald-400"
             : color === "red"
               ? "text-rose-600 dark:text-rose-400"
-              : color === "violet"
-                ? "text-violet-600 dark:text-violet-400"
-                : "text-slate-700 dark:text-slate-300";
+              : "text-slate-700 dark:text-slate-300";
 
     return (
         <>
@@ -256,47 +327,75 @@ function PLRow({ label, value, indent = false, bold = false, color, separator = 
                     {indent && <span className="text-slate-300 dark:text-slate-600 mr-1.5">└</span>}
                     {label}
                 </span>
-                <span className={`text-xs font-mono ${bold ? "font-bold" : "font-semibold"} ${colorClass}`}>
-                    {value < 0 ? `(${formatRupiah(Math.abs(value))})` : formatRupiah(value)}
-                </span>
+                {isLoading ? (
+                    <Skeleton className="h-4 w-20" />
+                ) : (
+                    <span className={`text-xs font-mono ${bold ? "font-bold" : "font-semibold"} ${colorClass}`}>
+                        {value < 0 ? `(${formatRupiah(Math.abs(value))})` : formatRupiah(value)}
+                    </span>
+                )}
             </motion.div>
         </>
     );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
 export default function FinancialReport() {
     const { thisMonth, thisYear } = DateTimeNow();
 
-    // 1. Pastikan bulan selalu 2 digit (contoh: "08", bukan "8")
     const initialMonth = String(thisMonth).padStart(2, "0");
     const [period, setPeriod] = useState(`${thisYear}-${initialMonth}`);
+    const [corpExpense, setCorpExpense] = useState([]);
+    const [isExpenseLoading, setIsExpenseLoading] = useState(true);
 
-    // 2. Hitung startPeriod & endPeriod menggunakan useMemo (menghindari bug UTC Timezone & re-render)
-    const { startPeriod, endPeriod } = useMemo(() => {
-        if (!period) return { startPeriod: null, endPeriod: null };
+    const { startPeriod, endPeriod, formattedPeriodName } = useMemo(() => {
+        if (!period) return { startPeriod: null, endPeriod: null, formattedPeriodName: "" };
 
         const [yearStr, monthStr] = period.split("-");
         const year = Number(yearStr);
         const month = Number(monthStr);
 
-        // Cari tanggal terakhir di bulan tersebut (misal: 28, 30, atau 31)
         const lastDay = new Date(year, month, 0).getDate();
         const lastDayStr = String(lastDay).padStart(2, "0");
 
-        // Format datetime-local (YYYY-MM-DDTHH:mm:ss)
         const start = `${yearStr}-${monthStr}-01T00:00:00`;
         const end = `${yearStr}-${monthStr}-${lastDayStr}T23:59:59`;
 
-        return { startPeriod: start, endPeriod: end };
+        const monthName = MONTHS[month - 1] || "";
+        const formattedPeriodName = `${monthName} ${yearStr}`;
+
+        return { startPeriod: start, endPeriod: end, formattedPeriodName };
     }, [period]);
 
-    const { revenue, error, isLoading, isValidating } = useRevenueReport(startPeriod, endPeriod);
-    const totalRevenue = revenue.revenue?.reduce((sum, item) => sum + item.fee, 0);
+    // Hook Revenue Bulanan
+    const { revenue, isLoading: isRevenueLoading } = useRevenueReport(startPeriod, endPeriod);
 
-    const [corpExpense, setCorpExpense] = useState([]);
+    // Total Revenue
+    const totalRevenue = useMemo(() => {
+        if (!revenue || !Array.isArray(revenue.revenue)) return 0;
+        return revenue.revenue.reduce((sum, item) => sum + (Number(item.fee) + Number(item.expense) || 0), 0);
+    }, [revenue]);
+
+    const totalRevenueLastMonth = useMemo(() => {
+        if (!revenue || !Array.isArray(revenue.revenue)) return 0;
+        return revenue.revenue_last_month.reduce((sum, item) => sum + (Number(item.fee) + Number(item.expense) || 0), 0);
+    }, [revenue]);
+
+    const revenueTrend = useMemo(() => {
+        // 1. Jika data bulan lalu 0 atau tidak ada, return 0 (atau sesuaikan dengan kebutuhan)
+        if (!totalRevenueLastMonth || totalRevenueLastMonth === 0) return 0;
+
+        // 2. Hitung persentase pertumbuhan
+        const growth = ((totalRevenue - totalRevenueLastMonth) / totalRevenueLastMonth) * 100;
+
+        // 3. Batasi 1-2 angka di belakang koma dan ubah kembali ke tipe Number
+        return Number(growth.toFixed(1));
+    }, [totalRevenue, totalRevenueLastMonth]);
+
+    // Fetch Corp & Branch Expenses
     useEffect(() => {
         const fetchCorpExpense = async () => {
+            if (!startPeriod || !endPeriod) return;
+            setIsExpenseLoading(true);
             try {
                 const response = await axios.get(`/api/cash-flows`, {
                     params: {
@@ -304,49 +403,107 @@ export default function FinancialReport() {
                         end_date: endPeriod,
                     },
                 });
-                setCorpExpense(response.data?.data);
+                setCorpExpense(response.data?.data?.cash_flows_grouped || []);
             } catch (err) {
-                setNotification(err.response?.data?.message || "Failed to fetch corp expense data");
                 console.error("Error fetching corp expense data:", err);
+            } finally {
+                setIsExpenseLoading(false);
             }
         };
 
         fetchCorpExpense();
     }, [startPeriod, endPeriod]);
 
+    const [monthlyPayrollSum, setMonthlyPayrollSum] = useState(0);
+
+    useEffect(() => {
+        const fetchMonthlyPayrollSum = async () => {
+            try {
+                const response = await axios.get(`/api/monthly-payroll-sum/${endPeriod.split("T")[0]}`);
+                setMonthlyPayrollSum(response.data?.total_salary || 0);
+            } catch (err) {
+                console.error("Error fetching monthly payroll sum:", err);
+            }
+        };
+
+        fetchMonthlyPayrollSum();
+    }, [endPeriod]);
+
     const corporateExpenses = useMemo(() => {
-        return corpExpense.map((item) => ({
-            label: item.description || item.name,
-            amount: Number(item.amount || 0),
-            icon: Receipt,
-        }));
+        if (!Array.isArray(corpExpense)) return [];
+        return corpExpense
+            .filter((item) => item.is_corporate === 1)
+            .map((item) => ({
+                label: item.category || item.name || "Lainnya",
+                amount: Number(item.total || 0),
+                icon: Receipt,
+            }));
     }, [corpExpense]);
 
-    const DUMMY_DATA = {
-        revenue: totalRevenue,
-        branchExpenses: [
-            { label: "Gaji Karyawan Cabang", amount: 78_500_000, icon: Users },
-            { label: "Operasional Cabang", amount: 12_400_000, icon: Settings2 },
-            { label: "Listrik & Air", amount: 4_200_000, icon: Zap },
-            { label: "Perlengkapan Kantor", amount: 2_850_000, icon: Printer },
-            { label: "Transportasi", amount: 3_600_000, icon: Car },
-            { label: "Komisi Agen", amount: 24_300_000, icon: Handshake },
-        ],
-        corporateExpenses,
-        monthlyRevenue: [310, 345, 388, 420, 395, 450, 430, 475, 460, 490, 486, 0].map((v) => v * 1_000_000),
-    };
+    const branchExpenses = useMemo(() => {
+        // 1. Tapis corpExpense secara aman tanpa membatalkan monthlyPayroll
+        const items = Array.isArray(corpExpense)
+            ? corpExpense
+                  .filter((item) => item.is_corporate === 0)
+                  .map((item) => ({
+                      label: item.category || item.name || "Lainnya",
+                      amount: Number(item.total || 0),
+                      icon: Receipt,
+                  }))
+            : [];
 
-    const totalBranch = DUMMY_DATA.branchExpenses.reduce((s, e) => s + e.amount, 0);
-    const totalCorporate = DUMMY_DATA.corporateExpenses.reduce((s, e) => s + e.amount, 0);
+        // 2. Buat objek gaji karyawan dengan casting Number untuk keamanan data
+        const monthlyPayroll = {
+            label: "Gaji Karyawan",
+            amount: Number(monthlyPayrollSum || 0),
+            icon: Coins,
+        };
+
+        // 3. Gabungkan menggunakan spread operator
+        return [monthlyPayroll, ...items];
+    }, [corpExpense, monthlyPayrollSum]);
+
+    const totalBranch = useMemo(() => branchExpenses.reduce((s, e) => s + e.amount, 0), [branchExpenses]);
+    const totalCorporate = useMemo(() => corporateExpenses.reduce((s, e) => s + e.amount, 0), [corporateExpenses]);
+
     const totalExpenses = totalBranch + totalCorporate;
-    const grossProfit = DUMMY_DATA.revenue - totalBranch;
+    const grossProfit = totalRevenue - totalBranch;
     const netProfit = grossProfit - totalCorporate;
-    const grossMargin = ((grossProfit / DUMMY_DATA.revenue) * 100).toFixed(1);
-    const netMargin = ((netProfit / DUMMY_DATA.revenue) * 100).toFixed(1);
+
+    const grossMargin = totalRevenue > 0 ? ((grossProfit / totalRevenue) * 100).toFixed(1) : "0.0";
+    const netMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : "0.0";
+
+    // State untuk Tren Tahunan
+    const [monthlyRevenue, setMonthlyRevenue] = useState(Array(12).fill(0));
+    const [isTrendLoading, setIsTrendLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchMonthlyRevenue = async () => {
+            if (!period) return;
+            setIsTrendLoading(true);
+            const [yearStr] = period.split("-");
+
+            try {
+                const response = await axios.get(`/api/yearly-profit-report/${yearStr}`);
+                if (response.data?.success) {
+                    setMonthlyRevenue(response.data.data);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data tren bulanan:", error);
+            } finally {
+                setIsTrendLoading(false);
+            }
+        };
+
+        fetchMonthlyRevenue();
+    }, [period]);
+
+    // Flag apakah data utama (revenue/expenses) sedang dimuat
+    const isMainLoading = isRevenueLoading || isExpenseLoading;
 
     return (
         <div className="space-y-6">
-            {/* ── Page Header ─────────────────────────────────── */}
+            {/* Header */}
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -372,15 +529,16 @@ export default function FinancialReport() {
                 </div>
             </motion.div>
 
-            {/* ── KPI Cards ───────────────────────────────────── */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <StatCard
                     title="Total Pendapatan"
-                    value={DUMMY_DATA.revenue}
+                    value={totalRevenue}
                     icon={DollarSign}
                     color="indigo"
-                    trend={8.4}
+                    trend={revenueTrend}
                     trendLabel="vs bulan lalu"
+                    isLoading={isRevenueLoading}
                     delay={0}
                 />
                 <StatCard
@@ -390,6 +548,7 @@ export default function FinancialReport() {
                     color="rose"
                     trend={-3.1}
                     trendLabel="vs bulan lalu"
+                    isLoading={isExpenseLoading}
                     delay={0.06}
                 />
                 <StatCard
@@ -399,6 +558,7 @@ export default function FinancialReport() {
                     color="amber"
                     trend={12.6}
                     trendLabel={`Margin ${grossMargin}%`}
+                    isLoading={isMainLoading}
                     delay={0.12}
                 />
                 <StatCard
@@ -408,114 +568,112 @@ export default function FinancialReport() {
                     color="emerald"
                     trend={15.2}
                     trendLabel={`Margin ${netMargin}%`}
+                    isLoading={isMainLoading}
                     delay={0.18}
                 />
             </div>
 
-            {/* ── Revenue Trend Chart ──────────────────────────── */}
+            {/* Chart Card */}
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.24, duration: 0.35 }}
                 className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5"
             >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-2">
                     <div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Tren Pendapatan</p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500">Januari – Juli 2025</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Tren Pendapatan (Gross Profit)</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500">Grafik Pergerakan Bulanan</p>
                     </div>
-                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-full">
-                        +{formatNumberToK(DUMMY_DATA.revenue)} / bln
-                    </span>
+                    {isRevenueLoading ? (
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                    ) : (
+                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 rounded-full">
+                            +{formatNumberToK(totalRevenue)} / bln
+                        </span>
+                    )}
                 </div>
-                <MiniBarChart data={DUMMY_DATA.monthlyRevenue} />
+
+                <MiniLineChart data={monthlyRevenue} isLoading={isTrendLoading} />
             </motion.div>
 
-            {/* ── Two column: Expenses breakdown + P&L ────────── */}
+            {/* Expenses breakdown + P&L */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* LEFT — Expense Sections */}
                 <div className="space-y-4">
                     <CollapsibleSection
                         title="Pengeluaran Cabang"
-                        subtitle={`${DUMMY_DATA.branchExpenses.length} pos pengeluaran`}
+                        subtitle={`${branchExpenses.length} pos pengeluaran`}
                         total={totalBranch}
-                        items={DUMMY_DATA.branchExpenses}
+                        items={branchExpenses}
                         icon={Building2}
                         iconColor="bg-rose-500"
+                        isLoading={isExpenseLoading}
                         delay={0.3}
                     />
                     <CollapsibleSection
-                        title="Pengeluaran Corporate"
-                        subtitle={`${DUMMY_DATA.corporateExpenses.length} pos pengeluaran`}
+                        title="Pengeluaran Corporate/Owner"
+                        subtitle={`${corporateExpenses.length} pos pengeluaran`}
                         total={totalCorporate}
-                        items={DUMMY_DATA.corporateExpenses}
+                        items={corporateExpenses}
                         icon={Landmark}
                         iconColor="bg-violet-600"
+                        isLoading={isExpenseLoading}
                         delay={0.38}
                     />
                 </div>
 
-                {/* RIGHT — P&L Statement */}
                 <motion.div
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.44, duration: 0.35 }}
                     className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-hidden h-fit"
                 >
-                    {/* Header */}
                     <div className="px-5 py-4 bg-linear-to-r from-indigo-600 to-violet-600">
                         <p className="text-xs font-bold text-indigo-100 uppercase tracking-widest">Laporan Laba Rugi</p>
-                        <p className="text-base font-bold text-white mt-0.5">Juli 2025</p>
+                        <p className="text-base font-bold text-white mt-0.5">{formattedPeriodName}</p>
                     </div>
 
-                    {/* P&L rows */}
                     <div className="px-5 py-3">
-                        <PLRow label="Pendapatan Bruto" value={DUMMY_DATA.revenue} color="green" bold delay={0.5} />
+                        <PLRow label="Pendapatan Bruto" value={totalRevenue} color="green" bold isLoading={isRevenueLoading} delay={0.5} />
 
-                        <PLRow label="Pengeluaran Cabang" value={-totalBranch} color="red" separator delay={0.54} />
-                        {DUMMY_DATA.branchExpenses.map((e, i) => (
-                            <PLRow key={e.label} label={e.label} value={-e.amount} indent delay={0.56 + i * 0.02} />
+                        <PLRow label="Pengeluaran Cabang" value={-totalBranch} color="red" separator isLoading={isExpenseLoading} delay={0.54} />
+                        {branchExpenses.map((e, i) => (
+                            <PLRow key={e.label} label={e.label} value={-e.amount} indent isLoading={isExpenseLoading} delay={0.56 + i * 0.02} />
                         ))}
 
-                        <PLRow label="GROSS PROFIT" value={grossProfit} color="green" bold separator delay={0.68} />
+                        <PLRow label="GROSS PROFIT" value={grossProfit} color="green" bold separator isLoading={isMainLoading} delay={0.68} />
                         <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 -mt-1 mb-2 pl-0.5">Margin: {grossMargin}%</p>
 
-                        <PLRow label="Pengeluaran Corporate" value={-totalCorporate} color="red" separator delay={0.72} />
-                        {DUMMY_DATA.corporateExpenses.map((e, i) => (
-                            <PLRow key={e.label} label={e.label} value={-e.amount} indent delay={0.74 + i * 0.02} />
+                        <PLRow label="Pengeluaran Corporate/Owner" value={-totalCorporate} color="red" separator isLoading={isExpenseLoading} delay={0.72} />
+                        {corporateExpenses.map((e, i) => (
+                            <PLRow key={e.label} label={e.label} value={-e.amount} indent isLoading={isExpenseLoading} delay={0.74 + i * 0.02} />
                         ))}
 
-                        {/* Net Profit highlight */}
                         <div className="border-t-2 border-indigo-200 dark:border-indigo-800 mt-3 pt-3">
                             <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 px-3 py-3 rounded-xl">
                                 <div>
                                     <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200 uppercase tracking-wide">Net Profit</p>
                                     <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Margin bersih: {netMargin}%</p>
                                 </div>
-                                <motion.p
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ delay: 0.9, type: "spring", stiffness: 300 }}
-                                    className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300"
-                                >
-                                    {formatRupiah(netProfit)}
-                                </motion.p>
+                                {isMainLoading ? (
+                                    <Skeleton className="h-6 w-28" />
+                                ) : (
+                                    <motion.p
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: 0.9, type: "spring", stiffness: 300 }}
+                                        className="text-base font-black font-mono text-emerald-700 dark:text-emerald-300"
+                                    >
+                                        {formatRupiah(netProfit)}
+                                    </motion.p>
+                                )}
                             </div>
                         </div>
 
-                        {/* Margin progress bars */}
                         <div className="mt-4 space-y-2.5 pb-2">
                             {[
-                                {
-                                    label: "Gross Margin",
-                                    value: parseFloat(grossMargin),
-                                    color: "bg-amber-400",
-                                },
-                                {
-                                    label: "Net Margin",
-                                    value: parseFloat(netMargin),
-                                    color: "bg-emerald-500",
-                                },
+                                { label: "Gross Margin", value: Math.max(0, Math.min(100, parseFloat(grossMargin))), color: "bg-amber-400" },
+                                { label: "Net Margin", value: Math.max(0, Math.min(100, parseFloat(netMargin))), color: "bg-emerald-500" },
                             ].map((bar, i) => (
                                 <div key={bar.label}>
                                     <div className="flex justify-between text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
@@ -526,11 +684,7 @@ export default function FinancialReport() {
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${bar.value}%` }}
-                                            transition={{
-                                                delay: 1 + i * 0.1,
-                                                duration: 0.7,
-                                                ease: "easeOut",
-                                            }}
+                                            transition={{ delay: 1 + i * 0.1, duration: 0.7, ease: "easeOut" }}
                                             className={`h-full rounded-full ${bar.color}`}
                                         />
                                     </div>

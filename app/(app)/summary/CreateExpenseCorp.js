@@ -1,3 +1,4 @@
+import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle } from "lucide-react";
@@ -10,6 +11,8 @@ export default function CreateExpenseCorp({ setIsModalOpen, notification, fetchC
         type: "expense",
         amount: "",
         description: "",
+        category: "",
+        is_corporate: 1,
     });
 
     const [formError, setFormError] = useState("");
@@ -39,6 +42,21 @@ export default function CreateExpenseCorp({ setIsModalOpen, notification, fetchC
             setLoading(false);
         }
     };
+
+    const categoryOptions = [
+        { id: "", value: "", label: "Pilih Kategori" },
+        { id: "sewa-gedung", value: "Sewa Gedung Kantor", label: "Sewa Gedung Kantor" },
+        { id: "cicilan-bank", value: "Cicilan Bank", label: "Cicilan Bank" },
+        { id: "paket-cod", value: "Paket COD", label: "Paket COD" },
+        { id: "rumah-tangga", value: "Rumah Tangga", label: "Rumah Tangga" },
+        { id: "biaya-administrasi-bank", value: "Biaya Administrasi Bank", label: "Biaya Administrasi Bank" },
+        { id: "cicilan-kendaraan", value: "Cicilan Kendaraan", label: "Cicilan Kendaraan" },
+        { id: "asuransi-kantor", value: "Asuransi Kantor", label: "Asuransi Kantor" },
+        { id: "gaji-manajemen", value: "Gaji Manajemen", label: "Gaji Manajemen" },
+        { id: "software-it", value: "Software & IT", label: "Software & IT" },
+        { id: "marketing-promosi", value: "Marketing & Promosi", label: "Marketing & Promosi" },
+        { id: "lainnya", value: "Lainnya", label: "Lainnya" },
+    ];
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,6 +107,25 @@ export default function CreateExpenseCorp({ setIsModalOpen, notification, fetchC
                 <p className="text-[11px] text-rose-600 dark:text-rose-400 font-mono mt-1 font-semibold">
                     Preview: Rp {formData.amount ? parseFloat(formData.amount).toLocaleString("id-ID") : "0"}
                 </p>
+            </div>
+
+            <div className="space-y-1">
+                <label id="tx-category-label" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    Kategori Biaya
+                </label>
+
+                <Dropdown
+                    id="tx-category"
+                    label="Transaction Category Selector"
+                    options={categoryOptions}
+                    selectedValue={formData.category}
+                    onChange={(val) => {
+                        setFormData({
+                            ...formData,
+                            category: val,
+                        });
+                    }}
+                />
             </div>
 
             {/* Description */}
