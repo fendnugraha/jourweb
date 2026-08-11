@@ -278,18 +278,6 @@ const TransactionContent = () => {
                                                 ariaLabel="Filter inventory by account"
                                             />
                                         </div>
-
-                                        {/* Category Dropdown */}
-                                        {/* <div className="w-full">
-                    <Dropdown
-                      id="stock-category-filter"
-                      label="Stock category Filter"
-                      options={categoryOptions}
-                      selectedValue={categoryFilter}
-                      onChange={(val) => setCategoryFilter(val)}
-                      ariaLabel="Filter inventory by category"
-                    />
-                  </div> */}
                                     </div>
 
                                     {/* Action Buttons (Sejajar di Mobile) */}

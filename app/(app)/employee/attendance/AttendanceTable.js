@@ -6,12 +6,10 @@ import { useState } from "react";
 import AttendanceDetail from "./AttendanceDetail";
 import Notification from "@/app/components/Notification";
 
-const AttendanceTable = ({ userAttendance, userRole, mutate }) => {
-    const { today } = DateTimeNow();
+const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => {
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [notification, setNotification] = useState("");
 
-    const [selectedZone, setSelectedZone] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const filteredWarehouses = userAttendance.filter((warehouse) => {

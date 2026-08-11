@@ -5,9 +5,11 @@ import { AnimatePresence, motion } from "motion/react";
 import AttendanceTable from "./AttendanceTable";
 import { DateTimeNow, formatLongDate, formatMonthYear, todayDate } from "@/app/utils/format";
 import { useUserAttendance, useUserAttendanceMonthly } from "@/app/hooks/useUserAttendance";
-import AttendanceTableMonthly from "./AttendanceTableMonthly";
-import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 import SubTabSwitcher from "@/app/components/SubTabSwitcher";
+import AttendanceTableMonthly from "./AttendanceTableMonthly";
+import AttendanceSummary from "./AttendanceSummary";
+import useWarehouseZone from "@/app/hooks/useWarehouseZone";
+import Dropdown from "@/app/components/Dropdown";
 
 const AttendancePage = ({ userRole }) => {
     const today = todayDate();
@@ -17,6 +19,10 @@ const AttendancePage = ({ userRole }) => {
     const [modalTitle, setModalTitle] = useState("Create Attendance Record");
     const [activeSubTab, setActiveSubTab] = useState("daily");
     const [selectedZone, setSelectedZone] = useState(null);
+
+    const { zones } = useWarehouseZone();
+
+    const zoneOptions = [{ value: "all", label: "All Zones" }, ...zones.map((zone) => ({ value: zone.id, label: zone.zone_name }))];
 
     const { userAttendance, mutate: mutateUserAttendance } = useUserAttendance({
         date: selectedDate,
@@ -64,6 +70,18 @@ const AttendancePage = ({ userRole }) => {
                             className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
+
+                    {/* Status Dropdown */}
+                    <div>
+                        <Dropdown
+                            id="zone-filter"
+                            label="Zone Filter"
+                            options={zoneOptions}
+                            selectedValue={selectedZone}
+                            onChange={(val) => setSelectedZone(val)}
+                            ariaLabel="Filter workers by zone"
+                        />
+                    </div>
                     <div>
                         <input
                             type="date"
@@ -71,21 +89,9 @@ const AttendancePage = ({ userRole }) => {
                             onChange={(e) => {
                                 setSelectedDate(e.target.value);
                             }}
-                            className="rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                            className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
-
-                    {/* Status Dropdown */}
-                    {/* <div>
-                        <Dropdown
-                            id="stock-status-filter"
-                            label="Stock Status Filter"
-                            options={statusOptions}
-                            selectedValue={status}
-                            onChange={(val) => setStatus(val)}
-                            ariaLabel="Filter inventory by status"
-                        />
-                    </div> */}
                 </div>
 
                 {/* Action Button */}
@@ -114,7 +120,7 @@ const AttendancePage = ({ userRole }) => {
                         transition={{ duration: 0.15 }}
                         className="space-y-6"
                     >
-                        <AttendanceTable userAttendance={userAttendance} mutate={mutateUserAttendance} userRole={userRole} />
+                        <AttendanceTable userAttendance={userAttendance} selectedZone={selectedZone} mutate={mutateUserAttendance} userRole={userRole} />
                     </motion.div>
                 )}
                 {activeSubTab === "monthly" && (
@@ -127,6 +133,19 @@ const AttendancePage = ({ userRole }) => {
                         className="space-y-6"
                     >
                         <AttendanceTableMonthly warehouseMonthly={warehouseMonthly} selectedZone={selectedZone} mutate={mutateWarehouseMonthly} />
+                    </motion.div>
+                )}
+
+                {activeSubTab === "summary" && (
+                    <motion.div
+                        key="summary"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.15 }}
+                        className="space-y-6"
+                    >
+                        <AttendanceSummary dateString={selectedDate} search={searchTerm} selectedZone={selectedZone} />
                     </motion.div>
                 )}
             </AnimatePresence>

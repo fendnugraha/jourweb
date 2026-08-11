@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function MobileNavDrawer({ menuList = [], activeTab, setActiveTab }) {
     const [isOpen, setIsOpen] = useState(false);
 
-    const ActiveIcon = activeTab?.icon || ArrowUpDown;
     const activeTabObj = menuList.find((item) => item.id === activeTab);
     const activeLabel = activeTabObj?.label || "Pilih Menu";
+    const ActiveIcon = activeTabObj?.icon || ArrowUpDown;
 
     return (
         <>
@@ -17,7 +17,7 @@ export default function MobileNavDrawer({ menuList = [], activeTab, setActiveTab
                     <button
                         type="button"
                         onClick={() => setIsOpen(true)}
-                        className="w-full flex items-center justify-between p-3 bg-indigo-50/60 dark:bg-indigo-800/50 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl active:scale-[0.98] transition-transform"
+                        className="w-full flex items-center justify-between p-3 bg-indigo-200/60 dark:bg-indigo-800/50 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl active:scale-[0.98] transition-transform"
                     >
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
