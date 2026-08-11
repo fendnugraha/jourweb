@@ -34,3 +34,23 @@ export function useUserAttendanceMonthly({ date }) {
         mutate,
     };
 }
+
+export function useUserAttendanceByContactMonthly({ contactId, year, month }) {
+    const { data, error, isLoading, isValidating, mutate } = useSWR(
+        contactId && year && month ? `/api/get-attendances-by-contact-monthly/${contactId}/${year}/${month}` : null,
+        fetcher,
+        {
+            revalidateOnFocus: true,
+            dedupingInterval: 60000,
+            fallbackData: [],
+        },
+    );
+
+    return {
+        contactMonthly: data,
+        isLoading,
+        isValidating,
+        error,
+        mutate,
+    };
+}

@@ -17,6 +17,34 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
 
         return !selectedZone || zoneMatch;
     });
+
+    const STATUS_CONFIG = {
+        Late: {
+            label: "Telat",
+            Icon: ClockAlert,
+            color: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20",
+            iconStyle: "w-3 h-3",
+        },
+        Good: {
+            label: "Excellent",
+            Icon: Star,
+            color: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200/60 dark:border-amber-500/20",
+            iconStyle: "w-3 h-3 fill-amber-400 text-amber-500",
+        },
+        Overtime: {
+            label: "Overtime",
+            Icon: AlarmClockPlus,
+            color: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300 border-violet-200/60 dark:border-violet-500/20",
+            iconStyle: "w-3 h-3",
+        },
+        // Fallback / Default
+        Normal: {
+            label: "Normal",
+            Icon: Check,
+            color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/20",
+            iconStyle: "w-3 h-3",
+        },
+    };
     return (
         <>
             <Notification message={notification} onClose={() => setNotification("")} />
@@ -72,23 +100,18 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
 
                                     {/* Status / Rating Badge */}
                                     <div className="shrink-0">
-                                        {status === "Late" ? (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20">
-                                                <ClockAlert className="w-3 h-3" /> Telat
-                                            </span>
-                                        ) : status === "Good" ? (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/20">
-                                                <Star className="w-3 h-3 fill-amber-400 text-amber-500" /> Excellent
-                                            </span>
-                                        ) : status === "Overtime" ? (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/20">
-                                                <AlarmClockPlus className="w-3 h-3" /> Overtime
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
-                                                <Check className="w-3 h-3" /> Normal
-                                            </span>
-                                        )}
+                                        {(() => {
+                                            const config = STATUS_CONFIG[status] || STATUS_CONFIG.Normal;
+                                            const { Icon, label, color, iconStyle } = config;
+
+                                            return (
+                                                <span
+                                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${color}`}
+                                                >
+                                                    <Icon className={iconStyle} /> {label}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
 
@@ -274,23 +297,18 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
                                             {/* 5. RATING / STATUS */}
                                             <td className="px-5 py-4 text-center whitespace-nowrap">
                                                 <div className="flex justify-center">
-                                                    {status === "Late" ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20">
-                                                            <ClockAlert className="w-3.5 h-3.5" /> Telat
-                                                        </span>
-                                                    ) : status === "Good" ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/20">
-                                                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" /> Excellent
-                                                        </span>
-                                                    ) : status === "Overtime" ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/20">
-                                                            <AlarmClockPlus className="w-3.5 h-3.5" /> Overtime
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20">
-                                                            <Check className="w-3.5 h-3.5" /> Normal
-                                                        </span>
-                                                    )}
+                                                    {(() => {
+                                                        const config = STATUS_CONFIG[status] || STATUS_CONFIG.Normal;
+                                                        const { Icon, label, color, iconStyle } = config;
+
+                                                        return (
+                                                            <span
+                                                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${color}`}
+                                                            >
+                                                                <Icon className={iconStyle} /> {label}
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </td>
 

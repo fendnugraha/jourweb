@@ -313,7 +313,10 @@ const TransactionContent = () => {
                                             }}
                                             className="inline-flex items-center justify-between gap-1.5 rounded-xl bg-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-lime-300 shadow-xs hover:bg-slate-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 transition-all w-full sm:w-68 truncate col-span-2 sm:col-span-1"
                                         >
-                                            <ReceiptText className="h-4 w-4 shrink-0" />
+                                            <div className="flex items-center gap-1.5">
+                                                <ReceiptText className="h-4 w-4 shrink-0" />
+                                                <span className="truncate text-xs">Tot. Setoran</span>
+                                            </div>
                                             {isDashboardLoading ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (
