@@ -81,7 +81,7 @@ const AttendanceTableMonthly = ({ selectedZone, warehouseMonthly }) => {
 
                         {/* 2. TIMELINE STRIP BAR WITH ICONS (Kanan) */}
                         <div className="flex-1 overflow-x-auto pb-1 pt-2 scrollbar-none">
-                            <div className="flex items-center gap-1 min-w-max">
+                            <div className="hidden sm:flex items-center gap-1 min-w-max">
                                 {days.map((day) => {
                                     const att = employee?.attendance_by_date?.[day];
                                     const dateNum = day.split("-")[2];
@@ -121,6 +121,30 @@ const AttendanceTableMonthly = ({ selectedZone, warehouseMonthly }) => {
                                                 {/* Arrow Tooltip */}
                                                 <div className="h-2 w-2 rotate-45 bg-slate-900 dark:bg-slate-800 -mt-1" />
                                             </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="grid grid-cols-7 sm:hidden gap-1.5">
+                                {days.map((day) => {
+                                    const att = employee?.attendance_by_date?.[day];
+                                    const dateNum = day.split("-")[2];
+                                    const config = getStatusConfig(att?.status);
+
+                                    return (
+                                        <div key={day} className="group/bar relative flex flex-col items-center">
+                                            <div
+                                                title={`${day} - Status: ${config.label}`}
+                                                className={`
+                            w-full h-8 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-200 
+                            active:scale-95 sm:group-hover/bar:scale-110 sm:group-hover/bar:z-10 cursor-pointer
+                            ${config.bg}
+                        `}
+                                            >
+                                                {config.icon}
+                                            </div>
+
+                                            <span className="text-[10px] font-mono font-medium text-slate-400 dark:text-slate-500 mt-1">{dateNum}</span>
                                         </div>
                                     );
                                 })}

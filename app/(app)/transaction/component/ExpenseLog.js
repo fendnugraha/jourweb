@@ -1,16 +1,18 @@
 import Dropdown from "@/app/components/Dropdown";
+import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
 import { DateTimeNow, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlertCircle, Calendar, Search, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowUpRight, BanknoteArrowDown, Calendar, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts, setTxToDelete }) => {
+const ExpenseLog = ({ warehouseId, warehouseCashId, journals, notification, mutate, mutateBalance, accounts, setTxToDelete }) => {
     const { today } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [formError, setFormError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [expenseAmount, setExpenseAmount] = useState(0);
+    const [expenseAmount, setExpenseAmount] = useState("");
     const [errors, setErrors] = useState([]);
+    const [activeTab, setActiveTab] = useState("operational");
 
     const [formData, setFormData] = useState({
         date_issued: today,
@@ -30,8 +32,15 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
     }, [journals, searchTerm]);
 
     const accountOptions = [
-        { value: "", label: "Pilih account" },
+        { value: "", label: "Pilih Account" },
         ...accounts.filter((account) => account.account?.type === "Biaya").map((account) => ({ value: account.id, label: account.name })),
+    ];
+
+    const bankOptions = [
+        { value: "", label: "Pilih Bank" },
+        ...accounts
+            .filter((account) => account.account_id === 2 && account.warehouse_id === warehouseId)
+            .map((account) => ({ value: account.id, label: account.group })),
     ];
 
     const handleSubmit = async (e) => {
@@ -40,7 +49,6 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
         try {
             const response = await axios.post("/api/create-mutation", formData);
             notification(response.data.message);
-            mutate();
             setFormData({
                 date_issued: today,
                 debt_id: formData.debt_id,
@@ -53,6 +61,8 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
             setExpenseAmount(0);
             setErrors([]);
             setFormError("");
+            mutate();
+            mutateBalance();
         } catch (error) {
             setErrors(error.response?.data?.errors || ["Something went wrong."]);
             setFormError(error.response?.data?.message || "Failed to create expense log.");
@@ -62,9 +72,42 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
         }
     };
 
+    const buttonList = [
+        {
+            icon: BanknoteArrowDown,
+            value: "operational",
+            label: "Operasional",
+            onClick: () => {
+                setActiveTab("operational");
+                setFormData((prev) => ({
+                    ...prev,
+                    debt_id: "",
+                    cred_id: warehouseCashId,
+                    description: "",
+                }));
+            },
+        },
+        {
+            icon: ArrowUpRight,
+            value: "bankfee",
+            label: "Admin Bank",
+            onClick: () => {
+                setActiveTab("bankfee");
+                setFormData((prev) => ({
+                    ...prev,
+                    debt_id: warehouseCashId,
+                    cred_id: formData.cred_id,
+                    description: "Biaya Administrasi Bank",
+                    amount: expenseAmount,
+                }));
+            },
+        },
+    ];
+
     return (
         <>
             {/* 1. HEADER BAR & FILTER */}
+
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-xs backdrop-blur-xl dark:bg-slate-900/80 dark:border-slate-800">
                 <div className="flex-1 max-w-md">
                     <div className="relative">
@@ -91,9 +134,9 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
             </div>
 
             {/* 2. MAIN CONTENT GRID */}
-            <div className="mt-4 flex flex-col lg:flex-row gap-6 items-start">
+            <div className="grid sm:grid-cols-4 gap-6">
                 {/* LEFT COLUMN: FORM EXPENSE (Sticky / Fixed Aspect) */}
-                <div className="w-full lg:w-80 lg:shrink-0 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-4">
+                <div className="w-full rounded-2xl border border-slate-200/80 p-4 bg-white  shadow-xs dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-4">
                     <div className="mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
                         <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Catat Biaya / Pengeluaran</h2>
                         <p className="text-[11px] text-slate-400">Masukkan rincian operasional baru</p>
@@ -106,6 +149,11 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
                                 <span>{formError}</span>
                             </div>
                         )}
+                        <div className="space-y-1.5">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tipe Transaksi</span>
+
+                            <TabSwitcher buttonList={buttonList} activeTab={activeTab} setActiveTab={setActiveTab} />
+                        </div>
 
                         {/* Date Input */}
                         <div className="space-y-1">
@@ -123,23 +171,38 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
                         </div>
 
                         {/* Account Selection */}
-                        <div className="space-y-1">
-                            <label id="tx-account-label" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                Akun / Sumber Dana
-                            </label>
-                            <Dropdown
-                                id="tx-account"
-                                label="Transaction account Selector"
-                                options={accountOptions}
-                                selectedValue={formData.debt_id}
-                                onChange={(val) => setFormData({ ...formData, debt_id: val })}
-                            />
-                        </div>
+                        {activeTab === "operational" ? (
+                            <div className="space-y-1">
+                                <label id="tx-account-label" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                    Kategori Biaya
+                                </label>
+                                <Dropdown
+                                    id="tx-account"
+                                    label="Transaction account Selector"
+                                    options={accountOptions}
+                                    selectedValue={formData.debt_id}
+                                    onChange={(val) => setFormData({ ...formData, debt_id: val })}
+                                />
+                            </div>
+                        ) : (
+                            <div className="space-y-1">
+                                <label id="tx-bank-label" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                    Rekening Bank
+                                </label>
+                                <Dropdown
+                                    id="tx-bank"
+                                    label="Transaction bank Selector"
+                                    options={bankOptions}
+                                    selectedValue={formData.cred_id}
+                                    onChange={(val) => setFormData({ ...formData, cred_id: val })}
+                                />
+                            </div>
+                        )}
 
                         {/* Jumlah Biaya */}
                         <div className="space-y-1">
                             <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                Jumlah Biaya (Rp)
+                                Jumlah (Rp)
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
@@ -149,11 +212,21 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
                                     required
                                     value={expenseAmount}
                                     onChange={(e) => {
-                                        setExpenseAmount(e.target.value);
-                                        setFormData({
+                                        const val = e.target.value;
+                                        setExpenseAmount(val);
+
+                                        // Buat objek data baru
+                                        const updatedForm = {
                                             ...formData,
-                                            fee_amount: -e.target.value,
-                                        });
+                                            fee_amount: -val,
+                                        };
+
+                                        // Pengecekan tab aktif
+                                        if (activeTab === "bankfee") {
+                                            updatedForm.amount = val;
+                                        }
+
+                                        setFormData(updatedForm);
                                     }}
                                     placeholder="50000"
                                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/50 py-2 pl-9 pr-3 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
@@ -193,7 +266,7 @@ const ExpenseLog = ({ warehouseCashId, journals, notification, mutate, accounts,
                 </div>
 
                 {/* RIGHT COLUMN: EXPENSE TABLE */}
-                <div className="flex-1 w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex-1 w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:col-span-3">
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>

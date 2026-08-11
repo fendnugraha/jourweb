@@ -463,10 +463,12 @@ const TransactionContent = () => {
                             className="space-y-6"
                         >
                             <ExpenseLog
+                                warehouseId={warehouseId}
                                 warehouseCashId={warehouseCashId}
                                 journals={journalByWarehouse}
                                 notification={setNotification}
                                 mutate={mutate}
+                                mutateBalance={mutateBalance}
                                 accounts={accounts}
                                 setTxToDelete={setTxToDelete}
                             />
