@@ -16,10 +16,15 @@ export default function DeliveryForm({ warehouses, employees, isModalOpen, notif
         priority: "low",
     });
 
-    const warehouseOptions = warehouses.map((warehouse) => ({
-        value: warehouse.id,
-        label: warehouse.name,
-    }));
+    const warehouseOptions = [
+        { value: "", label: "Pilih Cabang Tujuan" },
+        ...warehouses
+            .filter((warehouse) => warehouse.id !== 1 && warehouse.status === 1)
+            .map((warehouse) => ({
+                value: warehouse.id,
+                label: warehouse.name,
+            })),
+    ];
 
     const employeeOptions = [
         { value: "", label: "Pilih Kurir" },

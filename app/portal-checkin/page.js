@@ -259,7 +259,7 @@ const PortalCheckin = () => {
                             <div className="pt-2 border-t border-slate-800/50 flex items-center justify-between text-xs">
                                 <div className="flex items-center gap-1.5 text-slate-400">
                                     <Navigation size={13} className="text-indigo-400" />
-                                    <span>Akurasi Sinyal GPS:</span>
+                                    <span>Sinyal GPS:</span>
                                 </div>
                                 <span
                                     className={`font-semibold px-2 py-0.5 rounded-md text-[11px] ${
@@ -268,7 +268,7 @@ const PortalCheckin = () => {
                                             : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                     }`}
                                 >
-                                    ± {Math.round(location.accuracy)} meter {location.accuracy <= 30 ? "(Sangat Akurat)" : ""}
+                                    ± {Math.round(location.accuracy)} m {location.accuracy <= 30 ? "(High)" : ""}
                                 </span>
                             </div>
                         )}

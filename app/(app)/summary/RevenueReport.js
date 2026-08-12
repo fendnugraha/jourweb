@@ -40,7 +40,6 @@ const RevenueReport = () => {
                     end_date: dateFilter.endDate,
                 },
             });
-            console.log(response.data?.data);
             setCorpExpense(response.data?.data?.cash_flows);
             setCorpExpenseGrouped(response.data?.data?.cash_flows_grouped);
         } catch (err) {

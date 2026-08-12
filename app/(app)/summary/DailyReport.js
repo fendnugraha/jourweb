@@ -95,6 +95,15 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
     const totalReceivable = filteredFinances.reduce((sum, finance) => sum + Number(finance.bill_amount), 0);
     const totalFee = revenue?.revenue?.reduce((sum, item) => sum + Number(item.fee), 0) || 0;
     const totalCorpExpense = filteredCorpExpense.reduce((total, expense) => total + Number(expense.amount), 0) || 0;
+
+    const diffTotal = revenue?.revenue?.reduce((acc, item) => {
+        const rawCash = item.cash || 0;
+        const roundedCash = Math.floor(rawCash / 1000) * 1000;
+        const selisih = rawCash - roundedCash; // Atau cukup: rawCash % 1000
+
+        return acc + selisih;
+    }, 0);
+
     return (
         <div className="space-y-4 font-sans text-slate-800">
             {/* ========================================================= */}
@@ -158,7 +167,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span className="text-[9px] font-mono text-slate-400 uppercase font-bold block">Corp Expense</span>
-                            <span className="text-sm font-bold font-mono text-indigo-600 mt-0.5 block">Rp {formatNumber(totalCorpExpense)}</span>
+                            <span className="text-sm font-bold font-mono text-indigo-600 mt-0.5 block">Rp {formatNumber(totalCorpExpense + diffTotal)}</span>
                         </div>
                         <Receipt className="w-4 h-4 text-indigo-400" />
                     </div>
@@ -172,7 +181,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                             <span>Laba Ditransfer (Net Profit)</span>
                         </div>
                         <div className="text-2xl font-black font-mono tracking-tight text-white">
-                            Rp {formatNumber(Number(totalFee) - Number(totalReceivable) - Number(totalCorpExpense))}
+                            Rp {formatNumber(Number(totalFee) - Number(totalReceivable) - Number(totalCorpExpense + diffTotal))}
                         </div>
                     </div>
 
@@ -273,13 +282,22 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                             </div>
 
                             <div className="divide-y divide-slate-100 font-mono text-xs">
-                                {filteredCorpExpense.length > 0 ? (
-                                    filteredCorpExpense.map((expense) => (
-                                        <div key={expense.id} className="px-3.5 py-2 flex items-center justify-between">
-                                            <span className="font-sans text-slate-700 truncate max-w-54">{expense.description}</span>
-                                            <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
-                                        </div>
-                                    ))
+                                {filteredCorpExpense.length > 0 || diffTotal !== 0 ? (
+                                    <>
+                                        {diffTotal !== 0 && (
+                                            <div className="px-3.5 py-2 flex items-center justify-between">
+                                                <span className="font-sans text-slate-700 truncate max-w-54">Pembulatan Setoran</span>
+                                                <span className="font-bold text-indigo-600">Rp {formatNumber(diffTotal)}</span>
+                                            </div>
+                                        )}
+
+                                        {filteredCorpExpense.map((expense) => (
+                                            <div key={expense.id} className="px-3.5 py-2 flex items-center justify-between">
+                                                <span className="font-sans text-slate-700 truncate max-w-54">{expense.description}</span>
+                                                <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
+                                            </div>
+                                        ))}
+                                    </>
                                 ) : (
                                     <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Nihil / Tidak ada pengeluaran.</p>
                                 )}
@@ -287,7 +305,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
 
                             <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
                                 <span className="font-sans text-indigo-950">Total Corporate</span>
-                                <span className="text-indigo-600">Rp {formatNumber(totalCorpExpense)}</span>
+                                <span className="text-indigo-600">Rp {formatNumber(totalCorpExpense + diffTotal)}</span>
                             </div>
                         </div>
                     </div>

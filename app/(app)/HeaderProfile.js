@@ -53,6 +53,7 @@ export default function HeaderProfile() {
                                 width={30}
                                 height={30}
                                 unoptimized
+                                loading="eager"
                             />
                         </div>
                         {/* Dot Indicator Status Check-in */}

@@ -29,6 +29,7 @@ import {
     ArrowUpRight,
     Minus,
     Siren,
+    ShieldCheck,
 } from "lucide-react";
 import { calculateDeliveryETA, formatDateTime, formatNumber } from "@/app/utils/format";
 import useWarehouse from "@/app/hooks/useWarehouse";
@@ -169,8 +170,8 @@ export default function DeliveryContent() {
 
         const config = {
             low: {
-                label: "Low",
-                icon: Minus,
+                label: "Normal",
+                icon: ShieldCheck,
                 className: "bg-slate-50 text-slate-500 ring-slate-200/60 dark:bg-slate-900/60 dark:text-slate-400 dark:ring-slate-800",
             },
             medium: {
@@ -181,7 +182,7 @@ export default function DeliveryContent() {
             high: {
                 label: "High",
                 icon: AlertTriangle,
-                className: "bg-amber-50/80 text-amber-700 ring-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-800/60",
+                className: "bg-amber-50/80 text-amber-700 ring-amber-200/70 dark:bg-amber-950/40 dark:text-amber-400 dark:ring-amber-800/60 animate-pulse",
             },
             urgent: {
                 label: "Urgent",
@@ -463,14 +464,6 @@ export default function DeliveryContent() {
 
                                     <div className="bg-slate-50/40 dark:bg-slate-850/20 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 space-y-2 text-xs">
                                         <div className="flex items-center justify-between">
-                                            {/* <div className="space-y-0.5">
-                        <span className="text-[10px] text-indigo-500 font-bold uppercase inline-flex items-center gap-0.5">
-                          <Building className="w-2.5 h-2.5" /> HQ Pusat
-                        </span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300 block">
-                          Vault Utama
-                        </span>
-                      </div> */}
                                             <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0 mx-2" />
                                             <div className="space-y-0.5 text-right">
                                                 <span className="text-[10px] text-slate-400 uppercase font-semibold block">Tujuan</span>
