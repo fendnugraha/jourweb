@@ -118,6 +118,30 @@ export default function ClosingReport({ dailyDashboard, openingCash = 9000000, t
             setLoading(false);
         }
     };
+
+    const now = new Date();
+
+    // 2. Gunakan Intl.DateTimeFormat untuk ambil jam & menit khusus timezone Asia/Jakarta
+    const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Jakarta",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: false, // Pakai format 24 jam agar tidak ada AM/PM
+    });
+
+    // Hasilnya berupa string format 24 jam, misal: "20:30"
+    const parts = formatter.formatToParts(now);
+    const hour = parseInt(parts.find((p) => p.type === "hour").value, 10);
+    const minute = parseInt(parts.find((p) => p.type === "minute").value, 10);
+
+    // 3. Hitung total menit saat ini
+    const currentMinutes = hour * 60 + minute;
+
+    // 4. Range waktu (20:00 - 23:45)
+    const start = 20 * 60; // 1200 menit
+    const end = 23 * 60 + 45; // 1425 menit
+
+    const isWithinTime = currentMinutes >= start && currentMinutes <= end;
     return (
         <div className="text-sm space-y-3">
             {/* SECTION 1: RINCIAN PENERIMAAN */}
@@ -225,6 +249,7 @@ export default function ClosingReport({ dailyDashboard, openingCash = 9000000, t
                     type="button"
                     onClick={handleCloseStore}
                     disabled={!!statusText}
+                    hidden={!isWithinTime || warehouse === 1 || limitPlusSummary > 0}
                     className="w-full py-2 rounded-xl bg-amber-500 text-white font-semibold text-sm shadow-sm hover:bg-amber-400 active:scale-95 transition-all disabled:bg-slate-500"
                 >
                     {statusText ? statusText : "Tutup toko dan setorkan kas"}
