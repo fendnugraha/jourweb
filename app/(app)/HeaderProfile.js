@@ -11,7 +11,7 @@ export default function HeaderProfile() {
     const { rankByProfit, isLoading } = useRankByProfit();
 
     const isUserCheckedIn = user?.has_checked_in;
-    const contactWarningStatus = user?.attendances?.[0]?.contact?.employee?.warning_active || false;
+    const contactWarningStatus = user?.contact?.employee?.warning_active || false;
 
     // Foto dari absensi atau default avatar
     const userPhoto = user?.attendances?.[0]?.photo_url || "/default.png";
@@ -95,7 +95,7 @@ export default function HeaderProfile() {
                             {contactWarningStatus && (
                                 <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40">
                                     <AlertTriangle className="h-3 w-3 text-rose-500 shrink-0" />
-                                    <span>Warning</span>
+                                    <span>{contactWarningStatus.level}</span>
                                 </span>
                             )}
                         </div>

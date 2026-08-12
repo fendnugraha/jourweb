@@ -149,13 +149,6 @@ const AttendancePage = ({ userRole }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                }}
-                title={modalTitle}
-            ></Modal>
         </>
     );
 };

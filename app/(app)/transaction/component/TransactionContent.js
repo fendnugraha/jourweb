@@ -261,8 +261,8 @@ const TransactionContent = () => {
                                                 type="text"
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                                placeholder="Search by SKU or Name..."
-                                                aria-label="Search stock item list"
+                                                placeholder="Search ..."
+                                                aria-label="Search transaction list"
                                                 className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                                             />
                                         </div>
@@ -315,7 +315,7 @@ const TransactionContent = () => {
                                         >
                                             <div className="flex items-center gap-1.5">
                                                 <ReceiptText className="h-4 w-4 shrink-0" />
-                                                <span className="truncate text-xs">Tot. Setoran</span>
+                                                <span className="truncate text-xs">Report</span>
                                             </div>
                                             {isDashboardLoading ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -512,6 +512,7 @@ const TransactionContent = () => {
                     )}
                     {modalName === "closing-report" && (
                         <ClosingReport
+                            accountBalance={cashBankBalanceData}
                             dailyDashboard={dailyDashboard}
                             totalSetoran={totalSetoran}
                             warehouseName={warehouseName}

@@ -45,6 +45,9 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
             iconStyle: "w-3 h-3",
         },
     };
+
+    const modalTitle = selectedWarehouse ? selectedWarehouse.name : "Create Attendance";
+
     return (
         <>
             <Notification message={notification} onClose={() => setNotification("")} />
@@ -334,7 +337,7 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
                     </div>
                 </div>
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Attendance Detail">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
                 <AttendanceDetail
                     selectedWarehouse={selectedWarehouse}
                     mutate={mutate}

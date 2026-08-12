@@ -5,7 +5,16 @@ import { DateTimeNow, formatDateTime, formatNumber } from "@/app/utils/format";
 import { Check, CircleAlert, ReceiptText, TrendingUp, Wallet } from "lucide-react";
 import { useState } from "react";
 
-export default function ClosingReport({ dailyDashboard, openingCash = 9000000, totalSetoran, warehouseName, warehouseId, warehouseCashId, notification }) {
+export default function ClosingReport({
+    accountBalance,
+    dailyDashboard,
+    openingCash = 9000000,
+    totalSetoran,
+    warehouseName,
+    warehouseId,
+    warehouseCashId,
+    notification,
+}) {
     const { today } = DateTimeNow();
     const [isClosingComplete, setIsClosingComplete] = useState(false);
     const [statusText, setStatusText] = useState("");
@@ -23,6 +32,11 @@ export default function ClosingReport({ dailyDashboard, openingCash = 9000000, t
     const totalFee = data.totalFee ?? 0;
     const totalExpense = data.totalExpense ?? 0;
     const profit = data.profit ?? 0;
+
+    const limitSummary = accountBalance?.data?.chartOfAccounts?.reduce((total, account) => total + Number(account.limit?.limit_amount), 0);
+    const limitPlusSummary = accountBalance?.data?.chartOfAccounts
+        ?.filter((acc) => acc.balance - acc.limit?.limit_amount > 0 && acc.account_id === 2)
+        .reduce((total, account) => total + Number(account.balance - account.limit?.limit_amount), 0);
 
     // Pre-calculated values
     const totalPendapatanGross = totalCash + totalDeposit + totalAccessories + totalVoucher;
@@ -248,8 +262,8 @@ export default function ClosingReport({ dailyDashboard, openingCash = 9000000, t
                 <button
                     type="button"
                     onClick={handleCloseStore}
-                    disabled={!!statusText}
-                    hidden={!isWithinTime || warehouse === 1 || limitPlusSummary > 0}
+                    disabled={!!statusText || !isWithinTime || warehouseId === 1 || limitPlusSummary > 0}
+                    // hidden={!isWithinTime || warehouseId === 1 || limitPlusSummary > 0}
                     className="w-full py-2 rounded-xl bg-amber-500 text-white font-semibold text-sm shadow-sm hover:bg-amber-400 active:scale-95 transition-all disabled:bg-slate-500"
                 >
                     {statusText ? statusText : "Tutup toko dan setorkan kas"}
