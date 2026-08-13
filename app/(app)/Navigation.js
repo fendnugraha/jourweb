@@ -18,7 +18,7 @@ const Navigation = ({ user, logout }) => {
     const pathName = usePathname();
     const userRole = user.role;
     const userPhoto = user?.attendances?.[0]?.photo_url || "/default.png";
-    const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || process.env.APP_VERSION;
+    const appVersion = process.env.APP_VERSION;
 
     const filteredMenu = navMenu.mainMenu.filter((item) => item.role.includes(userRole));
     const bottomBarItems = filteredMenu.slice(0, BOTTOM_BAR_MAX);
@@ -156,9 +156,7 @@ const Navigation = ({ user, logout }) => {
                                     {/* Label */}
                                     <span
                                         className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 truncate max-w-full ${
-                                            isActive
-                                                ? "text-indigo-600 dark:text-indigo-400"
-                                                : "text-slate-400 dark:text-slate-500"
+                                            isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"
                                         }`}
                                     >
                                         {item.name}
