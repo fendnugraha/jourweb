@@ -13,6 +13,7 @@ import {
     Receipt,
     Sparkles,
     Store,
+    Trash2,
     TrendingDown,
     TrendingUp,
     UserMinus,
@@ -20,7 +21,9 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 
-export default function DailyReport({ revenue, hasData, date, corpExpense }) {
+export default function DailyReport({ revenue, hasData, date, corpExpense, warehouseBalance }) {
+    const totalHqCash = warehouseBalance?.warehouse?.find((w) => w.id === 1)?.cash || 0;
+
     const sumByTrxType = (trxType) => {
         return revenue.revenue.reduce((total, item) => {
             return total + Number(item[trxType]);
@@ -103,6 +106,21 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
 
         return acc + selisih;
     }, 0);
+
+    const [cashdetail, setCashDetail] = useState([]);
+
+    const handleAddCashDetail = (note, amount) => {
+        setCashDetail([...cashdetail, { note, amount }]);
+
+        localStorage.setItem("cashDetail", JSON.stringify([...cashdetail, { note, amount }]));
+    };
+
+    const handleRemoveCashDetail = (index) => {
+        const newCashDetail = [...cashdetail];
+        newCashDetail.splice(index, 1);
+        setCashDetail(newCashDetail);
+        localStorage.setItem("cashDetail", JSON.stringify(newCashDetail));
+    };
 
     return (
         <div className="space-y-4 font-sans text-slate-800">
@@ -243,7 +261,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                     {/* TABEL KANAN: KASBON & CORPORATE (5 KOLOM) */}
                     <div className="col-span-5 space-y-3">
                         {/* KASBON KARYAWAN */}
-                        <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
                             <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <UserMinus className="w-3.5 h-3.5 text-amber-500" />
@@ -255,7 +273,7 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                             <div className="divide-y divide-slate-100 font-mono text-xs">
                                 {filteredFinances?.length > 0 ? (
                                     filteredFinances.map((finance) => (
-                                        <div key={finance.id} className="px-3.5 py-2 flex items-center justify-between">
+                                        <div key={finance.id} className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                             <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
                                             <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
                                         </div>
@@ -272,40 +290,152 @@ export default function DailyReport({ revenue, hasData, date, corpExpense }) {
                         </div>
 
                         {/* CORPORATE EXPENSE */}
-                        <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white">
+                        <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
                             <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
                                     <Receipt className="w-3.5 h-3.5 text-indigo-600" />
                                     <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Corporate Expense</h3>
                                 </div>
-                                <span className="text-[10px] font-mono text-slate-400">{filteredCorpExpense.length || 0} Item</span>
+                                <span className="text-[10px] font-mono text-slate-400">{filteredCorpExpense?.length || 0} Item</span>
                             </div>
 
                             <div className="divide-y divide-slate-100 font-mono text-xs">
-                                {filteredCorpExpense.length > 0 || diffTotal !== 0 ? (
+                                {filteredCorpExpense?.length > 0 || diffTotal !== 0 ? (
                                     <>
                                         {diffTotal !== 0 && (
-                                            <div className="px-3.5 py-2 flex items-center justify-between">
+                                            <div className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                                 <span className="font-sans text-slate-700 truncate max-w-54">Pembulatan Setoran</span>
                                                 <span className="font-bold text-indigo-600">Rp {formatNumber(diffTotal)}</span>
                                             </div>
                                         )}
 
-                                        {filteredCorpExpense.map((expense) => (
-                                            <div key={expense.id} className="px-3.5 py-2 flex items-center justify-between">
+                                        {filteredCorpExpense?.map((expense) => (
+                                            <div
+                                                key={expense.id}
+                                                className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+                                            >
                                                 <span className="font-sans text-slate-700 truncate max-w-54">{expense.description}</span>
                                                 <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
                                             </div>
                                         ))}
                                     </>
                                 ) : (
-                                    <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Nihil / Tidak ada pengeluaran.</p>
+                                    <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada pengeluaran.</p>
                                 )}
                             </div>
 
                             <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
                                 <span className="font-sans text-indigo-950">Total Corporate</span>
-                                <span className="text-indigo-600">Rp {formatNumber(totalCorpExpense + diffTotal)}</span>
+                                <span className="text-indigo-600">Rp {formatNumber((totalCorpExpense || 0) + (diffTotal || 0))}</span>
+                            </div>
+                        </div>
+
+                        {/* TOTAL KAS AKHIR */}
+                        <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
+                            <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <Wallet className="w-3.5 h-3.5 text-indigo-600" />
+                                    <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Total Kas Akhir</h3>
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400">{cashdetail?.length || 0} Item</span>
+                            </div>
+
+                            <div className="divide-y divide-slate-100 font-mono text-xs">
+                                {cashdetail?.length > 0 || diffTotal !== 0 ? (
+                                    <>
+                                        <div className="px-3.5 py-2 flex items-center justify-between">
+                                            <span className="font-sans text-slate-700 truncate max-w-54">Setoran Cabang</span>
+                                            <span className="font-bold text-indigo-600">Rp {formatNumber(sumByTrxType("cash"))}</span>
+                                        </div>
+
+                                        {cashdetail?.map((detail, index) => (
+                                            <div
+                                                key={index}
+                                                className="px-3.5 py-2 flex items-center justify-between group hover:bg-slate-50/50 transition-colors"
+                                            >
+                                                <span className="font-sans text-slate-700 truncate max-w-54 flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveCashDetail(index)}
+                                                        className="text-rose-500 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                        title="Hapus"
+                                                    >
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                    <span>{detail.note}</span>
+                                                </span>
+                                                <span className="font-bold text-indigo-600">Rp {formatNumber(detail.amount)}</span>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada rincian kas.</p>
+                                )}
+                            </div>
+
+                            {/* Form Tambah Item Kas Detail (Menggunakan Native Event / Standard React) */}
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    const note = formData.get("note")?.toString().trim();
+                                    const amount = parseFloat(formData.get("amount")?.toString() || "");
+
+                                    if (note && !isNaN(amount)) {
+                                        handleAddCashDetail(note, amount);
+                                        e.currentTarget.reset(); // Clear input otomatis
+                                    }
+                                }}
+                                className="p-2.5 bg-slate-50/50 border-t border-indigo-100"
+                                hidden={isExporting}
+                            >
+                                <div className="grid grid-cols-3 gap-2">
+                                    <input
+                                        name="note"
+                                        type="text"
+                                        required
+                                        placeholder="Note"
+                                        className="rounded-xl border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                    />
+                                    <input
+                                        name="amount"
+                                        type="number"
+                                        step="any"
+                                        required
+                                        placeholder="Amount"
+                                        className="rounded-xl border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500 active:scale-95 transition-all cursor-pointer"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Ringkasan Akumulasi Kas */}
+                            <div className="divide-y divide-indigo-100/60 border-t border-indigo-100 font-mono font-bold text-xs bg-indigo-50/30">
+                                <div className="px-3.5 py-2 flex justify-between">
+                                    <span className="font-sans text-indigo-950">Total Actual</span>
+                                    <span className="text-indigo-600">Rp {formatNumber(sumByTrxType("cash"))}</span>
+                                </div>
+                                <div className="px-3.5 py-2 flex justify-between">
+                                    <span className="font-sans text-indigo-950">Total System</span>
+                                    <span className="text-indigo-600">Rp {formatNumber(totalHqCash)}</span>
+                                </div>
+                                <div className="px-3.5 py-2 flex justify-between bg-indigo-50/80">
+                                    <span className="font-sans text-indigo-950">Selisih</span>
+                                    {(() => {
+                                        const totalCashDetail = cashdetail.reduce((acc, curr) => acc + curr.amount, 0);
+                                        const selisih = sumByTrxType("cash") + totalCashDetail - totalHqCash;
+                                        return (
+                                            <span className={selisih < 0 ? "text-rose-600" : selisih > 0 ? "text-emerald-600" : "text-indigo-600"}>
+                                                Rp {formatNumber(selisih)}
+                                            </span>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -50,7 +50,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
                         type="button"
                         className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
                             type === "bonuses"
-                                ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                ? "bg-green-600 border-green-600 text-white shadow-xs"
                                 : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                         }`}
                         onClick={() => setType("bonuses")}
@@ -61,7 +61,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
                         type="button"
                         className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
                             type === "deductions"
-                                ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                ? "bg-red-600 border-red-600 text-white shadow-xs"
                                 : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                         }`}
                         onClick={() => setType("deductions")}

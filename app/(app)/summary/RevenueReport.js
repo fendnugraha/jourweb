@@ -13,7 +13,7 @@ import CreateExpenseCorp from "./CreateExpenseCorp";
 import Notification from "@/app/components/Notification";
 import axios from "@/app/utils/axios";
 
-const RevenueReport = () => {
+const RevenueReport = ({ warehouseBalance }) => {
     const { today } = DateTimeNow();
     const [dateFilter, setDateFilter] = useState({
         preset: "today",
@@ -141,7 +141,13 @@ const RevenueReport = () => {
                 ) : activeSubTab === "revenue" ? (
                     <RevenueTable revenue={revenue} hasData={hasData} />
                 ) : (
-                    <DailyReport revenue={revenue} hasData={hasData} date={dateFilter.endDate || today} corpExpense={corpExpense} />
+                    <DailyReport
+                        revenue={revenue}
+                        hasData={hasData}
+                        date={dateFilter.endDate || today}
+                        corpExpense={corpExpense}
+                        warehouseBalance={warehouseBalance}
+                    />
                 )}
             </div>
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Tambah Pengeluaran Owner/Corporate">

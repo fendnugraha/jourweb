@@ -6,6 +6,8 @@ import WarehouseBalance from "./WarehouseBalance";
 import RevenueReport from "./RevenueReport";
 import LogTrack from "./LogTrack";
 import MobileNavDrawer from "@/app/components/MobileNavDrawer";
+import { useWarehouseBalance } from "@/app/hooks/useWarehouseBalance";
+import { todayDate } from "@/app/utils/format";
 
 const menuList = [
     { id: "balances", label: "Warehouse Balance", icon: Coins },
@@ -14,8 +16,15 @@ const menuList = [
 ];
 
 const SummaryContent = () => {
+    // const { today } = DateTimeNow();
+    const today = todayDate();
+    const [selectedDate, setSelectedDate] = useState(today);
+
     const [searchTerm, setSearchTerm] = useState("");
     const [activeSubTab, setActiveSubTab] = useState("balances");
+
+    const { warehouseBalance, error, isLoading, isValidating, mutate } = useWarehouseBalance(selectedDate);
+
     return (
         <>
             <div className="space-y-6">
@@ -30,7 +39,15 @@ const SummaryContent = () => {
                             transition={{ duration: 0.15 }}
                             className="space-y-6"
                         >
-                            <WarehouseBalance />
+                            <WarehouseBalance
+                                selectedDate={selectedDate}
+                                setSelectedDate={setSelectedDate}
+                                warehouseBalance={warehouseBalance}
+                                error={error}
+                                isLoading={isLoading}
+                                isValidating={isValidating}
+                                mutate={mutate}
+                            />
                         </motion.div>
                     )}
 
@@ -43,7 +60,7 @@ const SummaryContent = () => {
                             transition={{ duration: 0.15 }}
                             className="space-y-6"
                         >
-                            <RevenueReport />
+                            <RevenueReport warehouseBalance={warehouseBalance} />
                         </motion.div>
                     )}
                     {activeSubTab === "logtrack" && (

@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import useSWR from "swr";
 import {
     Send,
     Clock,
@@ -39,10 +38,15 @@ import useEmployee from "@/app/hooks/useEmployee";
 import Notification from "@/app/components/Notification";
 import { useDeliveries } from "@/app/hooks/useDeliveries";
 import UpdateDelivery from "./UpdateDelivery";
+import SubTabSwitcher from "@/app/components/SubTabSwitcher";
+import TabSwitcher from "@/app/components/TabSwitcher";
+import DeliveryFormMultiple from "./DeliveryFormMultiple";
+import { TabContentWrapper } from "@/app/components/TabContentWrapper";
 
 export default function DeliveryContent() {
     // 2. MENGGUNAKAN SWR DENGAN FALLBACK DATA DUMMY (TANPA EFFECT)
     const { deliveries, isLoading, isValidating, mutate } = useDeliveries();
+    const [inputMode, setInputMode] = useState("single");
 
     const deliveriesData = deliveries?.map((item) => ({
         id: item.id,
@@ -239,6 +243,11 @@ export default function DeliveryContent() {
             icon: Footprints,
             count: statusCounts.picked_up,
         },
+    ];
+
+    const subMenuTabs = [
+        { value: "single", label: "Single" },
+        { value: "multiple", label: "Multiple" },
     ];
 
     return (
@@ -618,7 +627,28 @@ export default function DeliveryContent() {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle}>
                 {modalName === "create" && (
-                    <DeliveryForm warehouses={warehouses} employees={employees} isModalOpen={setIsModalOpen} notification={setNotification} mutate={mutate} />
+                    <div className="space-y-4">
+                        <TabSwitcher buttonList={subMenuTabs} activeTab={inputMode} setActiveTab={setInputMode}>
+                            {inputMode === "single" && (
+                                <DeliveryForm
+                                    warehouses={warehouses}
+                                    employees={employees}
+                                    isModalOpen={setIsModalOpen}
+                                    notification={setNotification}
+                                    mutate={mutate}
+                                />
+                            )}
+                            {inputMode === "multiple" && (
+                                <DeliveryFormMultiple
+                                    warehouses={warehouses}
+                                    employees={employees}
+                                    isModalOpen={setIsModalOpen}
+                                    notification={setNotification}
+                                    mutate={mutate}
+                                />
+                            )}
+                        </TabSwitcher>
+                    </div>
                 )}
                 {modalName === "edit" && (
                     <UpdateDelivery selectedDelivery={selectedDelivery} isModalOpen={setIsModalOpen} notification={setNotification} mutate={mutate} />

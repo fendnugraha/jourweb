@@ -131,9 +131,7 @@ const CreateTransaction = ({
 
             return {
                 ...prev,
-
                 fee_amount: newFeeAmount,
-
                 trx_type: nextState ? "Bank Fee" : "Tarik Tunai",
             };
         });
@@ -163,7 +161,6 @@ const CreateTransaction = ({
 
             return {
                 ...prev,
-
                 fee_amount: isFeeActive ? prev.amount : nextFeeAuto ? calculateFee(numAmount) : prev.fee_amount,
             };
         });

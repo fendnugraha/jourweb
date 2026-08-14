@@ -8,10 +8,7 @@ import { getStorePerformanceRating } from "@/app/utils/GetStorePerformanceRating
 import { Building2, Calendar, Loader2, Lock, Search, Unlock } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const WarehouseBalance = () => {
-    // const { today } = DateTimeNow();
-    const today = todayDate();
-    const [selectedDate, setSelectedDate] = useState(today);
+const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, error, isLoading, isValidating, mutate }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [status, setStatus] = useState("all");
     const [zone, setZone] = useState("all");
@@ -82,7 +79,6 @@ const WarehouseBalance = () => {
         return Math.round(percentage);
     };
 
-    const { warehouseBalance, error, isLoading, isValidating, mutate } = useWarehouseBalance(selectedDate);
     const filteredWarehouseBalance = useMemo(() => {
         return warehouseBalance?.warehouse?.filter((item) => {
             const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
