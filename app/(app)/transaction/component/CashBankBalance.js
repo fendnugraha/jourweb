@@ -111,6 +111,7 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
 
             const telegramResponseObj = result.telegramData.data;
             setRawTelegramData(telegramResponseObj);
+            localStorage.setItem(`last_telegram_data_${warehouse}`, JSON.stringify(telegramResponseObj));
             localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
 
             setStatusText("Mengirim laporan...");
@@ -126,6 +127,8 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
             const LOCK_DURATION_MS = 1 * 60 * 1000;
             const lockTargetTime = Date.now() + LOCK_DURATION_MS;
 
+            localStorage.setItem(`target_lock_time_${warehouse}`, lockTargetTime);
+            localStorage.setItem(`lock_warehouse_id_${warehouse}`, warehouse);
             localStorage.setItem("target_lock_time", lockTargetTime);
             localStorage.setItem("lock_warehouse_id", warehouse);
 
