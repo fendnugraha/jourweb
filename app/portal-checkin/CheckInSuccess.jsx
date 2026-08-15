@@ -7,7 +7,7 @@ import { CheckCircle2, Copy, Share2, ArrowRight, Clock, MapPin, Calendar, User }
 import Image from "next/image";
 import { formatLongDate } from "../utils/format";
 
-export default function CheckInSuccess({ attendance, style = "", buttonWithText = true, onContinue }) {
+export default function CheckInSuccess({ attendance, onContinue }) {
     const router = useRouter();
     const [copied, setCopied] = useState(false);
 
@@ -48,6 +48,7 @@ export default function CheckInSuccess({ attendance, style = "", buttonWithText 
         const message = `Absensi Berhasil!
 Nama: ${att?.contact?.name ?? att?.name ?? "-"}
 Tanggal: ${att?.date ? formatLongDate(att.date, true) : "-"}
+Jam Buka: ${att?.opening_time ?? "-"}
 Jam Masuk: ${att?.time_in ?? "-"}
 Status: ${statusText}
 Lokasi: ${att?.latitude ?? "-"}, ${att?.longitude ?? "-"}
@@ -78,7 +79,7 @@ ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
     const copyToClipboard = async () => {
         if (!att) return;
 
-        const photoUrl = att.photo || att.photo_url || "";
+        const photoUrl = att.photo_url || "";
         const short = photoUrl ? await shortUrl(photoUrl) : "";
         const photoLink = short || photoUrl;
 
@@ -131,9 +132,9 @@ ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
                 <p className="text-xs text-slate-400 mb-6">Data absensi masuk kamu telah tersimpan dalam sistem.</p>
 
                 {/* Photo Preview if available */}
-                {(att?.photo || att?.photo_url) && (
+                {att?.photo_url && (
                     <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-slate-800 shadow-inner mb-6">
-                        <Image src={att.photo || att.photo_url} alt="Foto Absen" fill className="object-cover" unoptimized />
+                        <Image src={att.photo_url} alt="Foto Absen" fill className="object-cover" unoptimized />
                     </div>
                 )}
 
