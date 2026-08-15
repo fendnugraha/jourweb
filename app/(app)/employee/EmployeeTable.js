@@ -7,6 +7,7 @@ import { useState } from "react";
 const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selectedEmployee, setSelectedEmployeeId }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("Edit Employee");
+    const [showEndContract, setShowEndContract] = useState(true);
 
     return (
         <div className="space-y-6">
@@ -55,7 +56,7 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                 <th scope="col" className="px-5 py-3.5 text-center">
                                     <div className="flex items-center justify-center gap-1.5">
                                         <Briefcase className="w-3.5 h-3.5" />
-                                        <span>Tipe</span>
+                                        <span>Tipe/End Date</span>
                                     </div>
                                 </th>
                                 <th scope="col" className="px-5 py-3.5 text-center">
@@ -160,7 +161,15 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                             {/* 7. Employment Type */}
                                             <td className="px-5 py-3.5 text-center">
                                                 <span className="inline-flex items-center rounded-lg bg-slate-200 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 capitalize border border-slate-200/60 dark:border-slate-700/60">
-                                                    {employee.employment_type === "full_time" ? "Full Time" : calculateContractTillEnd(employee.contract_end)}
+                                                    {employee.employment_type === "full_time" ? (
+                                                        "Full Time"
+                                                    ) : (
+                                                        <button onClick={() => setShowEndContract(!showEndContract)}>
+                                                            {showEndContract
+                                                                ? formatLongDate(employee.contract_end)
+                                                                : calculateContractTillEnd(employee.contract_end)}
+                                                        </button>
+                                                    )}
                                                 </span>
                                             </td>
 
