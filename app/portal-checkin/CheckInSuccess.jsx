@@ -7,7 +7,7 @@ import { CheckCircle2, Copy, Share2, ArrowRight, Clock, MapPin, Calendar, User }
 import Image from "next/image";
 import { formatLongDate } from "../utils/format";
 
-export default function CheckInSuccess({ attendance, onContinue }) {
+export default function CheckInSuccess({ attendance, buttonWithText = true, onContinue }) {
     const router = useRouter();
     const [copied, setCopied] = useState(false);
 
