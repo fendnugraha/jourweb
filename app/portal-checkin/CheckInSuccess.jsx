@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { CheckCircle2, Copy, Share2, ArrowRight, Clock, MapPin, Calendar, User } from "lucide-react";
+import { CheckCircle2, Copy, Share2, ArrowRight, Clock, MapPin, Calendar, User, Store, AlarmClock } from "lucide-react";
 import Image from "next/image";
 import { formatLongDate } from "../utils/format";
 
@@ -48,9 +48,10 @@ export default function CheckInSuccess({ attendance, buttonWithText = true, onCo
         const message = `Absensi Berhasil!
 Nama: ${att?.contact?.name ?? att?.name ?? "-"}
 Tanggal: ${att?.date ? formatLongDate(att.date, true) : "-"}
-Jam Buka: ${att?.opening_time ?? "-"}
+Jam Buka: ${att?.work_start ?? "-"}
 Jam Masuk: ${att?.time_in ?? "-"}
 Status: ${statusText}
+Cabang: ${att?.warehouse?.name ?? "-"}
 Lokasi: ${att?.latitude ?? "-"}, ${att?.longitude ?? "-"}
 ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
 
@@ -86,8 +87,10 @@ ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
         const message = `Absensi Berhasil!
 Nama: ${att?.contact?.name ?? att?.name ?? "-"}
 Tanggal: ${att?.date ? formatLongDate(att.date, true) : "-"}
+Jam Buka: ${att?.work_start ?? "-"}
 Jam Masuk: ${att?.time_in ?? "-"}
 Status: ${statusText}
+Cabang: ${att?.warehouse?.name ?? "-"}
 Lokasi: ${att?.latitude ?? "-"}, ${att?.longitude ?? "-"}
 ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
 
@@ -156,6 +159,13 @@ ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
 
                     <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/60">
                         <span className="text-slate-400 flex items-center gap-2">
+                            <AlarmClock size={14} className="text-indigo-400" /> Jam Buka
+                        </span>
+                        <span className="font-semibold text-slate-200">{att?.work_start || "-"}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/60">
+                        <span className="text-slate-400 flex items-center gap-2">
                             <Clock size={14} className="text-indigo-400" /> Jam Masuk
                         </span>
                         <span className="font-mono font-semibold text-slate-200">{att?.time_in || "-"}</span>
@@ -174,6 +184,13 @@ ${photoLink ? `\nFoto: ${photoLink}` : ""}`;
                         >
                             {statusText}
                         </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-800/60">
+                        <span className="text-slate-400 flex items-center gap-2">
+                            <Store size={14} className="text-indigo-400" /> Cabang
+                        </span>
+                        <span className="font-semibold text-slate-200">{att?.warehouse?.name || "-"}</span>
                     </div>
 
                     {(att?.latitude || att?.longitude) && (
