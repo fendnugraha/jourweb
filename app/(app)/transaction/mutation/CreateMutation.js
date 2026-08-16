@@ -7,18 +7,10 @@ import { AlertCircle, Landmark, Warehouse } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
-const inputClass = "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
+const inputClass =
+    "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
 
-const CreateMutation = ({
-    accounts = [],
-    mutate,
-    mutateBalance,
-    isModalOpen,
-    warehouseId,
-    notification,
-    warehouses = [],
-    userRole,
-}) => {
+const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, warehouseId, notification, warehouses = [], userRole }) => {
     const [newType, setNewType] = useState("self");
     const { today } = DateTimeNow();
     const [formError, setFormError] = useState("");
@@ -34,17 +26,16 @@ const CreateMutation = ({
         description: "",
     });
 
-    const availableWarehouses = useMemo(
-        () => warehouses.filter((w) => Number(w.id) !== Number(warehouseId) && w.status === 1),
-        [warehouses, warehouseId],
-    );
+    const availableWarehouses = useMemo(() => warehouses.filter((w) => Number(w.id) !== Number(warehouseId) && w.status === 1), [warehouses, warehouseId]);
 
-    const [selectedDestinationWarehouseId, setSelectedDestinationWarehouseId] = useState(
-        () => availableWarehouses[0]?.id || 1,
-    );
+    const [selectedDestinationWarehouseId, setSelectedDestinationWarehouseId] = useState(() => availableWarehouses[0]?.id || 1);
 
     const effectiveDestinationId = useMemo(() => {
-        if (availableWarehouses.length > 0 && !availableWarehouses.some((w) => Number(w.id) === Number(selectedDestinationWarehouseId))) {
+        if (
+            availableWarehouses.length > 0 &&
+            availableWarehouses.account_id === 2 &&
+            !availableWarehouses.some((w) => Number(w.id) === Number(selectedDestinationWarehouseId))
+        ) {
             return availableWarehouses[0].id;
         }
         return selectedDestinationWarehouseId;
@@ -59,9 +50,7 @@ const CreateMutation = ({
 
     const credOptions = [
         { value: "", label: "Select Account" },
-        ...accounts
-            .filter((a) => Number(a.warehouse_id) === Number(warehouseId))
-            .map((a) => ({ value: a.id, label: a.group })),
+        ...accounts.filter((a) => Number(a.warehouse_id) === Number(warehouseId) && a.account_id === 2).map((a) => ({ value: a.id, label: a.group })),
     ];
 
     const debtOptions = [
@@ -77,10 +66,7 @@ const CreateMutation = ({
             })),
     ];
 
-    const warehouseOptions = [
-        { value: "", label: "Select Warehouse" },
-        ...availableWarehouses.map((w) => ({ value: w.id, label: w.name })),
-    ];
+    const warehouseOptions = [{ value: "", label: "Select Warehouse" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
 
     // Auto-match destination account for inter-branch mutations
     useEffect(() => {
@@ -89,9 +75,7 @@ const CreateMutation = ({
         const selectedCred = accounts.find((a) => Number(a.id) === Number(formData.cred_id));
         if (!selectedCred) return;
 
-        const matchingDebt = accounts.find(
-            (a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(effectiveDestinationId),
-        );
+        const matchingDebt = accounts.find((a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(effectiveDestinationId));
         if (matchingDebt) patch({ debt_id: matchingDebt.id });
     }, [formData.cred_id, accounts, effectiveDestinationId, newType]);
 
@@ -108,7 +92,16 @@ const CreateMutation = ({
         try {
             const response = await axios.post("/api/create-mutation", formData);
             if (typeof notification === "function") notification(response.data?.message || "Mutasi kas berhasil disimpan");
-            setFormData({ date_issued: today, debt_id: "", cred_id: "", is_confirmed: true, amount: "", fee_amount: 0, trx_type: "Mutasi Kas", description: "" });
+            setFormData({
+                date_issued: today,
+                debt_id: "",
+                cred_id: "",
+                is_confirmed: true,
+                amount: "",
+                fee_amount: 0,
+                trx_type: "Mutasi Kas",
+                description: "",
+            });
             if (typeof mutate === "function") mutate();
             if (typeof mutateBalance === "function") mutateBalance();
             if (typeof isModalOpen === "function") isModalOpen(false);
@@ -143,7 +136,9 @@ const CreateMutation = ({
 
                 {/* Destination Warehouse */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-destination-warehouse" className={labelClass}>Cabang Tujuan Mutasi</label>
+                    <label htmlFor="tx-destination-warehouse" className={labelClass}>
+                        Cabang Tujuan Mutasi
+                    </label>
                     <Dropdown
                         id="tx-destination-warehouse"
                         label="Warehouse Selector"
@@ -157,7 +152,9 @@ const CreateMutation = ({
                 {/* Source & Destination Accounts */}
                 <div className="grid sm:grid-cols-2 gap-2">
                     <div className="space-y-1">
-                        <label htmlFor="tx-cred-account" className={labelClass}>Rekening Asal (Dari)</label>
+                        <label htmlFor="tx-cred-account" className={labelClass}>
+                            Rekening Asal (Dari)
+                        </label>
                         <Dropdown
                             id="tx-cred-account"
                             label="Rekening Asal"
@@ -183,7 +180,9 @@ const CreateMutation = ({
 
                 {/* Amount */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-amount" className={labelClass}>Jumlah (Rp IDR)</label>
+                    <label htmlFor="tx-amount" className={labelClass}>
+                        Jumlah (Rp IDR)
+                    </label>
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
                         <input
@@ -206,7 +205,9 @@ const CreateMutation = ({
 
                 {/* Description */}
                 <div className="space-y-1">
-                    <label htmlFor="tx-desc" className={labelClass}>Keterangan / Memo</label>
+                    <label htmlFor="tx-desc" className={labelClass}>
+                        Keterangan / Memo
+                    </label>
                     <input
                         id="tx-desc"
                         type="text"
