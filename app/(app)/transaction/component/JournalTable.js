@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import DropdownMenu from "@/app/components/DropdownMenu";
 import Modal from "@/app/components/Modal";
 import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
@@ -13,23 +14,28 @@ import {
   AlertCircle,
   Ellipsis,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Layers,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import EditMutationJournal from "./EditMutationJournal";
 import EditTxJournal from "./EditTxJournal";
 import EditDeposit from "../deposit/EditDeposit";
 
 const JournalTable = ({
-  filteredTransactions,
+  filteredTransactions = [],
   setTxToDelete,
   warehouseCashId,
   warehouseId,
   userRole,
-  hqAccounts,
-  hqAccountIds,
-  isJournalLoading,
-  isJournalValidating,
-  whAccounts,
+  hqAccounts = [],
+  hqAccountIds = [],
+  isJournalLoading = false,
+  isJournalValidating = false,
+  whAccounts = [],
   mutate,
   mutateBalance,
   notification,
@@ -39,8 +45,85 @@ const JournalTable = ({
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [typeTransaction, setTypeTransaction] = useState("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Reset to page 1 when filtered transactions change length
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredTransactions.length]);
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    const accountToCheck = Number(warehouseCashId);
+    let inflow = 0;
+    let outflow = 0;
+
+    filteredTransactions.forEach((tx) => {
+      const amount = Number(tx.amount || 0);
+      if (Number(tx.debt_id) === accountToCheck) {
+        inflow += amount;
+      } else {
+        outflow += amount;
+      }
+    });
+
+    return {
+      totalCount: filteredTransactions.length,
+      totalInflow: inflow,
+      totalOutflow: outflow,
+      netFlow: inflow - outflow,
+    };
+  }, [filteredTransactions, warehouseCashId]);
+
+  // Paginated Slices
+  const totalPages = useMemo(() => {
+    if (pageSize === "all") return 1;
+    return Math.max(
+      1,
+      Math.ceil(filteredTransactions.length / Number(pageSize)),
+    );
+  }, [filteredTransactions.length, pageSize]);
+
+  const paginatedTransactions = useMemo(() => {
+    if (pageSize === "all") return filteredTransactions;
+    const start = (currentPage - 1) * Number(pageSize);
+    return filteredTransactions.slice(start, start + Number(pageSize));
+  }, [filteredTransactions, currentPage, pageSize]);
+
+  const startItemIndex = useMemo(() => {
+    if (filteredTransactions.length === 0) return 0;
+    if (pageSize === "all") return 1;
+    return (currentPage - 1) * Number(pageSize) + 1;
+  }, [filteredTransactions.length, currentPage, pageSize]);
+
+  const endItemIndex = useMemo(() => {
+    if (pageSize === "all") return filteredTransactions.length;
+    return Math.min(
+      currentPage * Number(pageSize),
+      filteredTransactions.length,
+    );
+  }, [filteredTransactions.length, currentPage, pageSize]);
+
+  // Category badge helper
+  const getCategoryBadgeClass = (trxType) => {
+    switch (trxType) {
+      case "Mutasi Kas":
+        return "bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-900/50";
+      case "Transfer Uang":
+        return "bg-sky-50/80 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 border-sky-200/60 dark:border-sky-900/50";
+      case "Tarik Tunai":
+        return "bg-amber-50/80 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200/60 dark:border-amber-900/50";
+      case "Deposit":
+        return "bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-900/50";
+      default:
+        return "bg-slate-100/80 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/50";
+    }
+  };
+
   return (
-    <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 p-4">
       {/* BACKGROUND REVALIDATING INDICATOR */}
       {isJournalValidating && !isJournalLoading && (
         <div className="absolute top-3 right-5 z-10 flex items-center gap-1.5 rounded-full bg-indigo-50/90 dark:bg-indigo-950/80 px-2.5 py-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-xs">
@@ -48,6 +131,67 @@ const JournalTable = ({
           <span>Syncing...</span>
         </div>
       )}
+
+      {/* SUMMARY DASHBOARD HEADER */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300">
+            <Layers className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Total Entri
+            </p>
+            <p className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-100">
+              {totals.totalCount} TRX
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100/50 dark:border-emerald-900/40 flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400">
+            <TrendingUp className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+              Kas Masuk (+)
+            </p>
+            <p className="text-xs sm:text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300">
+              {formatRupiah(totals.totalInflow)}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400">
+            <TrendingDown className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
+              Kas Keluar (-)
+            </p>
+            <p className="text-xs sm:text-sm font-bold font-mono text-rose-700 dark:text-rose-300">
+              {formatRupiah(totals.totalOutflow)}
+            </p>
+          </div>
+        </div>
+
+        <div className="p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400">
+            <Coins className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+              Net Arus Kas
+            </p>
+            <p
+              className={`text-xs sm:text-sm font-bold font-mono ${totals.netFlow >= 0 ? "text-indigo-700 dark:text-indigo-300" : "text-rose-600 dark:text-rose-400"}`}
+            >
+              {formatRupiah(totals.netFlow)}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-3">
         {/* ========================================================================= */}
@@ -88,7 +232,7 @@ const JournalTable = ({
             </div>
           ) : (
             /* 1.3 STATE DATA MOBILE (LIST KARTU) */
-            filteredTransactions.map((tx) => {
+            paginatedTransactions.map((tx) => {
               const accountToCheck = Number(warehouseCashId);
               const isInflow = Number(tx.debt_id) === accountToCheck;
 
@@ -177,8 +321,10 @@ const JournalTable = ({
                   {/* Badges Info: Category & Settlement Channel */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
                     {/* Category */}
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100/80 dark:bg-slate-800/60 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
-                      <Tag className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-medium border ${getCategoryBadgeClass(tx.trx_type)}`}
+                    >
+                      <Tag className="h-2.5 w-2.5 shrink-0 opacity-70" />
                       <span>{tx.trx_type || "Uncategorized"}</span>
                     </span>
 
@@ -238,12 +384,12 @@ const JournalTable = ({
                     <div className="text-right">
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-md inline-block border ${
-                          !isInflow
+                          isInflow
                             ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/30"
-                            : "text-red-600 dark:text-red-400 bg-red-50/70 dark:bg-red-950/30 border-red-100/30"
+                            : "text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border-rose-100/30"
                         }`}
                       >
-                        {!isInflow ? "+" : "-"} {formatNumber(tx.amount)}
+                        {isInflow ? "+" : "-"} {formatNumber(tx.amount)}
                       </span>
 
                       {!tx.fee_amount || tx.fee_amount === 0 ? null : (
@@ -342,7 +488,7 @@ const JournalTable = ({
                 </tr>
               ) : (
                 /* 3. STATE DATA DESKTOP */
-                filteredTransactions.map((tx) => {
+                paginatedTransactions.map((tx) => {
                   const accountToCheck = Number(warehouseCashId);
                   const isInflow = Number(tx.debt_id) === accountToCheck;
 
@@ -364,8 +510,10 @@ const JournalTable = ({
                       </td>
 
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-800/60 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700/50">
-                          <Tag className="h-3 w-3 text-slate-400 shrink-0" />
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium border ${getCategoryBadgeClass(tx.trx_type)}`}
+                        >
+                          <Tag className="h-3 w-3 shrink-0 opacity-70" />
                           <span>{tx.trx_type || "Uncategorized"}</span>
                         </span>
                       </td>
@@ -421,12 +569,12 @@ const JournalTable = ({
                         <div className="font-semibold text-slate-800 dark:text-slate-100">
                           <span
                             className={`text-sm font-bold px-2 py-1 rounded-lg inline-block border ${
-                              !isInflow
+                              isInflow
                                 ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/30"
-                                : "text-red-600 dark:text-red-400 bg-red-50/70 dark:bg-red-950/30 border-red-100/30"
+                                : "text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border-rose-100/30"
                             }`}
                           >
-                            {!isInflow ? "+" : "-"} {formatNumber(tx.amount)}
+                            {isInflow ? "+" : "-"} {formatNumber(tx.amount)}
                           </span>
                         </div>
                         {!tx.fee_amount || tx.fee_amount === 0 ? null : (
@@ -510,6 +658,84 @@ const JournalTable = ({
           </table>
         </div>
       </div>
+
+      {/* PAGINATION FOOTER CONTROLS */}
+      {filteredTransactions.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span>
+              Menampilkan{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                {startItemIndex}
+              </span>{" "}
+              -{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                {endItemIndex}
+              </span>{" "}
+              dari{" "}
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                {filteredTransactions.length}
+              </span>{" "}
+              transaksi
+            </span>
+
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+
+            <div className="flex items-center gap-1">
+              <span className="text-[11px]">Tampilkan:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(
+                    e.target.value === "all" ? "all" : Number(e.target.value),
+                  );
+                  setCurrentPage(1);
+                }}
+                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value="all">Semua</option>
+              </select>
+            </div>
+          </div>
+
+          {pageSize !== "all" && totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-1 font-mono font-semibold px-2">
+                <span className="text-indigo-600 dark:text-indigo-400">
+                  {currentPage}
+                </span>
+                <span>/</span>
+                <span>{totalPages}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
