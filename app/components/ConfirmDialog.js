@@ -12,25 +12,33 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, descr
         if (isOpen) {
             previousFocusRef.current = document.activeElement;
             const timer = setTimeout(() => {
-                // Focus the cancel button first (safest option to prevent accidental keyboard deletes)
                 if (containerRef.current) {
                     const cancelButton = containerRef.current.querySelector('[data-type="cancel"]');
                     if (cancelButton) {
-                        cancelButton.focus();
+                        cancelButton.focus({ preventScroll: true });
                     } else {
-                        containerRef.current.focus();
+                        containerRef.current.focus({ preventScroll: true });
                     }
                 }
-            }, 100);
+            }, 50);
 
+            // Menghindari layout shift akibat hilangnya scrollbar
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
             document.body.style.overflow = "hidden";
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
+
             return () => {
                 clearTimeout(timer);
+                document.body.style.overflow = "";
+                document.body.style.paddingRight = "";
             };
         } else {
             document.body.style.overflow = "";
+            document.body.style.paddingRight = "";
             if (previousFocusRef.current) {
-                previousFocusRef.current.focus();
+                previousFocusRef.current.focus({ preventScroll: true });
             }
         }
     }, [isOpen]);
@@ -67,17 +75,18 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, descr
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop */}
+                    {/* Backdrop: 'transition-opacity' dihapus agar tidak terjadi konflik animasi */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity dark:bg-slate-950/85"
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs dark:bg-slate-950/85"
                         aria-hidden="true"
                     />
 
-                    {/* Confirm Dialog Content */}
+                    {/* Dialog Box: Ditambahkan transform-gpu & backface-hidden */}
                     <motion.div
                         ref={containerRef}
                         initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -90,7 +99,7 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, descr
                         aria-labelledby="confirm-title"
                         aria-describedby="confirm-desc"
                         tabIndex={-1}
-                        className="relative w-full max-w-md overflow-hidden rounded-xl bg-white p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800"
+                        className="relative w-full max-w-md transform-gpu backface-hidden overflow-hidden rounded-xl bg-white p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800"
                     >
                         <div className="flex items-start gap-4">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400">
@@ -113,7 +122,7 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, descr
                                 type="button"
                                 data-type="cancel"
                                 onClick={onClose}
-                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/80"
+                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700/80 cursor-pointer"
                             >
                                 {cancelLabel}
                             </button>
@@ -124,7 +133,7 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, descr
                                     onConfirm();
                                     onClose();
                                 }}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 dark:bg-red-600 dark:hover:bg-red-700"
+                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 dark:bg-red-600 dark:hover:bg-red-700 cursor-pointer"
                             >
                                 <Trash2 className="h-4 w-4" aria-hidden="true" />
                                 {confirmLabel}
