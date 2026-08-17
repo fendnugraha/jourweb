@@ -436,7 +436,14 @@ const TransactionContent = () => {
 
                             {/* MAIN GRID LAYOUT */}
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                {/* Tabel Utama (Desktop Kiri / Mobile Atas) */}
+                                <div className="lg:col-span-4 xl:col-span-3 lg:sticky lg:top-6">
+                                    <CashBankBalance
+                                        accountBalance={cashBankBalanceData}
+                                        isLoading={isLoading}
+                                        isValidating={isValidating}
+                                        dailyDashboard={dailyDashboard}
+                                    />
+                                </div>
                                 <div className="lg:col-span-8 xl:col-span-9 overflow-hidden">
                                     <JournalTable
                                         selectedBankAccount={selectedBankAccount}
@@ -453,16 +460,6 @@ const TransactionContent = () => {
                                         mutate={mutate}
                                         mutateBalance={mutateBalance}
                                         notification={setNotification}
-                                    />
-                                </div>
-
-                                {/* Ringkasan Kas/Bank (Desktop Kanan / Mobile Bawah) */}
-                                <div className="lg:col-span-4 xl:col-span-3 lg:sticky lg:top-6">
-                                    <CashBankBalance
-                                        accountBalance={cashBankBalanceData}
-                                        isLoading={isLoading}
-                                        isValidating={isValidating}
-                                        dailyDashboard={dailyDashboard}
                                     />
                                 </div>
                             </div>
