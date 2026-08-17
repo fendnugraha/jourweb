@@ -269,7 +269,7 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
                                             {/* 3. WAKTU BUKA */}
                                             <td className="px-5 py-4 text-center whitespace-nowrap">
                                                 <span className="font-mono text-base font-bold text-slate-800 dark:text-slate-200">
-                                                    {warehouse?.opening_time ?? "-"}
+                                                    {attendance?.work_start ?? "-"}
                                                 </span>
                                             </td>
 
@@ -282,11 +282,11 @@ const AttendanceTable = ({ userAttendance, userRole, mutate, selectedZone }) => 
                                                         </span>
                                                         {status === "Late" ? (
                                                             <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
-                                                                Telat {diffTimeHuman(warehouse?.opening_time, attendance?.time_in)}
+                                                                Telat {diffTimeHuman(attendance?.work_start, attendance?.time_in)}
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                                                                Lebih awal {diffTimeHuman(attendance?.time_in, warehouse?.opening_time)}
+                                                                Lebih awal {diffTimeHuman(attendance?.time_in, attendance?.work_start)}
                                                             </span>
                                                         )}
                                                     </div>
