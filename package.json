@@ -1,30 +1,30 @@
 {
-  "name": "jourweb",
-  "version": "2.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "axios": "^1.18.1",
-    "browser-image-compression": "^2.0.2",
-    "date-fns": "^4.4.0",
-    "html-to-image": "^1.11.13",
-    "jspdf": "^4.2.1",
-    "lucide-react": "^1.24.0",
-    "motion": "^12.42.2",
-    "next": "16.2.10",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "swr": "^2.4.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.10",
-    "tailwindcss": "^4"
-  }
+    "name": "jourweb",
+    "version": "2.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build --turbopack",
+        "start": "next start",
+        "lint": "eslint"
+    },
+    "dependencies": {
+        "axios": "^1.18.1",
+        "browser-image-compression": "^2.0.2",
+        "date-fns": "^4.4.0",
+        "html-to-image": "^1.11.13",
+        "jspdf": "^4.2.1",
+        "lucide-react": "^1.24.0",
+        "motion": "^12.42.2",
+        "next": "16.2.10",
+        "react": "19.2.4",
+        "react-dom": "19.2.4",
+        "swr": "^2.4.2"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4",
+        "eslint": "^9",
+        "eslint-config-next": "16.2.10",
+        "tailwindcss": "^4"
+    }
 }
