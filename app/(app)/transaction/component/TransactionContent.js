@@ -270,12 +270,13 @@ const TransactionContent = () => {
                             className="space-y-6"
                         >
                             {/* FILTER & BUTTON ACTIONS */}
-                            <div className="p-3.5 sm:p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800 space-y-4">
-                                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
+                            <div className="p-4 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
+                                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                    {/* Left Side: Search & Filter Inputs */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:max-w-3xl">
                                         {/* Search Input */}
                                         <div className="relative">
-                                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500 pointer-events-none">
                                                 <Search className="h-4 w-4" aria-hidden="true" />
                                             </span>
                                             <input
@@ -284,7 +285,7 @@ const TransactionContent = () => {
                                                 onChange={(e) => setSearchTerm(e.target.value)}
                                                 placeholder="Search ..."
                                                 aria-label="Search transaction list"
-                                                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                                                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 transition-colors"
                                             />
                                         </div>
 
@@ -299,7 +300,9 @@ const TransactionContent = () => {
                                                 ariaLabel="Filter inventory by account"
                                             />
                                         </div>
-                                        <div>
+
+                                        {/* Date Filter */}
+                                        <div className="w-full">
                                             <DateFilterDropdown
                                                 selectedPreset={dateFilter.preset}
                                                 customStartDate={dateFilter.startDate}
@@ -310,66 +313,78 @@ const TransactionContent = () => {
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons (Sejajar di Mobile) */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                                        <div className="w-full sm:col-span-2" hidden={!["Administrator", "Super Admin"].includes(userRole)}>
-                                            <Dropdown
-                                                id="stock-account-filter"
-                                                label="Stock Account Filter"
-                                                options={warehouseOptions}
-                                                selectedValue={selectedWarehouseId}
-                                                onChange={(val) => setSelectedWarehouseId(val)}
-                                                ariaLabel="Filter inventory by account"
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setModalName("create-transaction");
-                                                setIsModalAddTransactionOpen(true);
-                                            }}
-                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-all"
-                                        >
-                                            <Plus className="h-4 w-4 shrink-0" />
-                                            <span className="truncate">Tambah Transaksi</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setModalName("add-mutation");
-                                                setIsModalAddMutationOpen(true);
-                                            }}
-                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-amber-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500 transition-all"
-                                        >
-                                            <Plus className="h-4 w-4 shrink-0" />
-                                            <span className="truncate">Mutasi Saldo</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                mutateDashboard();
-                                                setModalName("closing-report");
-                                                setIsModalAddTransactionOpen(true);
-                                            }}
-                                            hidden={["Administrator", "Super Admin"].includes(userRole)}
-                                            className="inline-flex justify-between gap-1.5 sm:col-span-2 border border-red-500 rounded-xl text-sm font-bold text-red-500 hover:text-red-400 bg-slate-200 dark:bg-slate-800 px-3.5 py-2"
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <ReceiptText className="h-4 w-4 shrink-0" />
-                                                <span className="truncate text-xs">Report</span>
+                                    {/* Right Side: Admin Warehouse Filter & Action Buttons */}
+                                    <div className="flex flex-wrap items-center gap-2.5 sm:justify-end w-full xl:w-auto">
+                                        {/* Warehouse Dropdown (Khusus Admin) */}
+                                        {["Administrator", "Super Admin"].includes(userRole) && (
+                                            <div className="w-full sm:w-48">
+                                                <Dropdown
+                                                    id="warehouse-filter"
+                                                    label="Warehouse Filter"
+                                                    options={warehouseOptions}
+                                                    selectedValue={selectedWarehouseId}
+                                                    onChange={(val) => setSelectedWarehouseId(val)}
+                                                    ariaLabel="Filter inventory by warehouse"
+                                                />
                                             </div>
-                                            {isDashboardLoading ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <span className={`${isDashboardValidating ? "animate-pulse" : ""} truncate`}>
-                                                    {formatRupiah(totalSetoran - warehouseOpenCash)}
-                                                </span>
-                                            )}
-                                        </button>
+                                        )}
+
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setModalName("create-transaction");
+                                                    setIsModalAddTransactionOpen(true);
+                                                }}
+                                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-all cursor-pointer"
+                                            >
+                                                <Plus className="h-4 w-4 shrink-0" />
+                                                <span className="truncate">Tambah Transaksi</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setModalName("add-mutation");
+                                                    setIsModalAddMutationOpen(true);
+                                                }}
+                                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-amber-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500 transition-all cursor-pointer"
+                                            >
+                                                <Plus className="h-4 w-4 shrink-0" />
+                                                <span className="truncate">Mutasi Saldo</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Report Button (Non-Admin) */}
+                                        {!["Administrator", "Super Admin"].includes(userRole) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    mutateDashboard();
+                                                    setModalName("closing-report");
+                                                    setIsModalAddTransactionOpen(true);
+                                                }}
+                                                className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 border border-red-500/30 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2 transition-colors cursor-pointer"
+                                            >
+                                                <div className="flex items-center gap-1.5">
+                                                    <ReceiptText className="h-4 w-4 shrink-0" />
+                                                    <span className="truncate text-xs">Report</span>
+                                                </div>
+                                                {isDashboardLoading ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <span className={`${isDashboardValidating ? "animate-pulse" : ""} truncate font-mono text-xs`}>
+                                                        {formatRupiah(totalSetoran - warehouseOpenCash)}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+
+                                {/* Horizontal Category Tabs */}
+                                <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800/60">
                                     {categoryOptions.map((opt) => {
                                         const Icon = opt.icon;
                                         const isActive = categoryFilter === opt.value;
@@ -378,13 +393,12 @@ const TransactionContent = () => {
                                             <button
                                                 key={opt.value}
                                                 onClick={() => setCategoryFilter(opt.value)}
-                                                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shrink-0 select-none ${
+                                                className={`relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shrink-0 select-none cursor-pointer ${
                                                     isActive
                                                         ? "text-white"
                                                         : "text-slate-600 hover:text-slate-900 bg-slate-100/80 hover:bg-slate-200/70 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:bg-slate-700/60"
                                                 }`}
                                             >
-                                                {/* Background aktif yang meluncur/sliding */}
                                                 {isActive && (
                                                     <motion.div
                                                         layoutId="activeCategoryTab"
@@ -393,16 +407,15 @@ const TransactionContent = () => {
                                                             stiffness: 400,
                                                             damping: 30,
                                                         }}
-                                                        className="absolute inset-0 bg-indigo-600 rounded-xl shadow-sm shadow-indigo-500/30"
+                                                        className="absolute inset-0 bg-indigo-600 rounded-xl shadow-xs shadow-indigo-500/30"
                                                     />
                                                 )}
 
-                                                {/* Konten Tab (diberi z-10 & motion.span agar animasi angka count mulus) */}
                                                 <span className="relative z-10 flex items-center gap-1.5">
                                                     {Icon && <Icon className="w-3.5 h-3.5" />}
                                                     <span>{opt.label}</span>
                                                     <motion.span
-                                                        key={opt.count} // Bikin angka mentransisi jika nilainya berubah
+                                                        key={opt.count}
                                                         initial={{ scale: 0.8 }}
                                                         animate={{ scale: 1 }}
                                                         transition={{ duration: 0.15 }}
@@ -422,17 +435,9 @@ const TransactionContent = () => {
                             </div>
 
                             {/* MAIN GRID LAYOUT */}
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                                <div className="lg:col-span-1 lg:order-2">
-                                    <CashBankBalance
-                                        accountBalance={cashBankBalanceData}
-                                        isLoading={isLoading}
-                                        isValidating={isValidating}
-                                        dailyDashboard={dailyDashboard}
-                                    />
-                                </div>
-
-                                <div className="lg:col-span-3 lg:order-1 overflow-hidden">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                                {/* Tabel Utama (Desktop Kiri / Mobile Atas) */}
+                                <div className="lg:col-span-8 xl:col-span-9 overflow-hidden">
                                     <JournalTable
                                         selectedBankAccount={selectedBankAccount}
                                         filteredTransactions={filteredTransactions}
@@ -448,6 +453,16 @@ const TransactionContent = () => {
                                         mutate={mutate}
                                         mutateBalance={mutateBalance}
                                         notification={setNotification}
+                                    />
+                                </div>
+
+                                {/* Ringkasan Kas/Bank (Desktop Kanan / Mobile Bawah) */}
+                                <div className="lg:col-span-4 xl:col-span-3 lg:sticky lg:top-6">
+                                    <CashBankBalance
+                                        accountBalance={cashBankBalanceData}
+                                        isLoading={isLoading}
+                                        isValidating={isValidating}
+                                        dailyDashboard={dailyDashboard}
                                     />
                                 </div>
                             </div>
@@ -515,6 +530,8 @@ const TransactionContent = () => {
                                 journals={journalByWarehouse}
                                 mutate={mutate}
                                 notification={setNotification}
+                                dateFilter={dateFilter}
+                                setDateFilter={setDateFilter}
                                 accountBalance={cashBankBalanceData}
                                 accounts={accounts}
                                 warehouseId={selectedWarehouseId}
