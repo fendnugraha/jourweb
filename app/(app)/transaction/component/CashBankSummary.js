@@ -389,6 +389,18 @@ const CashBankSummary = ({
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-bold text-sm whitespace-nowrap font-mono">
                                                     {formatNumber(account.balance)}
+                                                    {account.balance - account.limit?.limit_amount < 0 && (
+                                                        <h2
+                                                            className={`text-xs ${
+                                                                account.balance - account.limit?.limit_amount > 0
+                                                                    ? "text-green-600 dark:text-green-400"
+                                                                    : "text-red-600 dark:text-red-400"
+                                                            } group-hover:scale-105 transition delay-100 duration-150 ease-out`}
+                                                            hidden={!account.limit?.limit_amount || !showLimit}
+                                                        >
+                                                            {formatNumber(account.balance - account.limit?.limit_amount)}
+                                                        </h2>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap font-mono">
                                                     {formatNumber(mutationInSumById(account.id))}
