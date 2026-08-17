@@ -18,7 +18,7 @@ function formatReadableDate(dateStr) {
     const [y, m, d] = dateStr.split("-");
     if (!y || !m || !d) return dateStr;
     const dateObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-    return dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return dateObj.toLocaleDateString("id-ID", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export function getDatePresetRange(presetKey) {
@@ -78,7 +78,7 @@ export default function DateFilterDropdown({
     customStartDate = "",
     customEndDate = "",
     onChange, // ({ preset, startDate, endDate }) => void
-    label = "Filter by Date",
+    label = "Filter Berdasarkan Tanggal",
     className = "",
 }) {
     const { today } = DateTimeNow();
@@ -100,13 +100,13 @@ export default function DateFilterDropdown({
     }, []);
 
     const PRESETS = [
-        { key: "today", label: "Today (Hari Ini)" },
-        { key: "yesterday", label: "Yesterday (Kemarin)" },
-        { key: "this-week", label: "This Week (Minggu Ini)" },
-        { key: "last-7-days", label: "Last 7 Days (7 Hari Terakhir)" },
-        { key: "this-month", label: "This Month (Bulan Ini)" },
-        { key: "last-month", label: "Last Month (Bulan Lalu)" },
-        { key: "custom", label: "Custom Date / Range..." },
+        { key: "today", label: "Hari Ini" },
+        { key: "yesterday", label: "Kemarin" },
+        { key: "this-week", label: "Minggu Ini" },
+        { key: "last-7-days", label: "7 Hari Terakhir" },
+        { key: "this-month", label: "Bulan Ini" },
+        { key: "last-month", label: "Bulan Lalu" },
+        { key: "custom", label: "Rentang Tanggal Khusus..." },
     ];
 
     const handleSelectPreset = (key) => {
@@ -149,12 +149,12 @@ export default function DateFilterDropdown({
 
     // Generate trigger button label text
     const getDisplayLabel = () => {
-        if (selectedPreset === "today") return "Today";
-        if (selectedPreset === "yesterday") return "Yesterday";
-        if (selectedPreset === "this-week") return "This Week";
-        if (selectedPreset === "last-7-days") return "Last 7 Days";
-        if (selectedPreset === "this-month") return "This Month";
-        if (selectedPreset === "last-month") return "Last Month";
+        if (selectedPreset === "today") return "Hari Ini";
+        if (selectedPreset === "yesterday") return "Kemarin";
+        if (selectedPreset === "this-week") return "Minggu Ini";
+        if (selectedPreset === "last-7-days") return "7 Hari Terakhir";
+        if (selectedPreset === "this-month") return "Bulan Ini";
+        if (selectedPreset === "last-month") return "Bulan Lalu";
         if (selectedPreset === "custom") {
             if (customStartDate && customEndDate) {
                 if (customStartDate === customEndDate) {
@@ -162,19 +162,17 @@ export default function DateFilterDropdown({
                 }
                 return `${formatReadableDate(customStartDate)} - ${formatReadableDate(customEndDate)}`;
             } else if (customStartDate) {
-                return `From ${formatReadableDate(customStartDate)}`;
+                return `Dari ${formatReadableDate(customStartDate)}`;
             } else if (customEndDate) {
-                return `Until ${formatReadableDate(customEndDate)}`;
+                return `Sampai ${formatReadableDate(customEndDate)}`;
             }
-            return "Custom Range";
+            return "Rentang Khusus";
         }
-        return "Filter Date";
+        return "Filter Tanggal";
     };
 
     return (
         <div className={`relative space-y-1 ${className}`} ref={containerRef}>
-            {/* {label && <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{label}</label>} */}
-
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -196,7 +194,7 @@ export default function DateFilterDropdown({
                                 e.stopPropagation();
                                 handleReset();
                             }}
-                            title="Clear date filter"
+                            title="Hapus filter tanggal"
                             className="p-0.5 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-900 text-indigo-600 dark:text-indigo-400 cursor-pointer"
                         >
                             <X className="h-3 w-3" />
@@ -218,7 +216,7 @@ export default function DateFilterDropdown({
                     >
                         {!showCustomRangeInputs ? (
                             <div className="space-y-0.5 max-h-64 overflow-y-auto pr-0.5">
-                                <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Date Presets</div>
+                                <div className="px-2.5 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pilihan Cepat</div>
                                 {PRESETS.map((p) => {
                                     const isSelected = selectedPreset === p.key;
                                     return (
@@ -243,20 +241,20 @@ export default function DateFilterDropdown({
                                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                                     <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                         <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                                        Custom Date Range
+                                        Rentang Tanggal Khusus
                                     </span>
                                     <button
                                         type="button"
                                         onClick={() => setShowCustomRangeInputs(false)}
                                         className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
                                     >
-                                        Back to Presets
+                                        Kembali
                                     </button>
                                 </div>
 
                                 <div className="space-y-2">
                                     <div>
-                                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Start Date (Dari Tanggal)</label>
+                                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Tanggal Mulai</label>
                                         <input
                                             type="date"
                                             value={tempStart}
@@ -266,7 +264,7 @@ export default function DateFilterDropdown({
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">End Date (Sampai Tanggal)</label>
+                                        <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Tanggal Selesai</label>
                                         <input
                                             type="date"
                                             value={tempEnd}
@@ -283,14 +281,14 @@ export default function DateFilterDropdown({
                                         className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                                     >
                                         <RotateCcw className="h-3 w-3" />
-                                        Reset
+                                        Atur Ulang
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={!tempStart && !tempEnd}
                                         className="flex-1 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer shadow-xs"
                                     >
-                                        Apply Filter
+                                        Terapkan Filter
                                         <ArrowRight className="h-3 w-3" />
                                     </button>
                                 </div>

@@ -108,51 +108,55 @@ export default function HeaderProfile() {
                 </div>
 
                 {/* SISI KANAN: Mini Bento Stats */}
-                <div className="grid sm:grid-cols-3 items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-                    {isLoading ? (
-                        <div className="flex items-center gap-2 text-xs text-slate-400 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
-                            <span>Memuat performa...</span>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Bento 1: Rank Cabang */}
-                            <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
-                                <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
-                                    <Trophy className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize">Rank</div>
-                                    <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
-                                        {WarehouseRank > 0 ? `#${WarehouseRank}` : "-"}
+                {userWarehouseId !== 1 && (
+                    <div className="grid sm:grid-cols-3 items-center gap-2.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                        {isLoading ? (
+                            <div className="flex items-center gap-2 text-xs text-slate-400 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+                                <span>Memuat performa...</span>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Bento 1: Rank Cabang */}
+                                <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
+                                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                                        <Trophy className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize">Rank</div>
+                                        <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
+                                            {WarehouseRank > 0 ? `#${WarehouseRank}` : "-"}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Bento 2: Rata-rata Profit Bulanan */}
-                            <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0 overflow-x-hidden">
-                                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
-                                    <TrendingUp className="w-3.5 h-3.5" />
+                                {/* Bento 2: Rata-rata Profit Bulanan */}
+                                <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0 overflow-x-hidden">
+                                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+                                        <TrendingUp className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize truncate">Profit</div>
+                                        <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">
+                                            {formatRupiah(WarehouseRankProfit)}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize truncate">Profit</div>
-                                    <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">{formatRupiah(WarehouseRankProfit)}</div>
-                                </div>
-                            </div>
 
-                            {/* Bento 3: Rating Performa Toko */}
-                            <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
-                                <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
-                                    <Star className="w-3.5 h-3.5" />
+                                {/* Bento 3: Rating Performa Toko */}
+                                <div className="flex items-center gap-2.5 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 shrink-0">
+                                    <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
+                                        <Star className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize">Rating</div>
+                                        <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">{WarehouseRating || "N/A"}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-[9px] sm:text-[10px] font-bold tracking-wider text-slate-400 capitalize">Rating</div>
-                                    <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">{WarehouseRating || "N/A"}</div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </motion.div>
     );

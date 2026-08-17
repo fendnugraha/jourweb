@@ -28,6 +28,12 @@ import HeaderProfile from "../../HeaderProfile";
 import ClosingReport from "./ClosingReport";
 import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 
+const fadeUp = (delay = 0) => ({
+    initial: { opacity: 0, y: 14 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.35, ease: "easeOut", delay },
+});
+
 const TransactionContent = () => {
     const { user } = useAuth();
     const { today } = DateTimeNow();
@@ -253,7 +259,9 @@ const TransactionContent = () => {
             <Notification message={notification} onClose={() => setNotification(null)} />
 
             {/* HEADER WELCOME BANNER */}
-            <HeaderProfile />
+            <motion.div {...fadeUp(0)}>
+                <HeaderProfile />
+            </motion.div>
 
             <div className="space-y-6" id="stock-inventory-section">
                 <MobileNavDrawer menuList={navTabs} activeTab={activeSubTab} setActiveTab={setActiveSubTab} />
