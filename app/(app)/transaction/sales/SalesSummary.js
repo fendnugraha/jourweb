@@ -1,10 +1,12 @@
 import Dropdown from "@/app/components/Dropdown";
-import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
+import { formatDate, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
 import { AlertCircle, Box, Calendar, Search, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import DateFilterDropdown from "@/app/components/DateFilterDropdown";
+import useWarehouse from "@/app/hooks/useWarehouse";
 
-const SalesSummary = ({ txByWarehouse }) => {
+const SalesSummary = ({ txByWarehouse = [], dateFilter, setDateFilter, mutate, selectedWarehouseId, setSelectedWarehouseId }) => {
     const categoryOptions = [
         { value: "all", label: "All Categories" },
         { value: "Voucher & SP", label: "Voucher & SP" },
@@ -14,11 +16,18 @@ const SalesSummary = ({ txByWarehouse }) => {
         { value: "Earphone", label: "Earphone" },
     ];
 
+    const { warehouses } = useWarehouse();
+
+    const warehouseOptions = [
+        { value: "all", label: "All Warehouses" },
+        ...warehouses.filter((w) => w.status === 1).map((warehouse) => ({ value: warehouse.id, label: warehouse.name })),
+    ];
+
     // --- Search & Filter State ---
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("all");
 
-    const filteredTransactions = txByWarehouse.summary?.filter((tx) => {
+    const filteredTransactions = txByWarehouse?.summary?.filter((tx) => {
         const matchesSearchTerm = tx.product?.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategoryFilter = categoryFilter === "all" || tx.product?.category === categoryFilter;
         return matchesSearchTerm && matchesCategoryFilter;
@@ -81,10 +90,33 @@ const SalesSummary = ({ txByWarehouse }) => {
                                 ariaLabel="Filter inventory by category"
                             />
                         </div>
+                        <div>
+                            <Dropdown
+                                id="warehouse-filter"
+                                label="Warehouse Filter"
+                                options={warehouseOptions}
+                                selectedValue={selectedWarehouseId}
+                                onChange={(val) => setSelectedWarehouseId(val)}
+                                ariaLabel="Filter transactions by warehouse"
+                            />
+                        </div>
                     </div>
 
                     {/* Action Button Area */}
-                    <div className="flex gap-4"></div>
+                    <div className="flex gap-4">
+                        <div>
+                            <DateFilterDropdown
+                                selectedPreset={dateFilter.preset}
+                                customStartDate={dateFilter.startDate}
+                                customEndDate={dateFilter.endDate}
+                                onChange={(val) => {
+                                    setDateFilter(val);
+                                    mutate();
+                                }}
+                                label="Transaction Date"
+                            />
+                        </div>
+                    </div>
                 </motion.div>
 
                 {/* ================= TABLES GRID ================= */}
@@ -97,7 +129,7 @@ const SalesSummary = ({ txByWarehouse }) => {
                         <h3 className="text-sm px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 border-b border-slate-50 dark:border-slate-800/50">
                             PENJUALAN VOUCHER & SP
                             <span className="text-xs text-slate-400 block capitalize font-normal mt-0.5">
-                                Tanggal: {new Date().toLocaleDateString("id-ID")}
+                                Tanggal: {formatDate(dateFilter.startDate)} s/d {formatDate(dateFilter.endDate)}
                             </span>
                         </h3>
                         <div className="overflow-x-auto">
@@ -123,7 +155,7 @@ const SalesSummary = ({ txByWarehouse }) => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
                                     <AnimatePresence mode="popLayout">
-                                        {filteredTransactions.filter((tx) => tx.product?.category === "Voucher & SP").length === 0 ? (
+                                        {filteredTransactions?.filter((tx) => tx.product?.category === "Voucher & SP").length === 0 ? (
                                             <motion.tr
                                                 key="empty-voucher"
                                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -141,7 +173,7 @@ const SalesSummary = ({ txByWarehouse }) => {
                                             </motion.tr>
                                         ) : (
                                             filteredTransactions
-                                                .filter((tx) => tx.product?.category === "Voucher & SP")
+                                                ?.filter((tx) => tx.product?.category === "Voucher & SP")
                                                 .map((tx) => (
                                                     <motion.tr
                                                         key={tx.product_id}
@@ -210,7 +242,7 @@ const SalesSummary = ({ txByWarehouse }) => {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
                                     <AnimatePresence mode="popLayout">
-                                        {filteredTransactions.filter((tx) => tx.product?.category !== "Voucher & SP").length === 0 ? (
+                                        {filteredTransactions?.filter((tx) => tx.product?.category !== "Voucher & SP").length === 0 ? (
                                             <motion.tr
                                                 key="empty-accessories"
                                                 initial={{ opacity: 0, scale: 0.95 }}
@@ -228,7 +260,7 @@ const SalesSummary = ({ txByWarehouse }) => {
                                             </motion.tr>
                                         ) : (
                                             filteredTransactions
-                                                .filter((tx) => tx.product?.category !== "Voucher & SP")
+                                                ?.filter((tx) => tx.product?.category !== "Voucher & SP")
                                                 .map((tx) => (
                                                     <motion.tr
                                                         key={tx.product_id}

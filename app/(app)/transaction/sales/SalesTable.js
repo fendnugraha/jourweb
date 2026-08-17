@@ -1,7 +1,7 @@
 import Dropdown from "@/app/components/Dropdown";
 import { useSales } from "@/app/hooks/useSales";
 import { ClipboardPen, Plus, Receipt, Search, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PointOfSale from "./PointOfSales";
 import useProducts from "@/app/hooks/useProducts";
 import axios from "@/app/utils/axios";
@@ -9,6 +9,7 @@ import SalesLog from "./SalesLog";
 import SalesSummary from "./SalesSummary";
 import { motion } from "framer-motion";
 import SubTabSwitcher from "@/app/components/SubTabSwitcher";
+import { DateTimeNow } from "@/app/utils/format";
 
 function generateUniqueId(prefix) {
     if (typeof window !== "undefined") {
@@ -17,12 +18,22 @@ function generateUniqueId(prefix) {
     return `${prefix}-${Math.floor(Math.random() * 1000000)}`;
 }
 
-const SalesTable = ({ warehouseId, startDate, endDate, notification, mutateJournal }) => {
-    const { txByWarehouse, loading, error, mutate } = useSales({
-        selectedWarehouse: warehouseId,
-        startDate,
-        endDate,
+const SalesTable = ({ warehouseId, notification, mutateJournal }) => {
+    const { today } = DateTimeNow();
+    const [dateFilter, setDateFilter] = useState({
+        preset: "today",
+        startDate: today,
+        endDate: today,
     });
+
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(warehouseId);
+
+    const { txByWarehouse, loading, error, mutate } = useSales({
+        selectedWarehouse: selectedWarehouseId,
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+    });
+    console.log(txByWarehouse);
     const { products, loading: loadingProducts, error: errorProducts } = useProducts();
 
     const categoryOptions = [
@@ -67,13 +78,28 @@ const SalesTable = ({ warehouseId, startDate, endDate, notification, mutateJourn
         { id: "summary", label: "Ringkasan Penjualan", icon: ClipboardPen },
     ];
 
+    useEffect(() => {
+        if (dateFilter) {
+            mutate();
+        }
+    }, [dateFilter, mutate]);
+
     return (
         <>
             <SubTabSwitcher subMenuTabs={tabs} activeSubTab={activeSubTab} setActiveSubTab={setActiveSubTab} />
 
             {activeSubTab === "pos" && <PointOfSale stockItems={products} onPOSCheckout={handlePOSCheckout} />}
             {activeSubTab === "ledger" && <SalesLog txByWarehouse={txByWarehouse} mutate={mutate} mutateJournal={mutateJournal} notification={notification} />}
-            {activeSubTab === "summary" && <SalesSummary txByWarehouse={txByWarehouse} />}
+            {activeSubTab === "summary" && (
+                <SalesSummary
+                    txByWarehouse={txByWarehouse}
+                    dateFilter={dateFilter}
+                    setDateFilter={setDateFilter}
+                    mutate={mutate}
+                    selectedWarehouseId={selectedWarehouseId}
+                    setSelectedWarehouseId={setSelectedWarehouseId}
+                />
+            )}
         </>
     );
 };
