@@ -1,16 +1,27 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = "max-w-lg" }) {
+export default function Modal({ isOpen, onClose, title, modalTitle, children, maxWidth = "max-w-lg" }) {
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
+    const [mounted, setMounted] = useState(false);
+
+    // Dukung prop 'title' maupun 'modalTitle' agar fleksibel
+    const displayTitle = title || modalTitle;
+
+    // Memastikan Portal hanya berjalan di Client Side (Aman untuk Next.js SSR)
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Store previous focus dan atur focus secara aman
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && mounted) {
             previousFocusRef.current = document.activeElement;
 
             const timer = setTimeout(() => {
@@ -37,14 +48,14 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                 document.body.style.overflow = "";
                 document.body.style.paddingRight = "";
             };
-        } else {
+        } else if (!isOpen && mounted) {
             document.body.style.overflow = "";
             document.body.style.paddingRight = "";
             if (previousFocusRef.current) {
                 previousFocusRef.current.focus({ preventScroll: true });
             }
         }
-    }, [isOpen]);
+    }, [isOpen, mounted]);
 
     // Keyboard trap
     const handleKeyDown = (e) => {
@@ -75,11 +86,13 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-                    {/* Backdrop: Dihapus class 'transition-opacity' agar tidak bentrok dengan Framer Motion */}
+                <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 sm:p-6">
+                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -90,7 +103,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                         aria-hidden="true"
                     />
 
-                    {/* Modal Content: Ditambahkan transform-gpu & backface-hidden untuk GPU acceleration */}
+                    {/* Modal Content */}
                     <motion.div
                         ref={modalRef}
                         initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -102,12 +115,12 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         tabIndex={-1}
-                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800`}
+                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800 z-10`}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4 dark:border-slate-800">
                             <h2 id="modal-title" className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                                {title}
+                                {displayTitle}
                             </h2>
                             <button
                                 type="button"
@@ -124,6 +137,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 }

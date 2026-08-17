@@ -1,19 +1,22 @@
+import Modal from "@/app/components/Modal";
+import axios from "@/app/utils/axios";
 import { formatNumber } from "@/app/utils/format";
-import { AlertCircle, ChevronDown, RefreshCw } from "lucide-react";
+import { AlertCircle, ChevronDown, Cog, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
+
+const labelClass = "block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1";
 
 const containerVariants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.05, // Jeda antar item 0.05 detik
+            staggerChildren: 0.05,
         },
     },
 };
 
-// Variasi animasi untuk tiap item
 const itemVariants = {
     hidden: { opacity: 0, y: 8 },
     show: {
@@ -24,142 +27,58 @@ const itemVariants = {
     exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
-const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboard }) => {
+const CashBankBalance = ({ accountBalance, isLoading, isValidating, mutate, dailyDashboard }) => {
     const summarizeBalance = accountBalance?.data?.chartOfAccounts?.reduce((total, account) => total + account.balance, 0) || 0;
     const accounts = accountBalance?.data?.chartOfAccounts || [];
     const [loading, setLoading] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
-    const copyData = async () => {
-        await navigator.clipboard.writeText(copyDailyReport());
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 9000);
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+    const [newAmount, setNewAmount] = useState("");
+
+    const handleOpenModal = (account) => {
+        setSelectedId(account.id);
+        setNewAmount(account.limit?.limit_amount || "");
+        setIsModalOpen(true);
     };
 
-    const copySalesVoucher = async () => {
-        await navigator.clipboard.writeText(formatVoucherText());
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 3000);
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedId(null);
+        setNewAmount("");
     };
 
-    const copyDailyReport = () => {
-        const dailyReportData = [
-            {
-                name: "Kas",
-                value: formatNumber(dailyDashboard?.data?.totalCash - openingCash),
-            },
-            {
-                name: "Voucher",
-                value: formatNumber(dailyDashboard?.data?.totalVoucher?.total),
-            },
-            {
-                name: "Deposit",
-                value: formatNumber(dailyDashboard?.data?.totalCashDeposit?.total),
-            },
-            {
-                name: "Koreksi",
-                value: formatNumber(dailyDashboard?.data?.totalCorrection ?? 0),
-            },
-            {
-                name: "Acc",
-                value: formatNumber(dailyDashboard?.data?.totalAccessories?.total),
-            },
-            { name: "Laba", value: formatNumber(dailyDashboard?.data?.profit) },
-        ];
-
-        const lines = dailyReportData.map(({ name, value }) => `${name}: ${value}`);
-
-        return `${formatDateTime(today)}\nReport ${warehouseName}:\n\n${lines.join("\n")}\n\nTotal Setoran: ${formatNumber(
-            dailyDashboard?.data?.totalCash > openingCash ? totalSetoran - openingCash : totalSetoran,
-        )}`;
-    };
-
-    const closingStatus = () => {
-        setIsClosingComplete(true);
-        setStatusText("Selesai.");
-        setTimeout(() => {
-            setIsClosingComplete(false);
-            setStatusText("");
-        }, 300000);
-    };
-
-    const handleClosing = async () => {
-        // Variabel menggunakan bahasa Inggris pro (isConfirmed)
-        const isConfirmed = confirm("Anda yakin ingin menutup shift, pastikan semua data sudah diinput?\n(Semua input data akan terkunci setelah kas disetor)");
-        if (!isConfirmed) return;
-
+    const updateLimitAmount = async (id, amount) => {
         setLoading(true);
-        setStatusText("Menutup shift...");
-
         try {
-            await copyData();
-
-            setStatusText("Mengunci cabang...");
-            await changeLockStatus(warehouse);
-
-            setStatusText("Mengambil data transaksi...");
-            const latestTransactions = await fetchTransaction();
-
-            const result = await closingShift({
-                cred_id: warehouseCashId,
-                amount: dailyDashboard?.data?.totalCash - openingCash,
-                warehouse: warehouseName,
-                message: copyDailyReport(),
-                warehouseId: warehouse,
+            await axios.put(`/api/update-account-limit/${id}`, {
+                limit: amount,
+                diff: 0, // kalau backend kamu wajib diff
             });
-
-            const telegramResponseObj = result.telegramData.data;
-            setRawTelegramData(telegramResponseObj);
-            localStorage.setItem(`last_telegram_data_${warehouse}`, JSON.stringify(telegramResponseObj));
-            localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
-
-            setStatusText("Mengirim laporan...");
-            await sendTelegramAlert({
-                title: "PENJUALAN BARANG", // Kembali ke teks asli Anda
-                source: warehouseName,
-                message: formatVoucherText(latestTransactions),
-                // forwardChatId: 986761281,
-                forwardChatId: 851552604,
-            });
-
-            // set duration in milliseconds
-            const LOCK_DURATION_MS = 1 * 60 * 1000;
-            const lockTargetTime = Date.now() + LOCK_DURATION_MS;
-
-            localStorage.setItem(`target_lock_time_${warehouse}`, lockTargetTime);
-            localStorage.setItem(`lock_warehouse_id_${warehouse}`, warehouse);
-            localStorage.setItem("target_lock_time", lockTargetTime);
-            localStorage.setItem("lock_warehouse_id", warehouse);
-
-            setCountdown(LOCK_DURATION_MS / 1000); // Menghitung detik
-            setIsLocking(true);
-
-            // Timer otomatis menggunakan durasi milidetik yang benar
-            setTimeout(() => {
-                setRawTelegramData(null);
-                localStorage.removeItem("last_telegram_data");
-            }, LOCK_DURATION_MS);
-
-            setStatusText("Menutup shift...");
-            alert("Shift berhasil ditutup!");
-            closingStatus();
+            setIsModalOpen(false);
+            mutate();
         } catch (error) {
-            console.error("Closing shift error:", error);
-            alert("Terjadi kesalahan saat menutup shift.");
+            console.log(error);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleSubmitLimit = (e) => {
+        e.preventDefault();
+        if (!selectedId) return;
+        updateLimitAmount(selectedId, newAmount);
+    };
+
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-            {/* HEADER - Tap Target Luas di Mobile */}
+            {/* HEADER */}
             <div
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center justify-between gap-2 p-3.5 sm:p-4 cursor-pointer select-none active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors"
             >
-                {/* Bagian Kiri: Panah, Judul & Subtitle */}
                 <div className="flex items-center gap-2.5 min-w-0">
                     <motion.div
                         animate={{ rotate: isOpen ? 0 : -90 }}
@@ -178,7 +97,6 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                     </div>
                 </div>
 
-                {/* TOTAL BADGE - Kompak di Mobile */}
                 <div className="shrink-0">
                     <div className="bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl flex items-center gap-1.5">
                         <span className="text-[10px] sm:text-[11px] font-medium text-indigo-600 dark:text-indigo-400">Total:</span>
@@ -206,7 +124,6 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                     >
                         <div className="p-2 sm:p-3">
                             <AnimatePresence mode="wait">
-                                {/* 1. STATE LOADING (SKELETON) */}
                                 {isLoading ? (
                                     <motion.div
                                         key="loading-skeleton"
@@ -226,7 +143,6 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                                         ))}
                                     </motion.div>
                                 ) : accounts.length > 0 ? (
-                                    /* 2. STATE DATA TERSEDIA */
                                     <motion.div
                                         key="account-list"
                                         variants={containerVariants}
@@ -244,9 +160,8 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                                                     key={account.id}
                                                     variants={itemVariants}
                                                     whileTap={{ scale: 0.98 }}
-                                                    className="group flex items-center justify-between py-2.5 px-2 rounded-xl transition-colors active:bg-slate-100 dark:active:bg-slate-800/80 cursor-pointer"
+                                                    className="group flex items-center justify-between py-2.5 px-2 rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 active:bg-slate-100 dark:active:bg-slate-800/80 cursor-pointer overflow-hidden"
                                                 >
-                                                    {/* Info Akun */}
                                                     <div className="min-w-0 flex-1 pr-3">
                                                         <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
                                                             {account.group}
@@ -256,7 +171,6 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                                                         </p>
                                                     </div>
 
-                                                    {/* Saldo & Selisih Limit */}
                                                     <div className="text-right shrink-0 flex flex-col items-end justify-center">
                                                         <span
                                                             className={`text-xs sm:text-sm font-bold font-mono tracking-tight ${
@@ -277,12 +191,23 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                                                             </span>
                                                         )}
                                                     </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenModal(account);
+                                                        }}
+                                                        className="flex items-center justify-center shrink-0 w-0 opacity-0 ml-0 overflow-hidden group-hover:w-7 group-hover:opacity-100 group-hover:ml-2 transition-all duration-300 ease-in-out p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 cursor-pointer"
+                                                        title="Atur Limit"
+                                                    >
+                                                        <Cog size={14} className="shrink-0" />
+                                                    </button>
                                                 </motion.div>
                                             );
                                         })}
                                     </motion.div>
                                 ) : (
-                                    /* 3. STATE EMPTY */
                                     <motion.div
                                         key="empty-state"
                                         initial={{ opacity: 0, y: 5 }}
@@ -298,6 +223,45 @@ const CashBankBalance = ({ accountBalance, isLoading, isValidating, dailyDashboa
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* MODAL UPDATE LIMIT */}
+            <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Atur Limit Akun">
+                <form onSubmit={handleSubmitLimit} className="space-y-4">
+                    <div className="space-y-1">
+                        <label htmlFor="tx-amount" className={labelClass}>
+                            Jumlah Limit (Rp IDR)
+                        </label>
+                        <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
+                            <input
+                                id="tx-amount"
+                                type="number"
+                                required
+                                value={newAmount}
+                                onChange={(e) => setNewAmount(e.target.value)}
+                                placeholder="50000"
+                                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <button
+                            type="button"
+                            onClick={handleCloseModal}
+                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60 cursor-pointer"
+                            disabled={loading}
+                        >
+                            {loading ? "Menyimpan data..." : "Ubah Limit"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };

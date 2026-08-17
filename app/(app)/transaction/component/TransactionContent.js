@@ -462,6 +462,7 @@ const TransactionContent = () => {
                                         accountBalance={cashBankBalanceData}
                                         isLoading={isLoading}
                                         isValidating={isValidating}
+                                        mutate={mutateBalance}
                                         dailyDashboard={dailyDashboard}
                                     />
                                 </div>
