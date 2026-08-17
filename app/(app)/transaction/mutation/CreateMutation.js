@@ -104,7 +104,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
             });
             if (typeof mutate === "function") mutate();
             if (typeof mutateBalance === "function") mutateBalance();
-            if (typeof isModalOpen === "function") isModalOpen(false);
+            // if (typeof isModalOpen === "function") isModalOpen(false);
         } catch (error) {
             setFormError(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data.");
         } finally {

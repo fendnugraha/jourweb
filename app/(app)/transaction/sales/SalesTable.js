@@ -33,7 +33,6 @@ const SalesTable = ({ warehouseId, notification, mutateJournal }) => {
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
     });
-    console.log(txByWarehouse);
     const { products, loading: loadingProducts, error: errorProducts } = useProducts();
 
     const categoryOptions = [
