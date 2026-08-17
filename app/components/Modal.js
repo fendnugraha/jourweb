@@ -8,24 +8,24 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
 
-    // Store previous focus and focus the modal container or its first interactive element on open
+    // Store previous focus dan atur focus secara aman
     useEffect(() => {
         if (isOpen) {
             previousFocusRef.current = document.activeElement;
 
-            // Delay slightly to allow animation to complete, then focus
             const timer = setTimeout(() => {
                 if (modalRef.current) {
                     const focusable = modalRef.current.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
                     if (focusable.length > 0) {
-                        focusable[0].focus();
+                        // preventScroll mencegah layar melompat/flicker saat elemen difokuskan
+                        focusable[0].focus({ preventScroll: true });
                     } else {
-                        modalRef.current.focus();
+                        modalRef.current.focus({ preventScroll: true });
                     }
                 }
-            }, 100);
+            }, 50);
 
-            // Mencegah background scroll & layout shift
+            // Mencegah layout shift pada scrollbar
             const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
             document.body.style.overflow = "hidden";
             if (scrollbarWidth > 0) {
@@ -41,12 +41,12 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
             document.body.style.overflow = "";
             document.body.style.paddingRight = "";
             if (previousFocusRef.current) {
-                previousFocusRef.current.focus();
+                previousFocusRef.current.focus({ preventScroll: true });
             }
         }
     }, [isOpen]);
 
-    // Trap focus within the modal (WCAG Requirement)
+    // Keyboard trap
     const handleKeyDown = (e) => {
         if (e.key === "Escape") {
             onClose();
@@ -62,13 +62,11 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
             const lastElement = focusableElements[focusableElements.length - 1];
 
             if (e.shiftKey) {
-                // Shift + Tab
                 if (document.activeElement === firstElement) {
                     lastElement.focus();
                     e.preventDefault();
                 }
             } else {
-                // Tab
                 if (document.activeElement === lastElement) {
                     firstElement.focus();
                     e.preventDefault();
@@ -81,17 +79,18 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-                    {/* Backdrop */}
+                    {/* Backdrop: Dihapus class 'transition-opacity' agar tidak bentrok dengan Framer Motion */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity dark:bg-slate-950/85"
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs dark:bg-slate-950/85"
                         aria-hidden="true"
                     />
 
-                    {/* Modal Content */}
+                    {/* Modal Content: Ditambahkan transform-gpu & backface-hidden untuk GPU acceleration */}
                     <motion.div
                         ref={modalRef}
                         initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -103,7 +102,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         tabIndex={-1}
-                        className={`relative w-full ${maxWidth} overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800`}
+                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800`}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4 dark:border-slate-800">
@@ -120,7 +119,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = "ma
                             </button>
                         </div>
 
-                        {/* Body (Bisa di-scroll jika konten tinggi) */}
+                        {/* Body */}
                         <div className="max-h-[calc(100vh-11rem)] overflow-y-auto pr-1 no-scrollbar">{children}</div>
                     </motion.div>
                 </div>
