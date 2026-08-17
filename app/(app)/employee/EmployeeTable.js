@@ -9,6 +9,35 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
     const [modalTitle, setModalTitle] = useState("Edit Employee");
     const [showEndContract, setShowEndContract] = useState(true);
 
+    const [expandedContractIds, setExpandedContractIds] = useState([]);
+
+    // 1. Buat Sub-Komponen Ini (Taruh di luar komponen utama)
+    function EmploymentStatusBadge({ employee, formatLongDate }) {
+        const [showDate, setShowDate] = useState(false);
+
+        // Jika Karyawan Full Time
+        if (employee.employment_type === "full_time") {
+            return (
+                <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                    Full Time
+                </span>
+            );
+        }
+
+        // Ambil teks & class warna dari fungsi calculateContractTillEnd
+        const contractInfo = calculateContractTillEnd(employee.contract_end);
+
+        return (
+            <button
+                type="button"
+                onClick={() => setShowDate((prev) => !prev)}
+                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${contractInfo.colorClass}`}
+            >
+                {showDate ? formatLongDate(employee.contract_end) : contractInfo.text}
+            </button>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Table Container */}
@@ -159,18 +188,9 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                             </td>
 
                                             {/* 7. Employment Type */}
+                                            {/* 7. Employment Type */}
                                             <td className="px-5 py-3.5 text-center">
-                                                <span className="inline-flex items-center rounded-lg bg-slate-200 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 capitalize border border-slate-200/60 dark:border-slate-700/60">
-                                                    {employee.employment_type === "full_time" ? (
-                                                        "Full Time"
-                                                    ) : (
-                                                        <button onClick={() => setShowEndContract(!showEndContract)}>
-                                                            {showEndContract
-                                                                ? formatLongDate(employee.contract_end)
-                                                                : calculateContractTillEnd(employee.contract_end)}
-                                                        </button>
-                                                    )}
-                                                </span>
+                                                <EmploymentStatusBadge employee={employee} formatLongDate={formatLongDate} />
                                             </td>
 
                                             {/* 8. Status Badge */}
