@@ -74,7 +74,15 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         // Tunggu sampai SWR selesai loading awal
         if (isLoading) return;
 
-        const requiresCheckin = user && !user.has_checked_in && user.role !== "Super Admin";
+        // 1. Cek role dasar
+        const isSuperAdmin = user?.role === "Super Admin";
+        const isAdminWarehouse1 = user?.role === "Administrator" && user?.warehouse_id === 1;
+
+        // 2. Tentukan apakah user dikecualikan dari check-in
+        const isExemptFromCheckin = isSuperAdmin || isAdminWarehouse1;
+
+        // 3. Hasil akhir
+        const requiresCheckin = user && !user.has_checked_in && !isExemptFromCheckin;
 
         // Helper penentu jalur redirect
         const getRedirectPath = () => {
