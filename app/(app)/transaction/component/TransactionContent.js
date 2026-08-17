@@ -35,9 +35,10 @@ const TransactionContent = () => {
     const warehouseId = user?.warehouse_id;
     const warehouseName = user?.warehouse?.name;
     const warehouseOpenCash = user?.warehouse?.primary_cash?.limit?.limit_amount || 9000000;
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(warehouseId);
 
     const { warehouses = [], loading: loadingWarehouses, error: errorWarehouses } = useWarehouse();
-    const warehouseCashId = warehouses.find((warehouse) => warehouse.id === warehouseId)?.primary_cash?.id;
+    const warehouseCashId = warehouses.find((warehouse) => warehouse.id === selectedWarehouseId)?.primary_cash?.id;
 
     const [dateFilter, setDateFilter] = useState({
         preset: "today",
@@ -49,7 +50,13 @@ const TransactionContent = () => {
 
     // --- Data Fetching ---
 
-    const { cashBankBalanceData, error: balanceError, isLoading, isValidating, mutate: mutateBalance } = useCashBankBalance(warehouseId, dateFilter.endDate);
+    const {
+        cashBankBalanceData,
+        error: balanceError,
+        isLoading,
+        isValidating,
+        mutate: mutateBalance,
+    } = useCashBankBalance(selectedWarehouseId, dateFilter.endDate);
 
     const {
         journalByWarehouse,
@@ -58,7 +65,7 @@ const TransactionContent = () => {
         error,
         mutate,
     } = useTransactions({
-        selectedWarehouse: warehouseId,
+        selectedWarehouse: selectedWarehouseId,
         startDate: dateFilter.startDate,
         endDate: dateFilter.endDate,
     });
@@ -68,7 +75,7 @@ const TransactionContent = () => {
         mutate: mutateDashboard,
         isLoading: isDashboardLoading,
         isValidating: isDashboardValidating,
-    } = useDailyDashboard(warehouseId, dateFilter.startDate, dateFilter.endDate);
+    } = useDailyDashboard(selectedWarehouseId, dateFilter.startDate, dateFilter.endDate);
 
     const totalSetoran =
         dailyDashboard?.data?.totalFee +
@@ -80,7 +87,7 @@ const TransactionContent = () => {
 
     const { accounts = [], loading: loadingAccounts, error: errorAccounts } = useAccounts();
 
-    const whAccounts = useMemo(() => accounts.filter((account) => account.warehouse_id === warehouseId), [accounts, warehouseId]);
+    const whAccounts = useMemo(() => accounts.filter((account) => account.warehouse_id === selectedWarehouseId), [accounts, selectedWarehouseId]);
     const hqAccounts = useMemo(() => accounts.filter((account) => account.warehouse_id === 1), [accounts]);
     const hqAccountIds = useMemo(() => hqAccounts.map((account) => account.id), [hqAccounts]);
 
@@ -92,6 +99,16 @@ const TransactionContent = () => {
             })),
         [whAccounts],
     );
+
+    const warehouseOptions = [
+        { value: "all", label: "Semua Cabang" },
+        ...warehouses
+            .filter((w) => w.id !== selectedWarehouseId && w.status === 1)
+            .map((warehouse) => ({
+                value: warehouse.id,
+                label: warehouse.name,
+            })),
+    ];
 
     // --- Search & Filter State ---
     const [searchTerm, setSearchTerm] = useState("");
@@ -274,7 +291,7 @@ const TransactionContent = () => {
                                         {/* Account Dropdown */}
                                         <div className="w-full">
                                             <Dropdown
-                                                id="stock-account-filter"
+                                                id="ware-filter"
                                                 label="Stock Account Filter"
                                                 options={[{ value: "all", label: "Semua Akun" }, ...accountOptions]}
                                                 selectedValue={accountFilter}
@@ -294,7 +311,17 @@ const TransactionContent = () => {
                                     </div>
 
                                     {/* Action Buttons (Sejajar di Mobile) */}
-                                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full lg:w-auto">
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                        <div className="w-full sm:col-span-2" hidden={!["Administrator", "Super Admin"].includes(userRole)}>
+                                            <Dropdown
+                                                id="stock-account-filter"
+                                                label="Stock Account Filter"
+                                                options={warehouseOptions}
+                                                selectedValue={selectedWarehouseId}
+                                                onChange={(val) => setSelectedWarehouseId(val)}
+                                                ariaLabel="Filter inventory by account"
+                                            />
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -306,6 +333,7 @@ const TransactionContent = () => {
                                             <Plus className="h-4 w-4 shrink-0" />
                                             <span className="truncate">Tambah Transaksi</span>
                                         </button>
+
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -324,7 +352,8 @@ const TransactionContent = () => {
                                                 setModalName("closing-report");
                                                 setIsModalAddTransactionOpen(true);
                                             }}
-                                            className="inline-flex items-center justify-between gap-1.5 rounded-xl bg-slate-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-lime-300 shadow-xs hover:bg-slate-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 transition-all w-full sm:w-68 truncate col-span-2 sm:col-span-1"
+                                            hidden={["Administrator", "Super Admin"].includes(userRole)}
+                                            className="inline-flex justify-between gap-1.5 sm:col-span-2 border border-red-500 rounded-xl text-sm font-bold text-red-500 hover:text-red-400 bg-slate-200 dark:bg-slate-800 px-3.5 py-2"
                                         >
                                             <div className="flex items-center gap-1.5">
                                                 <ReceiptText className="h-4 w-4 shrink-0" />
@@ -409,7 +438,7 @@ const TransactionContent = () => {
                                         filteredTransactions={filteredTransactions}
                                         setTxToDelete={setTxToDelete}
                                         warehouseCashId={warehouseCashId}
-                                        warehouseId={warehouseId}
+                                        warehouseId={selectedWarehouseId}
                                         userRole={userRole}
                                         hqAccounts={hqAccounts}
                                         hqAccountIds={hqAccountIds}
@@ -434,7 +463,7 @@ const TransactionContent = () => {
                             transition={{ duration: 0.15 }}
                             className="space-y-6"
                         >
-                            <SalesTable warehouseId={warehouseId} notification={setNotification} mutateJournal={mutate} />
+                            <SalesTable warehouseId={selectedWarehouseId} notification={setNotification} mutateJournal={mutate} />
                         </motion.div>
                     )}
 
@@ -461,7 +490,7 @@ const TransactionContent = () => {
                             className="space-y-6"
                         >
                             <ExpenseLog
-                                warehouseId={warehouseId}
+                                warehouseId={selectedWarehouseId}
                                 warehouseCashId={warehouseCashId}
                                 journals={journalByWarehouse}
                                 notification={setNotification}
@@ -488,7 +517,7 @@ const TransactionContent = () => {
                                 notification={setNotification}
                                 accountBalance={cashBankBalanceData}
                                 accounts={accounts}
-                                warehouseId={warehouseId}
+                                warehouseId={selectedWarehouseId}
                                 startDate={dateFilter.startDate}
                                 endDate={dateFilter.endDate}
                                 setIsModalAddMutationOpen={setIsModalAddMutationOpen}
@@ -509,7 +538,7 @@ const TransactionContent = () => {
                             selectedBankAccount={selectedBankAccount}
                             setSelectedBankAccount={setSelectedBankAccount}
                             accounts={accounts}
-                            warehouseId={warehouseId}
+                            warehouseId={selectedWarehouseId}
                             mutate={mutate}
                             mutateBalance={mutateBalance}
                             isModalOpen={setIsModalAddTransactionOpen}
@@ -525,7 +554,7 @@ const TransactionContent = () => {
                             dailyDashboard={dailyDashboard}
                             totalSetoran={totalSetoran}
                             warehouseName={warehouseName}
-                            warehouseId={warehouseId}
+                            warehouseId={selectedWarehouseId}
                             warehouseCashId={warehouseCashId}
                             notification={setNotification}
                         />
@@ -538,7 +567,7 @@ const TransactionContent = () => {
                         mutate={mutate}
                         mutateBalance={mutateBalance}
                         isModalOpen={setIsModalAddMutationOpen}
-                        warehouseId={warehouseId}
+                        warehouseId={selectedWarehouseId}
                         notification={setNotification}
                         warehouses={warehouses}
                         userRole={userRole}
