@@ -54,6 +54,11 @@ const SalesSummary = ({ txByWarehouse = [], dateFilter, setDateFilter, mutate, s
         exit: { opacity: 0, x: 8, transition: { duration: 0.15 } },
     };
 
+    const totalAccessories = filteredTransactions
+        .filter((tx) => tx.product?.category !== "Voucher & SP")
+        .reduce((sum, tx) => sum + Number(tx.total_cost * -1), 0);
+    const totalVoucher = filteredTransactions.filter((tx) => tx.product?.category === "Voucher & SP").reduce((sum, tx) => sum + Number(tx.total_cost * -1), 0);
+
     return (
         <>
             <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-4">
@@ -126,12 +131,15 @@ const SalesSummary = ({ txByWarehouse = [], dateFilter, setDateFilter, mutate, s
                         variants={itemVariants}
                         className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900"
                     >
-                        <h3 className="text-sm px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 border-b border-slate-50 dark:border-slate-800/50">
-                            PENJUALAN VOUCHER & SP
-                            <span className="text-xs text-slate-400 block capitalize font-normal mt-0.5">
-                                Tanggal: {formatDate(dateFilter.startDate)} s/d {formatDate(dateFilter.endDate)}
-                            </span>
-                        </h3>
+                        <div className="flex justify-between">
+                            <h3 className="text-sm px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 border-b border-slate-50 dark:border-slate-800/50">
+                                PENJUALAN VOUCHER & SP
+                                <span className="text-xs text-slate-400 block capitalize font-normal mt-0.5">
+                                    Tanggal: {formatDate(dateFilter.startDate)} s/d {formatDate(dateFilter.endDate)}
+                                </span>
+                            </h3>
+                            <h1 className="text-xs px-4 py-3 text-slate-600 block capitalize font-semibold mt-0.5">Total: {formatRupiah(totalVoucher)}</h1>
+                        </div>
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left">
                                 <thead>
@@ -213,12 +221,15 @@ const SalesSummary = ({ txByWarehouse = [], dateFilter, setDateFilter, mutate, s
                         variants={itemVariants}
                         className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900"
                     >
-                        <h3 className="text-sm px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 border-b border-slate-50 dark:border-slate-800/50">
-                            PENJUALAN ACCESSORIES
-                            <span className="text-xs text-slate-400 block capitalize font-normal mt-0.5">
-                                Tanggal: {new Date().toLocaleDateString("id-ID")}
-                            </span>
-                        </h3>
+                        <div className="flex justify-between">
+                            <h3 className="text-sm px-4 py-3 font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 border-b border-slate-50 dark:border-slate-800/50">
+                                PENJUALAN ACCESSORIES
+                                <span className="text-xs text-slate-400 block capitalize font-normal mt-0.5">
+                                    Tanggal: {formatDate(dateFilter.startDate)} s/d {formatDate(dateFilter.endDate)}
+                                </span>
+                            </h3>
+                            <h1 className="text-xs px-4 py-3 text-slate-600 block capitalize font-semibold mt-0.5">Total: {formatRupiah(totalAccessories)}</h1>
+                        </div>
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left">
                                 <thead>

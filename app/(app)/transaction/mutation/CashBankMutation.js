@@ -3,11 +3,14 @@ import Notification from "@/app/components/Notification";
 import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import CashBankSummary from "../component/CashBankSummary";
+import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 
 const CashBankMutation = ({
     journals = [],
     accountBalance,
     accounts = [],
+    dateFilter,
+    setDateFilter,
     warehouseId,
     onWarehouseChange,
     setIsModalAddMutationOpen,
@@ -30,15 +33,10 @@ const CashBankMutation = ({
 
     const accountOptions = [
         { value: "all", label: "Semua akun" },
-        ...accounts
-            .filter((a) => Number(a.warehouse_id) === Number(activeWarehouseId))
-            .map((a) => ({ value: a.id, label: a.group })),
+        ...accounts.filter((a) => Number(a.warehouse_id) === Number(activeWarehouseId)).map((a) => ({ value: a.id, label: a.group })),
     ];
 
-    const warehouseOptions = useMemo(
-        () => warehouses.filter((w) => Number(w.status) === 1).map((w) => ({ value: w.id, label: w.name })),
-        [warehouses],
-    );
+    const warehouseOptions = useMemo(() => warehouses.filter((w) => Number(w.status) === 1).map((w) => ({ value: w.id, label: w.name })), [warehouses]);
 
     const isAdmin = ["Administrator", "Super Admin"].includes(userRole);
 
@@ -85,14 +83,25 @@ const CashBankMutation = ({
                 </div>
 
                 {/* Add Button */}
-                <button
-                    type="button"
-                    onClick={() => setIsModalAddMutationOpen?.(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 transition-colors cursor-pointer"
-                >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Mutation</span>
-                </button>
+                <did className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                        <DateFilterDropdown
+                            selectedPreset={dateFilter.preset}
+                            customStartDate={dateFilter.startDate}
+                            customEndDate={dateFilter.endDate}
+                            onChange={(val) => setDateFilter(val)}
+                            label="Transaction Date"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setIsModalAddMutationOpen?.(true)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-amber-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 transition-colors cursor-pointer"
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span>Add Mutation</span>
+                    </button>
+                </did>
             </div>
 
             <CashBankSummary
