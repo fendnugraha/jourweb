@@ -134,6 +134,21 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                     </div>
                 )}
 
+                <div className="space-y-1" hidden={!["Administrator", "Super Admin"].includes(userRole)}>
+                    <label htmlFor="tx-date" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Tanggal Transaksi
+                    </label>
+
+                    <input
+                        id="tx-date"
+                        type="datetime-local"
+                        required
+                        value={formData.date_issued}
+                        onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    />
+                </div>
+
                 {/* Destination Warehouse */}
                 <div className="space-y-1">
                     <label htmlFor="tx-destination-warehouse" className={labelClass}>
