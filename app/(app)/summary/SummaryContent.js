@@ -10,8 +10,8 @@ import { useWarehouseBalance } from "@/app/hooks/useWarehouseBalance";
 import { todayDate } from "@/app/utils/format";
 
 const menuList = [
-    { id: "balances", label: "Warehouse Balance", icon: Coins },
-    { id: "revenue", label: "Revenue & Expenses", icon: Wallet2 },
+    { id: "balances", label: "Saldo Kas & Bank (Cabang)", icon: Coins },
+    { id: "revenue", label: "Laporan Pendapatan", icon: Wallet2 },
     { id: "logtrack", label: "Log Input Tracking", icon: Logs },
 ];
 

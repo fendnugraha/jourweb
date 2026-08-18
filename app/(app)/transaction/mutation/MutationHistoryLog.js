@@ -99,22 +99,24 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
                                         </div>
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex items-center gap-1 flex-wrap">
-                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[9px] font-semibold font-mono border border-slate-100 dark:border-slate-700">
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-semibold font-mono border border-slate-100 dark:border-slate-700">
                                                     <CreditCard className="h-2.5 w-2.5 text-slate-400" />
-                                                    {tx.cred?.group || "Asal"}
+                                                    {tx.cred?.group || "Asal"}{" "}
+                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.cred?.id)) && tx.cred?.warehouse?.code
+                                                        ? `(${tx.cred.warehouse.code})`
+                                                        : null}
                                                 </span>
-                                                <span className="text-slate-400 text-[9px]">→</span>
-                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 text-[9px] font-semibold font-mono">
+                                                <span className="text-slate-400 text-xs">→</span>
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 text-xs font-semibold font-mono">
                                                     <Coins className="h-2.5 w-2.5 text-indigo-500" />
-                                                    {tx.debt?.group || "Tujuan"}
+                                                    {tx.debt?.group || "Tujuan"}{" "}
+                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.debt?.id)) && tx.debt?.warehouse?.code
+                                                        ? `(${tx.debt.warehouse.code})`
+                                                        : null}
                                                 </span>
                                             </div>
 
-                                            <p className="text-xs font-bold leading-snug text-slate-800 dark:text-slate-100 wrap-break-word">
-                                                {tx.description}
-                                            </p>
-
-                                            <div className="flex items-center gap-1 text-[9px] font-mono text-slate-400">
+                                            <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
                                                 <Calendar className="h-2.5 w-2.5 shrink-0" />
                                                 <span>{formatDateTime(tx.date_issued)}</span>
                                             </div>
@@ -123,11 +125,11 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
 
                                     <div className="flex shrink-0 flex-col items-end justify-between self-stretch pl-1">
                                         <div className="text-right">
-                                            <span className={`block font-mono text-xs font-bold ${isOutflow ? "text-red-500" : "text-emerald-500"}`}>
+                                            <span className={`block font-mono text-sm font-bold ${isOutflow ? "text-red-500" : "text-emerald-500"}`}>
                                                 {formatRupiah(tx.amount)}
                                             </span>
                                             {tx.fee_amount > 0 && (
-                                                <span className="block text-[9px] font-medium text-slate-400">Fee: {formatNumber(tx.fee_amount)}</span>
+                                                <span className="block text-xs font-medium text-slate-400">Fee: {formatNumber(tx.fee_amount)}</span>
                                             )}
                                         </div>
 
