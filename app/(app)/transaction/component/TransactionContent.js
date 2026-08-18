@@ -136,39 +136,30 @@ const TransactionContent = () => {
     // --- Filtered Transactions Memo ---
     const filteredTransactions = useMemo(() => {
         if (!journalByWarehouse) return [];
+
+        const normalizedSearchTerm = searchTerm ? searchTerm.toLowerCase().trim() : "";
+
         return journalByWarehouse.filter((journal) => {
+            // 1. Cek Filter Akun
             const matchAccount =
-                accountFilter !== "all" && (Number(journal.cred_id) === Number(accountFilter) || Number(journal.debt_id) === Number(accountFilter));
+                accountFilter === "all" || Number(journal.cred_id) === Number(accountFilter) || Number(journal.debt_id) === Number(accountFilter);
 
-            const matchCategory = categoryFilter !== "all" && journal.trx_type === categoryFilter;
+            // 2. Cek Filter Kategori
+            const matchCategory = categoryFilter === "all" || journal.trx_type === categoryFilter;
 
+            // 3. Cek Pencarian (Search Term)
             const matchSearchTerm =
-                searchTerm &&
-                ((journal.debt?.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.cred?.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.description ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.id ?? "").toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.invoice ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.amount ?? "").toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (journal.transaction ?? []).some((t) => (t.product?.name ?? "").toLowerCase().includes(searchTerm.toLowerCase())));
+                !normalizedSearchTerm ||
+                (journal.debt?.name ?? "").toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.cred?.name ?? "").toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.description ?? "").toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.id ?? "").toString().toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.invoice ?? "").toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.amount ?? "").toString().toLowerCase().includes(normalizedSearchTerm) ||
+                (journal.transaction ?? []).some((t) => (t.product?.name ?? "").toLowerCase().includes(normalizedSearchTerm));
 
-            if (accountFilter !== "all" && categoryFilter !== "all" && searchTerm) {
-                return matchAccount && matchCategory && matchSearchTerm;
-            }
-
-            if (categoryFilter !== "all") {
-                return matchCategory;
-            }
-
-            if (accountFilter !== "all") {
-                return matchAccount;
-            }
-
-            if (searchTerm) {
-                return matchSearchTerm;
-            }
-
-            return true;
+            // Semua filter harus bernilai true agar data lolos
+            return matchAccount && matchCategory && matchSearchTerm;
         });
     }, [journalByWarehouse, accountFilter, searchTerm, categoryFilter]);
 

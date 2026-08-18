@@ -126,7 +126,7 @@ const CashBankSummary = ({ journals = [], accountBalance, setNotification, mutat
     return (
         <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                 <SummaryCard
                     title="Total Kas"
                     count={totals.kas.count}
@@ -203,6 +203,18 @@ const CashBankSummary = ({ journals = [], accountBalance, setNotification, mutat
                                         </td>
                                         <td className="px-3 py-2.5 text-right font-bold font-mono text-xs whitespace-nowrap">
                                             {formatNumber(account.balance)}
+                                            {account.balance - account.limit?.limit_amount < 0 && (
+                                                <h2
+                                                    className={`text-xs ${
+                                                        account.balance - account.limit?.limit_amount > 0
+                                                            ? "text-green-600 dark:text-green-400"
+                                                            : "text-red-600 dark:text-red-400"
+                                                    } group-hover:scale-105 transition delay-100 duration-150 ease-out`}
+                                                    hidden={!account.limit?.limit_amount}
+                                                >
+                                                    {formatNumber(account.balance - account.limit?.limit_amount)}
+                                                </h2>
+                                            )}
                                         </td>
                                         <td className="px-3 py-2.5 text-right text-emerald-600 dark:text-emerald-400 font-medium font-mono whitespace-nowrap">
                                             {formatNumber(mutationInSumById(account.id))}
