@@ -84,7 +84,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                 .filter((a) => {
                     const matchWarehouse = Number(a.warehouse_id) === Number(sourceWarehouseId);
                     const matchRole = ["Administrator", "Super Admin"].includes(userRole) ? true : a.account_id === 2;
-                    const notSameAsDebt = Number(a.id) !== Number(formData.debt_id);
+                    const notSameAsDebt = newType === "self" ? Number(a.id) !== Number(formData.debt_id) : true;
                     return matchWarehouse && matchRole && notSameAsDebt;
                 })
                 .map((a) => ({
