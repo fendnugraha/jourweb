@@ -461,6 +461,7 @@ const TransactionContent = () => {
                                         mutate={mutate}
                                         mutateBalance={mutateBalance}
                                         notification={setNotification}
+                                        accountFilter={accountFilter}
                                     />
                                 </div>
 

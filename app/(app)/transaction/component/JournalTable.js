@@ -39,6 +39,7 @@ const JournalTable = ({
     mutate,
     mutateBalance,
     notification,
+    accountFilter,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
@@ -56,7 +57,7 @@ const JournalTable = ({
 
     // Calculate totals
     const totals = useMemo(() => {
-        const accountToCheck = Number(warehouseCashId);
+        const accountToCheck = Number(accountFilter);
         let inflow = 0;
         let outflow = 0;
 
@@ -75,7 +76,7 @@ const JournalTable = ({
             totalOutflow: outflow,
             netFlow: inflow - outflow,
         };
-    }, [filteredTransactions, warehouseCashId]);
+    }, [filteredTransactions, accountFilter]);
 
     // Paginated Slices
     const totalPages = useMemo(() => {
@@ -209,7 +210,7 @@ const JournalTable = ({
                     ) : (
                         /* 1.3 STATE DATA MOBILE (LIST KARTU) */
                         paginatedTransactions.map((tx) => {
-                            const accountToCheck = Number(warehouseCashId);
+                            const accountToCheck = Number(accountFilter);
                             const isInflow = Number(tx.debt_id) === accountToCheck;
 
                             return (
@@ -431,7 +432,7 @@ const JournalTable = ({
                             ) : (
                                 /* 3. STATE DATA DESKTOP */
                                 paginatedTransactions.map((tx) => {
-                                    const accountToCheck = Number(warehouseCashId);
+                                    const accountToCheck = Number(accountFilter);
                                     const isInflow = Number(tx.debt_id) !== accountToCheck;
 
                                     return (
