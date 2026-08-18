@@ -103,7 +103,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
             ...accounts
                 .filter((a) => {
                     const matchWarehouse = Number(a.warehouse_id) === Number(targetWarehouseId);
-                    const notSameAsCred = Number(a.id) !== Number(formData.cred_id);
+                    const notSameAsCred = newType === "self" ? Number(a.id) !== Number(formData.cred_id) : true;
                     return matchWarehouse && notSameAsCred;
                 })
                 .map((a) => ({
