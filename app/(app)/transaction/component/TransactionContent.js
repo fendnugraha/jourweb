@@ -236,6 +236,13 @@ const TransactionContent = () => {
         localStorage.setItem("personalSetting", JSON.stringify(personalSetting));
     }, [personalSetting]);
 
+    const resetFilter = () => {
+        setActiveSubTab("transactions");
+        setAccountFilter("all");
+        setCategoryFilter("all");
+        setSearchTerm("");
+    };
+
     // --- Modals State ---
     const [isModalAddTransactionOpen, setIsModalAddTransactionOpen] = useState(false);
     const [isModalAddMutationOpen, setIsModalAddMutationOpen] = useState(false);
@@ -331,7 +338,10 @@ const TransactionContent = () => {
                                                     label="Warehouse Filter"
                                                     options={warehouseOptions}
                                                     selectedValue={selectedWarehouseId}
-                                                    onChange={(val) => setSelectedWarehouseId(val)}
+                                                    onChange={(val) => {
+                                                        setSelectedWarehouseId(val);
+                                                        resetFilter();
+                                                    }}
                                                     ariaLabel="Filter inventory by warehouse"
                                                 />
                                             </div>

@@ -261,13 +261,13 @@ const CreateTransaction = ({
 
                     {/* Nominal & Fee Admin Inputs */}
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="space-y-1 sm:col-span-2">
+                    <div className="grid gap-3 sm:grid-cols-5">
+                        <div className="space-y-1 sm:col-span-3">
                             <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                                 Jumlah {newType === "transfer" ? "Transfer" : "Penarikan"} (Rp IDR)
                             </label>
 
-                            <div className="relative">
+                            <div className="relative flex items-center">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-mono text-xs select-none">Rp</span>
 
                                 <input
@@ -279,6 +279,20 @@ const CreateTransaction = ({
                                     placeholder="50000"
                                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-3.5 text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                                 />
+                                {newType === "withdrawal" && (
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleFee}
+                                        className={`absolute right-1.5 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                                            isFeeActive
+                                                ? "bg-indigo-600 text-white shadow-xs"
+                                                : "bg-slate-200 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"
+                                        }`}
+                                    >
+                                        <Sparkles className="w-3 h-3 text-amber-300" />
+                                        Fee/Bunga
+                                    </button>
+                                )}
                             </div>
 
                             <AnimatePresence>
@@ -295,95 +309,39 @@ const CreateTransaction = ({
                             </AnimatePresence>
                         </div>
 
-                        <div className="space-y-1">
+                        <div className="space-y-1 sm:col-span-2">
                             <label htmlFor="tx-fee" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                                 Fee Admin (Jasa)
                             </label>
 
-                            <div className="relative">
-                                <span
-                                    className={`absolute inset-y-0 left-0 flex items-center pl-3.5 font-mono text-xs select-none transition-colors ${
-                                        feeAuto ? "text-white/80" : "text-slate-400"
-                                    }`}
-                                >
-                                    Rp
-                                </span>
+                            <div className="relative flex items-center">
+                                <span className="absolute left-3.5 font-mono text-xs text-slate-400 select-none">Rp</span>
 
                                 <input
                                     id="tx-fee"
                                     type="number"
                                     required
                                     value={formData.fee_amount}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-
-                                            fee_amount: e.target.value,
-                                        })
-                                    }
+                                    onChange={(e) => setFormData({ ...formData, fee_amount: e.target.value })}
                                     min={0}
-                                    placeholder={feeAuto ? "Auto" : "0"}
-                                    className={`w-full rounded-xl border py-2 pl-10 pr-3 text-sm font-mono transition-all focus:outline-hidden focus-visible:ring-2 ${
-                                        feeAuto
-                                            ? "border-indigo-600 bg-indigo-600 text-white font-bold placeholder-white/60 focus-visible:ring-indigo-400"
-                                            : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus-visible:ring-indigo-500"
-                                    }`}
+                                    placeholder="0"
+                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-16 text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                                 />
-                            </div>
 
-                            <AnimatePresence>
-                                {formData.fee_amount && !isNaN(parseFloat(formData.fee_amount)) && (
-                                    <motion.p
-                                        initial={{ opacity: 0, y: -4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold"
-                                    >
-                                        Preview: Rp {parseFloat(formData.fee_amount).toLocaleString("id-ID")}
-                                    </motion.p>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-
-                    {/* Filter / Toggle Pills */}
-
-                    <div className="flex sm:flex-wrap gap-2 pt-1">
-                        <AnimatePresence>
-                            {newType === "withdrawal" && (
-                                <motion.button
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    whileTap={{ scale: 0.95 }}
+                                <button
                                     type="button"
-                                    onClick={handleToggleFee}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                                        isFeeActive
-                                            ? "border-indigo-500/40 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
-                                            : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400"
+                                    onClick={handleToggleFeeAuto}
+                                    className={`absolute right-1.5 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                                        feeAuto
+                                            ? "bg-indigo-600 text-white shadow-xs"
+                                            : "bg-slate-200 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"
                                     }`}
                                 >
-                                    <span className={`w-2 h-2 rounded-full ${isFeeActive ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                    Fee/Bunga Bank
-                                </motion.button>
-                            )}
-                        </AnimatePresence>
-
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            type="button"
-                            onClick={handleToggleFeeAuto}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                                feeAuto
-                                    ? "border-indigo-500/40 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800"
-                                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400"
-                            }`}
-                        >
-                            <span className={`w-2 h-2 rounded-full ${feeAuto ? "bg-emerald-500" : "bg-slate-400"}`} />
-                            <Sparkles className="w-3 h-3 text-indigo-500" />
-                            Fee Admin Auto
-                        </motion.button>
+                                    <Sparkles className="w-3 h-3 text-amber-300" />
+                                    Auto
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Nama Customer */}
