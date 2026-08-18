@@ -47,7 +47,8 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
     const handleTypeChange = (val) => {
         setNewType(val);
         setFormData((prev) => ({ ...prev, debt_id: "" }));
-        setSelectedDestinationWarehouseId(null);
+        const defaultDestId = ["Administrator", "Super Admin"].includes(userRole) ? null : 1;
+        setSelectedDestinationWarehouseId(defaultDestId);
     };
 
     const patch = (fields) => setFormData((prev) => ({ ...prev, ...fields }));
