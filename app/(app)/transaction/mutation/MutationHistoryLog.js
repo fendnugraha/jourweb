@@ -2,16 +2,20 @@
 
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import Dropdown from "@/app/components/Dropdown";
+import Modal from "@/app/components/Modal";
 import { deleteJournal } from "@/app/hooks/JournalActionService";
 import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
-import { ArrowRightLeft, Calendar, Coins, CreditCard, FileWarning, Search, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Calendar, Coins, CreditCard, FileWarning, Pencil, Search, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
+import EditMutation from "./EditMutation";
 
-const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mutate, mutateBalance }) => {
+const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mutate, mutateBalance, userRole }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [accountFilter, setAccountFilter] = useState("all");
     const [txToDelete, setTxToDelete] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedJournal, setSelectedJournal] = useState(null);
 
     // Dynamic account options derived directly from accounts prop
     const accountOptions = useMemo(() => {
@@ -133,14 +137,29 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
                                             )}
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => setTxToDelete(tx.id)}
-                                            className="mt-1 rounded-lg p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                                            title="Delete entry"
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
+                                        <div className="flex gap-1">
+                                            {["Administator", "Super Admin"].includes(userRole) && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedJournal(tx);
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                    className="mt-1 rounded-lg p-1 text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                                                    title="Edit entry"
+                                                >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => setTxToDelete(tx.id)}
+                                                className="mt-1 rounded-lg p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                                                title="Delete entry"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             );
@@ -167,6 +186,10 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
                 title="Delete Ledger Transaction"
                 description="Are you sure you want to delete this mutation entry?"
             />
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Mutation Edit">
+                <EditMutation journal={selectedJournal} isModalOpen={isModalOpen} mutate={mutate} notification={setNotification} />
+            </Modal>
         </div>
     );
 };

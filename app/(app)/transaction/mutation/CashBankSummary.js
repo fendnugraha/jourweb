@@ -82,7 +82,7 @@ const SummaryCard = ({ title, count, balance, inflow, outflow, percentage, accen
     );
 };
 
-const CashBankSummary = ({ journals = [], accountBalance, setNotification, mutate, mutateBalance }) => {
+const CashBankSummary = ({ journals = [], accountBalance, setNotification, mutate, mutateBalance, userRole }) => {
     const mutationInSumById = useCallback(
         (acc_id) => journals.reduce((sum, j) => (Number(j.debt_id) === Number(acc_id) && j.trx_type === "Mutasi Kas" ? sum + Number(j.amount) : sum), 0),
         [journals],
@@ -225,6 +225,7 @@ const CashBankSummary = ({ journals = [], accountBalance, setNotification, mutat
                         setNotification={setNotification}
                         mutate={mutate}
                         mutateBalance={mutateBalance}
+                        userRole={userRole}
                     />
                 </div>
             </div>

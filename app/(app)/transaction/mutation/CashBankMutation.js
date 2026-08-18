@@ -84,6 +84,7 @@ const CashBankMutation = ({
                 setNotification={setNotification}
                 mutate={mutate}
                 mutateBalance={mutateBalance}
+                userRole={userRole}
             />
         </div>
     );
