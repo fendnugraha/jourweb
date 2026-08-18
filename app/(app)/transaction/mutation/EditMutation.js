@@ -15,11 +15,14 @@ export default function EditMutation({ journal, isModalOpen, mutate, notificatio
 
     const [formData, setFormData] = useState({
         date_issued: journal.date_issued,
-        debt_id: journal.debt_id,
-        cred_id: journal.cred_id,
+        debt_id: journal.debt_id || "",
+        cred_id: journal.cred_id || "",
         amount: journal.amount,
         fee_amount: journal.fee_amount,
+        description: journal.description || "",
     });
+
+    const patch = (fields) => setFormData((prev) => ({ ...prev, ...fields }));
 
     const credOptions = [{ value: "", label: "Pilih Akun" }, ...accounts.map((a) => ({ value: a.id, label: a.name }))];
 
@@ -68,7 +71,7 @@ export default function EditMutation({ journal, isModalOpen, mutate, notificatio
                     type="datetime-local"
                     required
                     value={formData.date_issued}
-                    onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
+                    onChange={(e) => patch({ date_issued: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                 />
             </div>

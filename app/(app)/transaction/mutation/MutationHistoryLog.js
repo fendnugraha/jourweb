@@ -106,17 +106,21 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
                                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-xs font-semibold font-mono border border-slate-100 dark:border-slate-700">
                                                     <CreditCard className="h-2.5 w-2.5 text-slate-400" />
                                                     {tx.cred?.group || "Asal"}{" "}
-                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.cred?.id)) && tx.cred?.warehouse?.code
-                                                        ? `(${tx.cred.warehouse.code})`
-                                                        : null}
+                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.cred?.id)) && tx.cred?.warehouse?.code ? (
+                                                        <span className="font-normal text-slate-400">
+                                                            ({tx.cred?.warehouse?.name.replace(/^konter\s*/i, "")})
+                                                        </span>
+                                                    ) : null}
                                                 </span>
                                                 <span className="text-slate-400 text-xs">→</span>
                                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 text-xs font-semibold font-mono">
                                                     <Coins className="h-2.5 w-2.5 text-indigo-500" />
                                                     {tx.debt?.group || "Tujuan"}{" "}
-                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.debt?.id)) && tx.debt?.warehouse?.code
-                                                        ? `(${tx.debt.warehouse.code})`
-                                                        : null}
+                                                    {!accountOptions.some((opt) => Number(opt.value) === Number(tx.debt?.id)) && tx.debt?.warehouse?.code ? (
+                                                        <span className="font-normal text-slate-400">
+                                                            ({tx.debt?.warehouse?.name.replace(/^konter\s*/i, "")})
+                                                        </span>
+                                                    ) : null}
                                                 </span>
                                             </div>
 
