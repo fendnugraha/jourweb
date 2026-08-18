@@ -4,7 +4,7 @@ import axios from "@/app/utils/axios";
 
 import { calculateFee, DateTimeNow } from "@/app/utils/format";
 
-import { AlertCircle, Loader2, Sparkles, ArrowRightLeft, Banknote, ArrowUp, ArrowDown } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles, ArrowUp, ArrowDown, Flower2 } from "lucide-react";
 
 import { useState } from "react";
 
@@ -289,7 +289,7 @@ const CreateTransaction = ({
                                                 : "bg-slate-200 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400"
                                         }`}
                                     >
-                                        <Sparkles className="w-3 h-3 text-amber-300" />
+                                        <Flower2 className="w-3 h-3 text-amber-300" />
                                         Fee/Bunga
                                     </button>
                                 )}

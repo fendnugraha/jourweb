@@ -3,7 +3,8 @@ import Dropdown from "@/app/components/Dropdown";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
-import { AlertCircle, Landmark, Warehouse } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertCircle, ArrowLeftRight, Landmark, Warehouse } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
@@ -15,6 +16,11 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
     const { today } = DateTimeNow();
     const [formError, setFormError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isSwapping, setIsSwapping] = useState(false); // State untuk animasi spin
+    const [isReversed, setIsReversed] = useState(false); // State pelacak status reverse/swap
+
+    // Cek apakah role diizinkan swap
+    const canSwap = ["Administrator", "Super Admin"].includes(userRole);
 
     const [formData, setFormData] = useState({
         date_issued: today,
@@ -46,45 +52,79 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
 
     const handleTypeChange = (val) => {
         setNewType(val);
-        setFormData((prev) => ({ ...prev, debt_id: "" }));
+        setIsReversed(false); // Reset status reverse saat ganti tab
+        setFormData((prev) => ({ ...prev, debt_id: "", cred_id: "" }));
         const defaultDestId = ["Administrator", "Super Admin"].includes(userRole) ? null : 1;
         setSelectedDestinationWarehouseId(defaultDestId);
     };
 
     const patch = (fields) => setFormData((prev) => ({ ...prev, ...fields }));
 
-    const credOptions = [
-        { value: "", label: "Pilih Akun" },
-        ...accounts
-            .filter((a) => Number(a.warehouse_id) === Number(warehouseId) && (["Administrator", "Super Admin"].includes(userRole) ? true : a.account_id === 2))
-            .map((a) => ({ value: a.id, label: a.group })),
-    ];
+    // Function Swap dengan Animasi & Pembalikan Opsi Filter
+    const handleSwapAccounts = () => {
+        setIsSwapping(true);
+        setIsReversed((prev) => !prev); // Toggle status reverse
 
-    const debtOptions = [
-        { value: "", label: "Select Account" },
-        ...accounts
-            .filter((a) => {
-                const targetId = newType === "self" ? warehouseId : effectiveDestinationId;
-                return Number(a.warehouse_id) === Number(targetId) && Number(a.id) !== Number(formData.cred_id);
-            })
-            .map((a) => ({
-                value: a.id,
-                label: a.group + (newType === "self" ? "" : ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code})`),
-            })),
-    ];
+        setFormData((prev) => ({
+            ...prev,
+            cred_id: prev.debt_id,
+            debt_id: prev.cred_id,
+        }));
+
+        setTimeout(() => setIsSwapping(false), 300); // Durasi animasi putar
+    };
+
+    // Filter Creditor (Rekening Asal) - Disesuaikan dengan isReversed
+    const credOptions = useMemo(() => {
+        const sourceWarehouseId = isReversed ? (newType === "self" ? warehouseId : effectiveDestinationId) : warehouseId;
+
+        return [
+            { value: "", label: "Pilih Akun" },
+            ...accounts
+                .filter((a) => {
+                    const matchWarehouse = Number(a.warehouse_id) === Number(sourceWarehouseId);
+                    const matchRole = ["Administrator", "Super Admin"].includes(userRole) ? true : a.account_id === 2;
+                    const notSameAsDebt = Number(a.id) !== Number(formData.debt_id);
+                    return matchWarehouse && matchRole && notSameAsDebt;
+                })
+                .map((a) => ({
+                    value: a.id,
+                    label: a.group + (isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code})` : ""),
+                })),
+        ];
+    }, [accounts, warehouseId, effectiveDestinationId, userRole, formData.debt_id, isReversed, newType]);
+
+    // Filter Debtor (Rekening Tujuan) - Disesuaikan dengan isReversed
+    const debtOptions = useMemo(() => {
+        const targetWarehouseId = isReversed ? warehouseId : newType === "self" ? warehouseId : effectiveDestinationId;
+
+        return [
+            { value: "", label: "Pilih Akun" },
+            ...accounts
+                .filter((a) => {
+                    const matchWarehouse = Number(a.warehouse_id) === Number(targetWarehouseId);
+                    const notSameAsCred = Number(a.id) !== Number(formData.cred_id);
+                    return matchWarehouse && notSameAsCred;
+                })
+                .map((a) => ({
+                    value: a.id,
+                    label: a.group + (!isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code})` : ""),
+                })),
+        ];
+    }, [accounts, warehouseId, effectiveDestinationId, formData.cred_id, isReversed, newType]);
 
     const warehouseOptions = [{ value: "", label: "Select Warehouse" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
 
-    // Auto-match destination account for inter-branch mutations
     useEffect(() => {
-        if (newType !== "other" || !formData.cred_id || !accounts?.length || !effectiveDestinationId) return;
+        if (newType !== "other" || !formData.cred_id || formData.debt_id || !accounts?.length || !effectiveDestinationId) return;
 
         const selectedCred = accounts.find((a) => Number(a.id) === Number(formData.cred_id));
         if (!selectedCred) return;
 
-        const matchingDebt = accounts.find((a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(effectiveDestinationId));
+        const targetWId = isReversed ? warehouseId : effectiveDestinationId;
+        const matchingDebt = accounts.find((a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(targetWId));
         if (matchingDebt) patch({ debt_id: matchingDebt.id });
-    }, [formData.cred_id, accounts, effectiveDestinationId, newType]);
+    }, [formData.cred_id, formData.debt_id, accounts, effectiveDestinationId, warehouseId, newType, isReversed]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -111,9 +151,9 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                 admin_fee: 0,
                 warehouse_id: warehouseId,
             });
+            setIsReversed(false);
             if (typeof mutate === "function") mutate();
             if (typeof mutateBalance === "function") mutateBalance();
-            // if (typeof isModalOpen === "function") isModalOpen(false);
         } catch (error) {
             setFormError(error.response?.data?.message || "Terjadi kesalahan saat menyimpan data.");
         } finally {
@@ -132,12 +172,20 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                 setActiveTab={handleTypeChange}
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {formError && (
-                        <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300">
-                            <AlertCircle className="h-4 w-4 shrink-0" />
-                            <span>{formError}</span>
-                        </div>
-                    )}
+                    {/* Alert Error dengan Motion */}
+                    <AnimatePresence>
+                        {formError && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0, y: -6 }}
+                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40 overflow-hidden"
+                            >
+                                <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+                                <span>{formError}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="space-y-1" hidden={!["Administrator", "Super Admin"].includes(userRole)}>
                         <label htmlFor="tx-date" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -154,11 +202,11 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                         />
                     </div>
 
-                    {/* Destination Warehouse */}
+                    {/* Destination / Source Warehouse Dropdown Header */}
                     {["Administrator", "Super Admin"].includes(userRole) && newType === "other" && (
                         <div className="space-y-1">
                             <label htmlFor="tx-destination-warehouse" className={labelClass}>
-                                Cabang Tujuan Mutasi
+                                {isReversed ? "Cabang Asal Mutasi" : "Cabang Tujuan Mutasi"}
                             </label>
                             <Dropdown
                                 id="tx-destination-warehouse"
@@ -171,7 +219,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                     )}
 
                     {/* Source & Destination Accounts */}
-                    <div className="grid sm:grid-cols-2 gap-2">
+                    <div className={`grid grid-cols-1 ${canSwap ? "sm:grid-cols-[1fr_auto_1fr]" : "sm:grid-cols-2"} items-end gap-2`}>
                         <div className="space-y-1">
                             <label htmlFor="tx-cred-account" className={labelClass}>
                                 Rekening Asal (Dari)
@@ -184,9 +232,28 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                                 onChange={(val) => patch({ cred_id: val })}
                             />
                         </div>
+
+                        {/* Tombol Swap / Tukar */}
+                        {canSwap && (
+                            <div className="flex justify-center pb-0.5">
+                                <motion.button
+                                    whileHover={{ scale: 1.08 }}
+                                    whileTap={{ scale: 0.92 }}
+                                    type="button"
+                                    onClick={handleSwapAccounts}
+                                    title="Tukar Rekening Asal & Tujuan"
+                                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer shadow-xs"
+                                >
+                                    <motion.div animate={{ rotate: isSwapping ? 180 : 0 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
+                                        <ArrowLeftRight className="w-4 h-4" />
+                                    </motion.div>
+                                </motion.button>
+                            </div>
+                        )}
+
                         <div className="space-y-1">
                             <label htmlFor="tx-debt-account" className={labelClass}>
-                                Ke {newType === "self" ? "Akun" : "Cabang Lain / Pusat"}
+                                Ke {newType === "self" ? "Akun" : isReversed ? "Cabang Saat Ini" : "Cabang Lain / Pusat"}
                             </label>
                             <Dropdown
                                 id="tx-debt-account"
@@ -194,7 +261,6 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                                 options={debtOptions}
                                 selectedValue={formData.debt_id}
                                 onChange={(val) => patch({ debt_id: val })}
-                                disabled={!formData.cred_id}
                             />
                         </div>
                     </div>
@@ -267,20 +333,24 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
 
                     {/* Actions */}
                     <div className="flex justify-end gap-2 pt-2">
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="button"
                             onClick={() => typeof isModalOpen === "function" && isModalOpen(false)}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
                         >
                             Batal
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                            whileHover={{ scale: loading ? 1 : 1.02 }}
+                            whileTap={{ scale: loading ? 1 : 0.98 }}
                             type="submit"
-                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60"
+                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60 cursor-pointer"
                             disabled={loading}
                         >
                             {loading ? "Menyimpan data..." : "Tambah Mutasi"}
-                        </button>
+                        </motion.button>
                     </div>
                 </form>
             </TabSwitcher>
