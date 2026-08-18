@@ -1,51 +1,56 @@
+"use client";
+
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import Notification from "@/app/components/Notification";
 import { changeLockStatus } from "@/app/hooks/JournalActionService";
 import useWarehouse from "@/app/hooks/useWarehouse";
 import useWarehouseZone from "@/app/hooks/useWarehouseZone";
-import { Lock, Plus, Search, Unlock, Warehouse, Building2, Clock, MapPin, Wallet, Edit2, Calendar, CheckCircle2 } from "lucide-react";
-import { useMemo, useState } from "react";
 import { useAccounts } from "@/app/hooks/useAccounts";
-import EditWarehouse from "./EditWarehouse";
+import { calculateContractTillEnd } from "@/app/utils/format";
+import { Building2, Calendar, CheckCircle2, Clock, Edit2, Lock, MapPin, Plus, Search, Unlock, Wallet, Warehouse } from "lucide-react";
+import { useMemo, useState } from "react";
 import AssignAccount from "./AssignAccount";
 import CreateWarehouse from "./CreateWarehouse";
-import { calculateContractTillEnd } from "@/app/utils/format";
+import EditWarehouse from "./EditWarehouse";
 import UpdateOpenHours from "./UpdateOpenHours";
 
 const WarehouseTable = () => {
-    const { warehouses = [], mutate } = useWarehouse();
+    // 1. Definisikan default value aman jika data custom hooks masih loading / undefined
+    const { warehouses = [], loading: loadingWh, mutate } = useWarehouse();
     const { accounts = [] } = useAccounts();
     const { zones = [] } = useWarehouseZone();
+
     const [notification, setNotification] = useState("");
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalName, setModalName] = useState("create");
     const [modalTitle, setModalTitle] = useState("");
 
+    const [status, setStatus] = useState("all");
+    const [zone, setZone] = useState("all");
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // Option data aman dari undefined
     const statusOptions = [
         { value: "all", label: "All Status" },
         { value: 1, label: "Active" },
         { value: 0, label: "Inactive" },
     ];
 
-    // Safe mapping for zone options
     const zoneOptions = useMemo(() => {
-        return [{ value: "all", label: "All Zones" }, ...(zones?.map((zone) => ({ value: zone.id, label: zone.zone_name })) || [])];
+        const safeZones = Array.isArray(zones) ? zones : [];
+        return [{ value: "all", label: "All Zones" }, ...safeZones.map((z) => ({ value: z.id, label: z.zone_name }))];
     }, [zones]);
 
-    const [status, setStatus] = useState("all");
-    const [zone, setZone] = useState("all");
-    const [searchTerm, setSearchTerm] = useState("");
-
-    // Safe filtering logic
+    // Safety Filtered List
     const filteredWarehouse = useMemo(() => {
-        if (!Array.isArray(warehouses)) return [];
-
-        return warehouses.filter((warehouse) => {
-            const matchesStatus = status === "all" || warehouse.status === parseInt(status, 10);
-            const matchesZone = zone === "all" || warehouse.warehouse_zone_id === parseInt(zone, 10);
-            const matchesSearch = (warehouse?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
+        return safeWarehouses.filter((wh) => {
+            if (!wh) return false;
+            const matchesStatus = status === "all" || Number(wh.status) === Number(status);
+            const matchesZone = zone === "all" || Number(wh.warehouse_zone_id) === Number(zone);
+            const matchesSearch = (wh.name || "").toLowerCase().includes((searchTerm || "").toLowerCase());
             return matchesStatus && matchesZone && matchesSearch;
         });
     }, [warehouses, status, zone, searchTerm]);
@@ -53,8 +58,8 @@ const WarehouseTable = () => {
     const toggleLockStatus = async (id) => {
         try {
             const response = await changeLockStatus(id);
-            setNotification(response?.data?.message || "Warehouse lock status updated successfully.");
-            await mutate();
+            setNotification(response?.data?.message || response?.message || "Warehouse lock status updated successfully.");
+            if (typeof mutate === "function") await mutate();
         } catch (error) {
             setNotification("Failed to update warehouse lock status.");
         }
@@ -64,10 +69,9 @@ const WarehouseTable = () => {
         <>
             <Notification message={notification} onClose={() => setNotification(null)} />
 
-            {/* Header Controls */}
+            {/* Filter Bar Top */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
-                    {/* Search Input */}
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
                             <Search className="h-4 w-4" aria-hidden="true" />
@@ -80,8 +84,6 @@ const WarehouseTable = () => {
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
-
-                    {/* Status Dropdown */}
                     <div>
                         <Dropdown
                             id="warehouse-status-filter"
@@ -91,21 +93,17 @@ const WarehouseTable = () => {
                             onChange={(val) => setStatus(val)}
                         />
                     </div>
-
-                    {/* Zone Dropdown */}
                     <div>
                         <Dropdown id="warehouse-zone-filter" label="Zone Filter" options={zoneOptions} selectedValue={zone} onChange={(val) => setZone(val)} />
                     </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex items-center gap-3 self-start sm:self-center">
                     <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3.5 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/50 text-xs font-bold shrink-0">
                         <Warehouse className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>{filteredWarehouse?.length || 0}</span>
+                        <span>{filteredWarehouse.length}</span>
                         <span className="text-indigo-500/80 font-medium">Warehouses</span>
                     </div>
-
                     <button
                         type="button"
                         onClick={() => {
@@ -118,7 +116,6 @@ const WarehouseTable = () => {
                         <Plus className="h-4 w-4" />
                         <span>Ubah Jam Buka</span>
                     </button>
-
                     <button
                         type="button"
                         onClick={() => {
@@ -168,8 +165,9 @@ const WarehouseTable = () => {
                             {filteredWarehouse.length > 0 ? (
                                 filteredWarehouse.map((wh) => {
                                     const isLeased = wh.ownership_status === "leased";
-                                    // Pengecekan aman tanggal sewa
-                                    const contractRemaining = wh?.lease?.lease_end_date ? calculateContractTillEnd(wh.lease.lease_end_date) : null;
+
+                                    // Panggilan fungsi calculateContractTillEnd yang mengembalikan objek { text, colorClass }
+                                    const contractInfo = calculateContractTillEnd(wh.lease?.lease_end_date);
 
                                     return (
                                         <tr key={wh.id} className="group transition-colors duration-150 hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
@@ -199,16 +197,18 @@ const WarehouseTable = () => {
                                             {/* Status Kepemilikan */}
                                             <td className="py-3.5 px-4 align-middle">
                                                 {isLeased ? (
-                                                    <div className="inline-flex flex-col gap-0.5">
-                                                        <div className="inline-flex items-center gap-1.5 self-start rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                                                    <div className="inline-flex flex-col gap-1 items-start">
+                                                        <div className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
                                                             <Calendar className="h-3 w-3 text-indigo-500" />
                                                             <span>Sewa {wh.lease?.lease_type === "yearly" ? "Tahunan" : "Bulanan"}</span>
                                                         </div>
-                                                        {contractRemaining && (
-                                                            <div className="pl-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                                                                Sisa: <span className="font-bold text-slate-700 dark:text-slate-200">{contractRemaining}</span>
-                                                            </div>
-                                                        )}
+                                                        <div className="text-[10px] font-mono flex items-center gap-1">
+                                                            <span className="text-slate-400">Sisa:</span>
+                                                            {/* Mengakses properti .text dan .colorClass dari Objek hasil calculateContractTillEnd */}
+                                                            <span className={`px-1.5 py-0.5 rounded border ${contractInfo.colorClass}`}>
+                                                                {contractInfo.text}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
@@ -242,7 +242,7 @@ const WarehouseTable = () => {
                                                 </div>
                                             </td>
 
-                                            {/* Toggle Akses */}
+                                            {/* Lock Status Button */}
                                             <td className="py-3.5 px-4 align-middle text-center">
                                                 <button
                                                     type="button"
@@ -279,7 +279,7 @@ const WarehouseTable = () => {
                                                 </span>
                                             </td>
 
-                                            {/* Action */}
+                                            {/* Action Button */}
                                             <td className="py-3.5 px-4 align-middle text-right">
                                                 <button
                                                     type="button"
@@ -315,28 +315,39 @@ const WarehouseTable = () => {
 
             {/* Modal Components */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
-                {modalName === "create" && (
-                    <CreateWarehouse isModalOpen={setIsModalOpen} accounts={accounts} zones={zones} notification={setNotification} mutate={mutate} />
+                {isModalOpen && modalName === "create" && (
+                    <CreateWarehouse
+                        isModalOpen={setIsModalOpen}
+                        accounts={Array.isArray(accounts) ? accounts : []}
+                        zones={Array.isArray(zones) ? zones : []}
+                        notification={setNotification}
+                        mutate={mutate}
+                    />
                 )}
-                {modalName === "update-opening-hours" && (
-                    <UpdateOpenHours notification={setNotification} mutate={mutate} isModalOpen={setIsModalOpen} warehouses={warehouses} />
+                {isModalOpen && modalName === "update-opening-hours" && (
+                    <UpdateOpenHours
+                        notification={setNotification}
+                        mutate={mutate}
+                        isModalOpen={setIsModalOpen}
+                        warehouses={Array.isArray(warehouses) ? warehouses : []}
+                    />
                 )}
-                {modalName === "edit" && (
+                {isModalOpen && modalName === "edit" && selectedWarehouse && (
                     <EditWarehouse
-                        key={selectedWarehouse?.id}
+                        key={selectedWarehouse.id}
                         warehouse={selectedWarehouse}
-                        accounts={accounts}
-                        zones={zones}
+                        accounts={Array.isArray(accounts) ? accounts : []}
+                        zones={Array.isArray(zones) ? zones : []}
                         isModalOpen={setIsModalOpen}
                         notification={setNotification}
                         mutate={mutate}
                     />
                 )}
-                {modalName === "assign-account" && (
+                {isModalOpen && modalName === "assign-account" && selectedWarehouse && (
                     <AssignAccount
                         warehouse={selectedWarehouse}
                         isModalOpen={setIsModalOpen}
-                        accounts={accounts}
+                        accounts={Array.isArray(accounts) ? accounts : []}
                         notification={setNotification}
                         mutate={mutate}
                     />
