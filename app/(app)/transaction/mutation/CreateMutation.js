@@ -23,13 +23,13 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
         is_confirmed: true,
         amount: "",
         fee_amount: 0,
-        admin_fee: "",
+        admin_fee: 0,
         trx_type: "Mutasi Kas",
         description: "",
         warehouse_id: warehouseId,
     });
 
-    const availableWarehouses = useMemo(() => warehouses.filter((w) => Number(w.id) !== Number(warehouseId) && w.status === 1), [warehouses, warehouseId]);
+    const availableWarehouses = useMemo(() => warehouses.filter((w) => w.status === 1), [warehouses]);
 
     const [selectedDestinationWarehouseId, setSelectedDestinationWarehouseId] = useState(() => availableWarehouses[0]?.id || 1);
 
@@ -108,6 +108,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                 fee_amount: 0,
                 trx_type: "Mutasi Kas",
                 description: "",
+                admin_fee: 0,
             });
             if (typeof mutate === "function") mutate();
             if (typeof mutateBalance === "function") mutateBalance();
@@ -240,7 +241,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                                     disabled={!formData.amount}
                                 />
                             </div>
-                            {formData.admin_fee && !isNaN(parseFloat(formData.admin_fee)) && (
+                            {formData.admin_fee !== 0 && !isNaN(parseFloat(formData.admin_fee)) && (
                                 <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
                                     Preview: Rp {parseFloat(formData.admin_fee).toLocaleString("id-ID")}
                                 </p>
