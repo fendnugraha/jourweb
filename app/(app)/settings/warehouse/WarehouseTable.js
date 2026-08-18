@@ -5,18 +5,18 @@ import { changeLockStatus } from "@/app/hooks/JournalActionService";
 import useWarehouse from "@/app/hooks/useWarehouse";
 import useWarehouseZone from "@/app/hooks/useWarehouseZone";
 import { Lock, Plus, Search, Unlock, Warehouse, Building2, Clock, MapPin, Wallet, Edit2, Calendar, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAccounts } from "@/app/hooks/useAccounts";
 import EditWarehouse from "./EditWarehouse";
 import AssignAccount from "./AssignAccount";
 import CreateWarehouse from "./CreateWarehouse";
-import { calculateContractTillEnd, formatRupiah } from "@/app/utils/format";
+import { calculateContractTillEnd } from "@/app/utils/format";
 import UpdateOpenHours from "./UpdateOpenHours";
 
 const WarehouseTable = () => {
-    const { warehouses, loading, mutate } = useWarehouse();
-    const { accounts } = useAccounts();
-    const { zones } = useWarehouseZone();
+    const { warehouses = [], mutate } = useWarehouse();
+    const { accounts = [] } = useAccounts();
+    const { zones = [] } = useWarehouseZone();
     const [notification, setNotification] = useState("");
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,18 +29,26 @@ const WarehouseTable = () => {
         { value: 0, label: "Inactive" },
     ];
 
-    const zoneOptions = [{ value: "all", label: "All Zones" }, ...zones?.map((zone) => ({ value: zone.id, label: zone.zone_name }))];
+    // Safe mapping for zone options
+    const zoneOptions = useMemo(() => {
+        return [{ value: "all", label: "All Zones" }, ...(zones?.map((zone) => ({ value: zone.id, label: zone.zone_name })) || [])];
+    }, [zones]);
 
-    const [status, setStatus] = useState(1);
+    const [status, setStatus] = useState("all");
     const [zone, setZone] = useState("all");
     const [searchTerm, setSearchTerm] = useState("");
 
-    const filteredWarehouse = warehouses?.filter((warehouse) => {
-        const matchesStatus = status === "all" || warehouse.status === parseInt(status);
-        const matchesZone = zone === "all" || warehouse.warehouse_zone_id === parseInt(zone);
-        const matchesSearch = warehouse.name.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesStatus && matchesZone && matchesSearch;
-    });
+    // Safe filtering logic
+    const filteredWarehouse = useMemo(() => {
+        if (!Array.isArray(warehouses)) return [];
+
+        return warehouses.filter((warehouse) => {
+            const matchesStatus = status === "all" || warehouse.status === parseInt(status, 10);
+            const matchesZone = zone === "all" || warehouse.warehouse_zone_id === parseInt(zone, 10);
+            const matchesSearch = (warehouse?.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesStatus && matchesZone && matchesSearch;
+        });
+    }, [warehouses, status, zone, searchTerm]);
 
     const toggleLockStatus = async (id) => {
         try {
@@ -55,9 +63,11 @@ const WarehouseTable = () => {
     return (
         <>
             <Notification message={notification} onClose={() => setNotification(null)} />
+
+            {/* Header Controls */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-                {/* Left Side Filters */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
+                    {/* Search Input */}
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
                             <Search className="h-4 w-4" aria-hidden="true" />
@@ -66,43 +76,36 @@ const WarehouseTable = () => {
                             type="text"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Search..."
-                            aria-label="Search stock item list"
+                            placeholder="Search warehouse..."
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
+
                     {/* Status Dropdown */}
                     <div>
                         <Dropdown
                             id="warehouse-status-filter"
-                            label="warehouse Status Filter"
+                            label="Status Filter"
                             options={statusOptions}
                             selectedValue={status}
                             onChange={(val) => setStatus(val)}
-                            ariaLabel="Filter warehouses by status"
                         />
                     </div>
 
                     {/* Zone Dropdown */}
                     <div>
-                        <Dropdown
-                            id="warehouse-zone-filter"
-                            label="warehouse Zone Filter"
-                            options={zoneOptions}
-                            selectedValue={zone}
-                            onChange={(val) => setZone(val)}
-                            ariaLabel="Filter warehouses by zone"
-                        />
+                        <Dropdown id="warehouse-zone-filter" label="Zone Filter" options={zoneOptions} selectedValue={zone} onChange={(val) => setZone(val)} />
                     </div>
                 </div>
 
-                {/* Action Button */}
+                {/* Action Buttons */}
                 <div className="flex items-center gap-3 self-start sm:self-center">
                     <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3.5 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/50 text-xs font-bold shrink-0">
                         <Warehouse className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                         <span>{filteredWarehouse?.length || 0}</span>
                         <span className="text-indigo-500/80 font-medium">Warehouses</span>
                     </div>
+
                     <button
                         type="button"
                         onClick={() => {
@@ -110,11 +113,12 @@ const WarehouseTable = () => {
                             setModalName("update-opening-hours");
                             setIsModalOpen(true);
                         }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
                         <span>Ubah Jam Buka</span>
                     </button>
+
                     <button
                         type="button"
                         onClick={() => {
@@ -122,7 +126,7 @@ const WarehouseTable = () => {
                             setModalName("create");
                             setIsModalOpen(true);
                         }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
                         <span>New Warehouse</span>
@@ -130,10 +134,10 @@ const WarehouseTable = () => {
                 </div>
             </div>
 
-            <div className="w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/80 shadow-xs">
+            {/* Table Area */}
+            <div className="w-full overflow-hidden rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/80 dark:bg-slate-900/80 shadow-xs mt-4">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
-                        {/* Header Minimalis */}
                         <thead>
                             <tr className="border-b border-slate-100 bg-slate-50/40 text-[10px] font-semibold tracking-wider text-slate-400 dark:border-slate-800/60 dark:bg-slate-950/30 uppercase">
                                 <th scope="col" className="py-3 px-4 font-medium">
@@ -160,15 +164,16 @@ const WarehouseTable = () => {
                             </tr>
                         </thead>
 
-                        {/* Body Tabel */}
                         <tbody className="divide-y divide-slate-100/80 text-xs dark:divide-slate-800/50">
-                            {filteredWarehouse?.length > 0 ? (
+                            {filteredWarehouse.length > 0 ? (
                                 filteredWarehouse.map((wh) => {
                                     const isLeased = wh.ownership_status === "leased";
+                                    // Pengecekan aman tanggal sewa
+                                    const contractRemaining = wh?.lease?.lease_end_date ? calculateContractTillEnd(wh.lease.lease_end_date) : null;
 
                                     return (
                                         <tr key={wh.id} className="group transition-colors duration-150 hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
-                                            {/* 1. Nama Cabang & Kas */}
+                                            {/* Cabang & Kas */}
                                             <td className="py-3.5 px-4 align-middle">
                                                 <div className="flex items-center gap-2.5">
                                                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -176,7 +181,7 @@ const WarehouseTable = () => {
                                                     </div>
                                                     <div>
                                                         <div className="font-semibold text-slate-900 dark:text-slate-100 text-[13px] tracking-tight">
-                                                            {wh.name}
+                                                            {wh.name || "-"}
                                                         </div>
                                                         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                                                             <Wallet className="h-3 w-3 text-indigo-500" />
@@ -191,7 +196,7 @@ const WarehouseTable = () => {
                                                 </div>
                                             </td>
 
-                                            {/* 2. Status Kepemilikan (Clean SaaS Badges) */}
+                                            {/* Status Kepemilikan */}
                                             <td className="py-3.5 px-4 align-middle">
                                                 {isLeased ? (
                                                     <div className="inline-flex flex-col gap-0.5">
@@ -199,12 +204,11 @@ const WarehouseTable = () => {
                                                             <Calendar className="h-3 w-3 text-indigo-500" />
                                                             <span>Sewa {wh.lease?.lease_type === "yearly" ? "Tahunan" : "Bulanan"}</span>
                                                         </div>
-                                                        <div className="pl-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                                                            Sisa:{" "}
-                                                            <span className="font-bold text-slate-700 dark:text-slate-200">
-                                                                {calculateContractTillEnd(wh.lease?.lease_end_date) || "-"}
-                                                            </span>
-                                                        </div>
+                                                        {contractRemaining && (
+                                                            <div className="pl-1 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                                                Sisa: <span className="font-bold text-slate-700 dark:text-slate-200">{contractRemaining}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : (
                                                     <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
@@ -214,7 +218,7 @@ const WarehouseTable = () => {
                                                 )}
                                             </td>
 
-                                            {/* 3. Operasional & Zona */}
+                                            {/* Jam Buka & Zona */}
                                             <td className="py-3.5 px-4 align-middle">
                                                 <div className="space-y-0.5">
                                                     <div className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-200">
@@ -230,7 +234,7 @@ const WarehouseTable = () => {
                                                 </div>
                                             </td>
 
-                                            {/* 4. Alamat */}
+                                            {/* Alamat */}
                                             <td className="py-3.5 px-4 align-middle max-w-50" title={wh.address}>
                                                 <div className="flex items-start gap-1 text-slate-500 dark:text-slate-400">
                                                     <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400 mt-0.5" />
@@ -238,7 +242,7 @@ const WarehouseTable = () => {
                                                 </div>
                                             </td>
 
-                                            {/* 5. Akses / Kunci Status Toggle */}
+                                            {/* Toggle Akses */}
                                             <td className="py-3.5 px-4 align-middle text-center">
                                                 <button
                                                     type="button"
@@ -263,7 +267,7 @@ const WarehouseTable = () => {
                                                 </button>
                                             </td>
 
-                                            {/* 6. Status Keaktifan Badge */}
+                                            {/* Status Keaktifan */}
                                             <td className="py-3.5 px-4 align-middle text-center">
                                                 <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-300">
                                                     <span
@@ -275,7 +279,7 @@ const WarehouseTable = () => {
                                                 </span>
                                             </td>
 
-                                            {/* 7. Action Button Ghost Style */}
+                                            {/* Action */}
                                             <td className="py-3.5 px-4 align-middle text-right">
                                                 <button
                                                     type="button"
@@ -308,6 +312,8 @@ const WarehouseTable = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Modal Components */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
                 {modalName === "create" && (
                     <CreateWarehouse isModalOpen={setIsModalOpen} accounts={accounts} zones={zones} notification={setNotification} mutate={mutate} />
