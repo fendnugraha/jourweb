@@ -109,6 +109,7 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
                 trx_type: "Mutasi Kas",
                 description: "",
                 admin_fee: 0,
+                warehouse_id: warehouseId,
             });
             if (typeof mutate === "function") mutate();
             if (typeof mutateBalance === "function") mutateBalance();
