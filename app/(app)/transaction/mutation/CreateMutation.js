@@ -132,7 +132,8 @@ const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, war
 
         if (!formData.cred_id) return setFormError("Silakan pilih Rekening Asal (Dari).");
         if (!formData.debt_id) return setFormError("Silakan pilih Akun/Cabang Tujuan.");
-        if (Number(formData.cred_id) === Number(formData.debt_id)) return setFormError("Rekening Asal dan Rekening Tujuan tidak boleh sama.");
+        if (Number(formData.cred_id) === Number(formData.debt_id) && newType === "self")
+            return setFormError("Rekening Asal dan Rekening Tujuan tidak boleh sama.");
         if (!formData.amount || parseFloat(formData.amount) <= 0) return setFormError("Jumlah mutasi harus lebih besar dari 0.");
 
         setLoading(true);
