@@ -148,7 +148,7 @@ const ExpenseLog = ({ warehouseId, setWarehouseId, warehouseCashId, journals, no
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9.5 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-100"
                         />
                     </div>
-                    {["Administrator", "Super Admin"].includes(userRole.toLowerCase()) && (
+                    {["Administrator", "Super Admin"].includes(userRole) && (
                         <div>
                             <Dropdown
                                 id="warehouse-filter"
