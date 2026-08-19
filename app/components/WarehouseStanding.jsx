@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Trophy, Medal, ChevronUp, Store, Sparkles, X, TrendingUp } from "lucide-react";
+import { Crown, Trophy, Medal, ChevronUp, Store, Sparkles, X, TrendingUp, Podium } from "lucide-react";
 import useGetProfit from "../hooks/useGetProfit";
 import { useAuth } from "../utils/auth";
 import { formatRupiah } from "../utils/format";
@@ -9,7 +9,7 @@ export default function WarehouseStanding() {
     const { user } = useAuth({ middleware: "auth" });
     const userWarehouseId = user?.warehouse_id;
     const drawerRef = useRef(null);
-    const { profit } = useGetProfit();
+    const { profit, mutate } = useGetProfit();
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -45,10 +45,10 @@ export default function WarehouseStanding() {
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.96 }}
                         onClick={() => setSidebarOpen(true)}
-                        className="hidden sm:flex ml-auto items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/95 px-4 py-2.5 shadow-xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 cursor-pointer group"
+                        className="hidden sm:flex ml-auto items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/5 px-4 py-2.5 shadow-xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95 cursor-pointer group"
                     >
                         <div className="flex items-center justify-center rounded-xl bg-amber-500/10 p-2 text-amber-500 dark:bg-amber-500/20">
-                            <Trophy className="h-4 w-4" />
+                            <Podium className="h-4 w-4" />
                         </div>
                         <div className="text-left">
                             <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Leaderboard</div>
@@ -75,9 +75,12 @@ export default function WarehouseStanding() {
                         {/* Header Panel */}
                         <div className="mb-3 flex shrink-0 items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/80">
                             <div className="flex items-center gap-2.5">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
-                                    <Sparkles className="h-4 w-4" />
-                                </div>
+                                <button
+                                    onClick={() => mutate()}
+                                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
+                                >
+                                    <Podium className="h-4 w-4" />
+                                </button>
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">Performa Omset Cabang</h3>
                                     <p className="text-[10px] font-medium text-slate-400">Peringkat realtime hari ini</p>
