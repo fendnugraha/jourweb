@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import Dropdown from "@/app/components/Dropdown";
 import TabSwitcher from "@/app/components/TabSwitcher";
+import { useAuth } from "@/app/utils/auth";
 import axios from "@/app/utils/axios";
 import { DateTimeNow } from "@/app/utils/format";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,7 +12,9 @@ const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
 const inputClass =
     "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
 
-const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, warehouseId, notification, warehouses = [], userRole }) => {
+const CreateMutation = ({ accounts = [], mutate, mutateBalance, isModalOpen, notification, warehouses = [], userRole }) => {
+    const { user } = useAuth();
+    const warehouseId = user.warehouse_id;
     const [newType, setNewType] = useState("self");
     const { today } = DateTimeNow();
     const [formError, setFormError] = useState("");

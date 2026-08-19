@@ -35,12 +35,8 @@ const DashboardContent = () => {
             {isAdmin && <MobileNavDrawer menuList={navTabs} activeTab={activeTab} setActiveTab={setActiveTab} />}
 
             <motion.div {...fadeUp(0.12)}>
-                {isAdmin ? (
-                    activeTab === "mutation" ? (
-                        <AdminDashboard userRole={userRole} warehouseId={warehouseId} />
-                    ) : (
-                        <DailyDashboardGrid userRole={userRole} warehouseId={warehouseId} />
-                    )
+                {isAdmin && activeTab === "mutation" ? (
+                    <AdminDashboard userRole={userRole} warehouseId={warehouseId} />
                 ) : (
                     <DailyDashboardGrid userRole={userRole} warehouseId={warehouseId} />
                 )}
