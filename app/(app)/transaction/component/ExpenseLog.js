@@ -1,11 +1,12 @@
 import Dropdown from "@/app/components/Dropdown";
 import TabSwitcher from "@/app/components/TabSwitcher";
+import useWarehouse from "@/app/hooks/useWarehouse";
 import axios from "@/app/utils/axios";
 import { DateTimeNow, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
 import { AlertCircle, ArrowUpRight, BanknoteArrowDown, Calendar, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const ExpenseLog = ({ warehouseId, warehouseCashId, journals, notification, mutate, mutateBalance, accounts, setTxToDelete }) => {
+const ExpenseLog = ({ warehouseId, setWarehouseId, warehouseCashId, journals, notification, mutate, mutateBalance, accounts, setTxToDelete, userRole }) => {
     const { today } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [formError, setFormError] = useState("");
@@ -25,15 +26,40 @@ const ExpenseLog = ({ warehouseId, warehouseCashId, journals, notification, muta
     });
 
     const filteredJournals = useMemo(() => {
-        return journals.filter((journal) => {
-            const matchesSearchTerm = journal.description.toLowerCase().includes(searchTerm.toLowerCase()) && journal.trx_type === "Pengeluaran";
-            return matchesSearchTerm;
+        // 1. Proteksi jika journals berbentuk Pagination Laravel (journals.data) atau undefined
+        const list = Array.isArray(journals) ? journals : journals?.data || [];
+
+        return list.filter((journal) => {
+            // 2. Filter Search Term (Safe null)
+            const descriptionText = journal.description?.toLowerCase() || "";
+            const matchesSearch = descriptionText.includes((searchTerm || "").toLowerCase());
+
+            // 3. Filter trx_type (Case-insensitive / abaikan huruf besar-kecil)
+            const isPengeluaran = journal.trx_type?.toLowerCase() === "pengeluaran";
+
+            // 4. Filter Warehouse (Loloskan jika 'all', empty, null, atau cocok ID-nya)
+            const isWarehouseAll = !warehouseId || warehouseId === "all";
+            const matchesWarehouse = isWarehouseAll || String(journal.warehouse_id) === String(warehouseId);
+
+            return matchesSearch && isPengeluaran && matchesWarehouse;
         });
-    }, [journals, searchTerm]);
+    }, [journals, searchTerm, warehouseId]);
 
     const accountOptions = [
         { value: "", label: "Pilih Account" },
         ...accounts.filter((account) => account.account?.type === "Biaya").map((account) => ({ value: account.id, label: account.name })),
+    ];
+
+    const { warehouses } = useWarehouse();
+
+    const warehouseOptions = [
+        { value: "all", label: "Semua Cabang" },
+        ...warehouses
+            .filter((w) => w.status === 1)
+            .map((warehouse) => ({
+                value: warehouse.id,
+                label: warehouse.name,
+            })),
     ];
 
     const bankOptions = [
@@ -109,7 +135,7 @@ const ExpenseLog = ({ warehouseId, warehouseCashId, journals, notification, muta
             {/* 1. HEADER BAR & FILTER */}
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-2xl bg-white/80 border border-slate-200/80 shadow-xs backdrop-blur-xl dark:bg-slate-900/80 dark:border-slate-800">
-                <div className="flex-1 max-w-md">
+                <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 dark:text-slate-500 pointer-events-none">
                             <Search className="h-4 w-4" aria-hidden="true" />
@@ -120,6 +146,17 @@ const ExpenseLog = ({ warehouseId, warehouseCashId, journals, notification, muta
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search expense description..."
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9.5 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-100"
+                        />
+                    </div>
+                    <div>
+                        <Dropdown
+                            id="warehouse-filter"
+                            label="Warehouse Filter"
+                            options={warehouseOptions}
+                            selectedValue={warehouseId}
+                            onChange={(val) => setWarehouseId(val)}
+                            ariaLabel="Filter by warehouse"
+                            disabled={!["Administrator", "Super Admin"].includes(userRole)}
                         />
                     </div>
                 </div>

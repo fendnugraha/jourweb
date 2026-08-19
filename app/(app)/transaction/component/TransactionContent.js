@@ -517,6 +517,7 @@ const TransactionContent = () => {
                         >
                             <ExpenseLog
                                 warehouseId={selectedWarehouseId}
+                                setWarehouseId={setSelectedWarehouseId}
                                 warehouseCashId={warehouseCashId}
                                 journals={journalByWarehouse}
                                 notification={setNotification}
@@ -524,6 +525,7 @@ const TransactionContent = () => {
                                 mutateBalance={mutateBalance}
                                 accounts={accounts}
                                 setTxToDelete={setTxToDelete}
+                                userRole={userRole}
                             />
                         </motion.div>
                     )}
