@@ -6,8 +6,10 @@ const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 const useNotifications = () => {
     const { data, error, isValidating, isLoading, mutate } = useSWR(`/api/notifications`, fetcher, {
-        revalidateOnFocus: true,
-        dedupingInterval: 60000,
+        refreshInterval: 30000, // Polling setiap 30 detik
+        revalidateOnFocus: true, // Re-fetch saat user balik buka tab
+        refreshWhenHidden: false, // PAUSE polling kalau tab di-minimize / tidak aktif
+        dedupingInterval: 10000,
     });
 
     // 1. Ekstrak data dari pagination Laravel

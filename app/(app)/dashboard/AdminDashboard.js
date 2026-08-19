@@ -107,6 +107,7 @@ export default function AdminDashboard({ userRole, warehouseId }) {
             {/* Add Mutation Modal */}
             <Modal isOpen={isModalAddMutationOpen} onClose={() => setIsModalAddMutationOpen(false)} title="Register New Mutation">
                 <CreateMutation
+                    accountBalance={cashBankBalanceData}
                     accounts={accounts}
                     mutate={mutate}
                     mutateBalance={mutateBalance}
