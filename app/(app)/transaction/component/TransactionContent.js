@@ -503,7 +503,17 @@ const TransactionContent = () => {
                             transition={{ duration: 0.15 }}
                             className="space-y-6"
                         >
-                            <DepositLog journals={journalByWarehouse} notification={setNotification} mutate={mutate} setTxToDelete={setTxToDelete} />
+                            <DepositLog
+                                journals={journalByWarehouse}
+                                notification={setNotification}
+                                mutate={mutate}
+                                setTxToDelete={setTxToDelete}
+                                dateFilter={dateFilter}
+                                setDateFilter={setDateFilter}
+                                warehouseId={selectedWarehouseId}
+                                setWarehouseId={setSelectedWarehouseId}
+                                userRole={userRole}
+                            />
                         </motion.div>
                     )}
 

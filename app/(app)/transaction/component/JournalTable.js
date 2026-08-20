@@ -32,7 +32,6 @@ const JournalTable = ({
     warehouseId,
     userRole,
     accounts,
-    hqAccounts = [],
     hqAccountIds = [],
     isJournalLoading = false,
     isJournalValidating = false,
@@ -58,7 +57,7 @@ const JournalTable = ({
 
     // Calculate totals
     const totals = useMemo(() => {
-        const accountToCheck = Number(accountFilter);
+        const accountToCheck = Number(accountFilter) || warehouseCashId;
         let inflow = 0;
         let outflow = 0;
 
@@ -77,7 +76,7 @@ const JournalTable = ({
             totalOutflow: outflow,
             netFlow: inflow - outflow,
         };
-    }, [filteredTransactions, accountFilter]);
+    }, [accountFilter, warehouseCashId, filteredTransactions]);
 
     // Paginated Slices
     const totalPages = useMemo(() => {
