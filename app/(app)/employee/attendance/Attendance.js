@@ -82,14 +82,17 @@ const AttendancePage = ({ userRole }) => {
                             ariaLabel="Filter workers by zone"
                         />
                     </div>
-                    <div>
+                    <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
+                            <Calendar className="h-4 w-4" aria-hidden="true" />
+                        </span>
                         <input
                             type="date"
                             value={selectedDate}
-                            onChange={(e) => {
-                                setSelectedDate(e.target.value);
-                            }}
-                            className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            placeholder="Select date..."
+                            aria-label="Select date"
+                            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import Dropdown from "@/app/components/Dropdown";
 import { changeLockStatus } from "@/app/hooks/JournalActionService";
 import { useWarehouseBalance } from "@/app/hooks/useWarehouseBalance";
 import useWarehouseZone from "@/app/hooks/useWarehouseZone";
-import { DateTimeNow, formatNumber, todayDate } from "@/app/utils/format";
+import { DateTimeNow, formatNumber, TimeAgo, todayDate } from "@/app/utils/format";
 import { getStorePerformanceRating } from "@/app/utils/GetStorePerformanceRating";
 import { Building2, Calendar, Loader2, Lock, Search, Unlock } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -344,11 +344,13 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
 
                                                             {/* Nama Cabang & Sub-info */}
                                                             <div className="min-w-0">
-                                                                <span className="font-bold text-slate-800 dark:text-slate-100 block truncate leading-snug">
+                                                                <span
+                                                                    className={`font-bold ${w.cash + w.bank - w.total_limit !== 0 && w.id !== 1 ? "text-red-500 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}  block truncate leading-snug`}
+                                                                >
                                                                     {w.name.replace(/^konter\s*/i, "")}
                                                                 </span>
                                                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block">
-                                                                    ID: #{w.id}
+                                                                    ID: #{w.id} | {<TimeAgo timestamp={w.updated_at} locale="id" />}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -378,7 +380,9 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                                         </div>
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
+                                                    <td
+                                                        className={`px-6 py-4 text-right font-mono font-bold ${w.cash + w.bank - w.total_limit !== 0 && w.id !== 1 ? "text-red-500 dark:text-red-400" : "text-slate-800 dark:text-slate-100"}`}
+                                                    >
                                                         {/* Nominal Total Saldo */}
                                                         <span>{formatNumber((Number(w.cash) || 0) + (Number(w.bank) || 0))}</span>
 
