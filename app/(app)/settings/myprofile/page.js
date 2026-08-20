@@ -31,7 +31,7 @@ import {
     UserCheck,
     CalendarCheck2,
 } from "lucide-react";
-import { DateTimeNow, formatDateTime, formatRupiah } from "@/app/utils/format";
+import { calculateWorkDuration, DateTimeNow, formatDateTime, formatRupiah } from "@/app/utils/format";
 import { useState } from "react";
 import Image from "next/image";
 import Modal from "@/app/components/Modal";
@@ -271,7 +271,8 @@ export default function MyProfile() {
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Tanggal Bergabung</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                                                            {formatDateOnly(employee.hire_date)}
+                                                            {formatDateOnly(employee.hire_date)}{" "}
+                                                            <span className="text-slate-400 font-normal">{`(${calculateWorkDuration(employee.hire_date)})`}</span>
                                                         </p>
                                                     </div>
                                                     <div>

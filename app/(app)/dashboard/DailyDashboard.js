@@ -48,7 +48,6 @@ const itemVariants = {
 export default function DailyDashboardGrid({ userRole, warehouseId }) {
     const { today } = DateTimeNow();
     const warehouse = !["Administrator", "Super Admin"].includes(userRole) ? warehouseId : "all";
-    const [searchTerm, setSearchTerm] = useState("");
     const [selectedWarehouse, setSelectedWarehouse] = useState(warehouse);
     const [dateFilter, setDateFilter] = useState({
         preset: "today",
@@ -95,19 +94,6 @@ export default function DailyDashboardGrid({ userRole, warehouseId }) {
             >
                 {/* Left Side: Filter Search */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
-                    <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
-                            <Search className="h-4 w-4" aria-hidden="true" />
-                        </span>
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Cari aktivitas atau user..."
-                            aria-label="Search log activities"
-                            className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100 transition-all"
-                        />
-                    </div>
                     {/* Warehouse Dropdown */}
                     <div>
                         <Dropdown

@@ -72,7 +72,10 @@ export default function Dropdown({ id, label, options = [], selectedValue, onCha
             window.addEventListener("scroll", updateCoords, true);
             window.addEventListener("resize", updateCoords);
 
-            // AUTO FOCUS KE SEARCH INPUT SUDAH DIHAPUS DARI SINI
+            // Auto focus ke input pencarian saat menu terbuka
+            setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 50);
 
             return () => {
                 window.removeEventListener("scroll", updateCoords, true);
@@ -173,9 +176,9 @@ export default function Dropdown({ id, label, options = [], selectedValue, onCha
                                     position: "fixed",
                                     top: `${coords.top}px`,
                                     left: `${coords.left}px`,
-                                    minWidth: `${coords.width}px`,
-                                    width: "max-content",
-                                    maxWidth: "calc(100vw - 32px)",
+                                    minWidth: `${coords.width}px`, // Minimal selebar button trigger
+                                    width: "max-content", // Lebar otomatis mengikuti teks terpanjang
+                                    maxWidth: "calc(100vw - 32px)", // Mencegah dropdown mentok keluar layar HP
                                     transform: coords.upwards ? "translateY(-100%) translateY(-4px)" : "translateY(4px)",
                                     transformOrigin: coords.upwards ? "bottom center" : "top center",
                                 }}
@@ -193,6 +196,7 @@ export default function Dropdown({ id, label, options = [], selectedValue, onCha
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                             onKeyDown={(e) => {
+                                                // Mencegah spasi di input memicu event toggle pada button
                                                 if (e.key === " ") e.stopPropagation();
                                             }}
                                             className="w-full rounded-lg bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-700 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 dark:bg-slate-800 dark:text-slate-200"

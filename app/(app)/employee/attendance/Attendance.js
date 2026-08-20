@@ -18,7 +18,7 @@ const AttendancePage = ({ userRole }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("Create Attendance Record");
     const [activeSubTab, setActiveSubTab] = useState("daily");
-    const [selectedZone, setSelectedZone] = useState(null);
+    const [selectedZone, setSelectedZone] = useState("all");
 
     const { zones } = useWarehouseZone();
 

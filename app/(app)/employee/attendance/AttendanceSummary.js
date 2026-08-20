@@ -11,14 +11,14 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
     const year = date.getFullYear();
 
     const { employees, loading } = useEmployee(month, year);
-
     // Filter & Sorting logic
     const filteredSortedEmployees = (employees || [])
         .filter((employee) => {
+            const matchZone = selectedZone === "all" || Number(employee.user?.warehouse?.warehouse_zone_id) === Number(selectedZone);
             const matchSearch = !search || employee.contact?.name?.toLowerCase().includes(search.toLowerCase());
             // const matchZone = !selectedZone || employee.attendances?.warehouse?.warehouse_zone_id === selectedZone;
             const hasRating = (employee.attendance_rating?.rating ?? 0) > 0;
-            return matchSearch && hasRating;
+            return matchSearch && hasRating && matchZone;
         })
         .sort((a, b) => {
             if (a.attendance_rating?.late === 0 && b.attendance_rating?.late !== 0) return -1;
