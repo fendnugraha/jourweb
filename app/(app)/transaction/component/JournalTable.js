@@ -31,6 +31,7 @@ const JournalTable = ({
     warehouseCashId,
     warehouseId,
     userRole,
+    accounts,
     hqAccounts = [],
     hqAccountIds = [],
     isJournalLoading = false,
@@ -540,17 +541,16 @@ const JournalTable = ({
                                                                     setIsModalOpen(true);
                                                                 },
                                                             },
-                                                            ["Mutasi Kas"].includes(tx.trx_type) &&
-                                                                !hqAccountIds.includes(tx.cred_id) && {
-                                                                    type: "button",
-                                                                    label: "Edit Mutasi",
-                                                                    onClick: () => {
-                                                                        setSelectedJournal(tx);
-                                                                        setModalTitle("Edit Mutasi");
-                                                                        setTypeTransaction("edit-mutasi-kas");
-                                                                        setIsModalOpen(true);
-                                                                    },
+                                                            ["Mutasi Kas"].includes(tx.trx_type) && {
+                                                                type: "button",
+                                                                label: "Edit Mutasi",
+                                                                onClick: () => {
+                                                                    setSelectedJournal(tx);
+                                                                    setModalTitle("Edit Mutasi");
+                                                                    setTypeTransaction("edit-mutasi-kas");
+                                                                    setIsModalOpen(true);
                                                                 },
+                                                            },
                                                             {
                                                                 type: "button",
                                                                 attributes: {
@@ -646,9 +646,9 @@ const JournalTable = ({
                         mutateBalance={mutateBalance}
                         notification={notification}
                         isModalOpen={setIsModalOpen}
-                        whAccounts={whAccounts}
-                        hqAccounts={hqAccounts}
+                        accounts={accounts}
                         userRole={userRole}
+                        warehouseId={warehouseId}
                     />
                 )}
 

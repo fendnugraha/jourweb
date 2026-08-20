@@ -451,6 +451,7 @@ const TransactionContent = () => {
                                         selectedBankAccount={selectedBankAccount}
                                         filteredTransactions={filteredTransactions}
                                         setTxToDelete={setTxToDelete}
+                                        accounts={accounts}
                                         warehouseCashId={warehouseCashId}
                                         warehouseId={selectedWarehouseId}
                                         userRole={userRole}
