@@ -22,10 +22,11 @@ export default function HeaderProfile() {
     const userWarehouseStatus = user?.warehouse?.is_open || 0;
 
     // Hitung Rank & Metric Profit
-    const warehouseRankIndex = rankByProfit?.revenue?.findIndex((item) => Number(item.warehouse_id) === Number(userWarehouseId));
+    const warehouseRankIndex = rankByProfit?.data?.revenue?.findIndex((item) => Number(item.warehouse_id) === Number(userWarehouseId));
     const WarehouseRank = warehouseRankIndex !== -1 && warehouseRankIndex !== undefined ? warehouseRankIndex + 1 : 0;
-    const WarehouseRankProfit = rankByProfit?.revenue?.find((item) => Number(item.warehouse_id) === Number(userWarehouseId))?.total || 0;
-    const WarehouseMonthlyProfit = rankByProfit?.totalProfitMonthly?.find((item) => Number(item.warehouse_id) === Number(userWarehouseId))?.average_profit || 0;
+    const WarehouseRankProfit = rankByProfit?.data?.revenue?.find((item) => Number(item.warehouse_id) === Number(userWarehouseId))?.total || 0;
+    const WarehouseMonthlyProfit =
+        rankByProfit?.data?.totalProfitMonthly?.find((item) => Number(item.warehouse_id) === Number(userWarehouseId))?.average_profit || 0;
     const WarehouseRating = getWarehouseRating(WarehouseMonthlyProfit);
 
     const [imgError, setImgError] = useState(false);

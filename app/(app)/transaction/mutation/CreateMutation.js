@@ -119,15 +119,20 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
     const warehouseOptions = [{ value: "", label: "Select Warehouse" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
 
     useEffect(() => {
-        if (newType !== "other" || !formData.cred_id || formData.debt_id || !accounts?.length || !effectiveDestinationId) return;
+        // 1. Pengecekan formData.debt_id DIHAPUS dari kondisi pembatas ini
+        if (newType !== "other" || !formData.cred_id || !accounts?.length || !effectiveDestinationId) return;
 
         const selectedCred = accounts.find((a) => Number(a.id) === Number(formData.cred_id));
         if (!selectedCred) return;
 
         const targetWId = isReversed ? warehouseId : effectiveDestinationId;
         const matchingDebt = accounts.find((a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(targetWId));
-        if (matchingDebt) patch({ debt_id: matchingDebt.id });
-    }, [formData.cred_id, formData.debt_id, accounts, effectiveDestinationId, warehouseId, newType, isReversed]);
+
+        // 2. Set debt_id ke akun yang cocok, atau reset jika tidak ditemukan pasangan yang cocok
+        patch({ debt_id: matchingDebt ? matchingDebt.id : "" });
+
+        // 3. formData.debt_id JUGA DIHAPUS dari dependency array di bawah ini
+    }, [formData.cred_id, accounts, effectiveDestinationId, warehouseId, newType, isReversed]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
