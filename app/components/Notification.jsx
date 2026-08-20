@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion"; // Atau "motion/react"
 import { CheckCircle2, X } from "lucide-react";
 
@@ -14,12 +15,15 @@ export default function Notification({ message, onClose, duration = 3000 }) {
         }
     }, [message, onClose, duration]);
 
-    return (
+    // Jika sedang SSR (Server-Side Rendering) atau tidak ada message, kembalikan null
+    if (typeof document === "undefined") return null;
+
+    return createPortal(
         <AnimatePresence>
             {message && (
-                /* Container Posisi: Tengah-Bawah di Mobile, Kanan-Bawah di Desktop */
+                /* z-[10000] memastikan posisi Notifikasi SELALU di atas Modal (biasanya Modal z-9999) */
                 <div
-                    className="fixed bottom-4 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 z-9999 w-[calc(100%-2rem)] max-w-sm sm:w-auto px-1 sm:px-0 pointer-events-none"
+                    className="fixed bottom-4 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 z-10000 w-[calc(100%-2rem)] max-w-sm sm:w-auto px-1 sm:px-0 pointer-events-none"
                     id="toast-notification-banner"
                 >
                     <motion.div
@@ -57,6 +61,7 @@ export default function Notification({ message, onClose, duration = 3000 }) {
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 }

@@ -1,3 +1,4 @@
+import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 import Dropdown from "@/app/components/Dropdown";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import useWarehouse from "@/app/hooks/useWarehouse";
@@ -6,7 +7,19 @@ import { DateTimeNow, formatDateTime, formatNumber, formatRupiah } from "@/app/u
 import { AlertCircle, ArrowUpRight, BanknoteArrowDown, Calendar, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const ExpenseLog = ({ warehouseId, setWarehouseId, warehouseCashId, journals, notification, mutate, mutateBalance, accounts, setTxToDelete, userRole }) => {
+const ExpenseLog = ({
+    warehouseId,
+    setWarehouseId,
+    warehouseCashId,
+    journals,
+    notification,
+    mutate,
+    mutateBalance,
+    accounts,
+    setTxToDelete,
+    userRole,
+    ...props
+}) => {
     const { today } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [formError, setFormError] = useState("");
@@ -146,6 +159,15 @@ const ExpenseLog = ({ warehouseId, setWarehouseId, warehouseCashId, journals, no
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search expense description..."
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9.5 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-100"
+                        />
+                    </div>
+                    <div className="w-full">
+                        <DateFilterDropdown
+                            selectedPreset={props.dateFilter.preset}
+                            customStartDate={props.dateFilter.startDate}
+                            customEndDate={props.dateFilter.endDate}
+                            onChange={(val) => props.setDateFilter(val)}
+                            label="Transaction Date"
                         />
                     </div>
                     {["Administrator", "Super Admin"].includes(userRole) && (

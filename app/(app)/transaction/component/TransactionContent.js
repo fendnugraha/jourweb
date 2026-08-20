@@ -109,7 +109,7 @@ const TransactionContent = () => {
     const warehouseOptions = [
         { value: "all", label: "Semua Cabang" },
         ...warehouses
-            .filter((w) => w.id !== selectedWarehouseId && w.status === 1)
+            .filter((warehouse) => warehouse.status === 1)
             .map((warehouse) => ({
                 value: warehouse.id,
                 label: warehouse.name,
@@ -527,6 +527,8 @@ const TransactionContent = () => {
                                 accounts={accounts}
                                 setTxToDelete={setTxToDelete}
                                 userRole={userRole}
+                                dateFilter={dateFilter}
+                                setDateFilter={setDateFilter}
                             />
                         </motion.div>
                     )}
