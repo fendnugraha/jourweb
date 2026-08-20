@@ -11,6 +11,11 @@ export default function JournalTableMobile({
     warehouseCashId,
     userRole,
     warehouseId,
+    setSelectedJournal,
+    setModalTitle,
+    setTypeTransaction,
+    setIsModalOpen,
+    setTxToDelete,
 }) {
     // Category badge helper
     const getCategoryBadgeClass = (trxType) => {

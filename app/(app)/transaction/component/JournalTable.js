@@ -168,6 +168,11 @@ const JournalTable = ({
                 warehouseCashId={warehouseCashId}
                 userRole={userRole}
                 warehouseId={warehouseId}
+                setSelectedJournal={setSelectedJournal}
+                setModalTitle={setModalTitle}
+                setTypeTransaction={setTypeTransaction}
+                setIsModalOpen={setIsModalOpen}
+                setTxToDelete={setTxToDelete}
             />
 
             {/* PAGINATION FOOTER CONTROLS */}
