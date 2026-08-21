@@ -4,7 +4,7 @@ import TabSwitcher from "@/app/components/TabSwitcher";
 import useWarehouse from "@/app/hooks/useWarehouse";
 import axios from "@/app/utils/axios";
 import { DateTimeNow, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlertCircle, ArrowUpRight, BanknoteArrowDown, Calendar, Search, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowUpRight, BanknoteArrowDown, Calendar, MapPin, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const ExpenseLog = ({
@@ -326,70 +326,123 @@ const ExpenseLog = ({
                     </form>
                 </div>
 
-                {/* RIGHT COLUMN: EXPENSE TABLE */}
+                {/* RIGHT COLUMN: EXPENSE TABLE / CARD LIST */}
                 <div className="flex-1 w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:col-span-3">
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse text-left">
-                            <thead>
-                                <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/40">
-                                    <th scope="col" className="px-6 py-4">
-                                        Rincian Pengeluaran
-                                    </th>
-                                    <th scope="col" className="px-6 py-4 text-right">
-                                        Nominal Biaya
-                                    </th>
-                                    <th scope="col" className="px-6 py-4 text-center">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
-                                {filteredJournals.length === 0 ? (
-                                    <tr>
-                                        {/* ✅ Fix colSpan dari 5 menjadi 3 */}
-                                        <td colSpan={3} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                                            <div className="flex flex-col items-center justify-center space-y-2">
-                                                <AlertCircle className="h-8 w-8 text-slate-300 dark:text-slate-700 stroke-[1.5]" />
-                                                <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Tidak ada pencatatan biaya ditemukan</p>
-                                                <p className="text-[11px] text-slate-400">Coba ubah kata kunci pencarian Anda</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredJournals.map((tx) => (
-                                        <tr key={tx.id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
-                                            <td className="px-6 py-4 max-w-xs md:max-w-md">
-                                                <div className="space-y-1">
-                                                    <span className="font-semibold text-slate-800 dark:text-slate-100 block text-xs leading-snug capitalize">
-                                                        {tx.description || "Tanpa Keterangan"}
-                                                    </span>
-                                                    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-mono">
-                                                        <Calendar className="h-3 w-3 text-slate-400" />
+                    {/* 1. STATE JIKA DATA KOSONG (Mobile & Desktop) */}
+                    {filteredJournals.length === 0 ? (
+                        <div className="p-8 sm:p-12 text-center text-slate-400 dark:text-slate-500">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                                <AlertCircle className="h-8 w-8 text-slate-300 dark:text-slate-700 stroke-[1.5]" />
+                                <p className="font-semibold text-xs sm:text-sm text-slate-600 dark:text-slate-400">Tidak ada pencatatan biaya ditemukan</p>
+                                <p className="text-[11px] text-slate-400">Coba ubah kata kunci pencarian Anda</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* 2. TAMPILAN MOBILE (Card List) - Hanya di HP (< 640px) */}
+                            <div className="block sm:hidden divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
+                                {filteredJournals.map((tx) => (
+                                    <div key={tx.id} className="p-4 space-y-3 hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
+                                        {/* Header Kartu: Deskripsi & Tombol Hapus */}
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="space-y-1.5 pr-2">
+                                                <span className="font-semibold text-slate-800 dark:text-slate-100 block text-xs leading-snug capitalize">
+                                                    {tx.description || "Tanpa Keterangan"}
+                                                </span>
+
+                                                {/* Info Tanggal & Gudang dalam Format Wrap yang Rapi */}
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400 font-mono">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
                                                         {formatDateTime(tx.date_issued)}
                                                     </span>
+                                                    {tx.warehouse?.name && (
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                                                            {tx.warehouse.name}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            </td>
+                                            </div>
 
-                                            <td className="px-6 py-4 text-right whitespace-nowrap font-mono">
-                                                <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">{formatRupiah(tx.fee_amount)}</span>
-                                            </td>
+                                            <button
+                                                type="button"
+                                                onClick={() => setTxToDelete(tx.id)}
+                                                className="inline-flex shrink-0 items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-all cursor-pointer"
+                                                title="Hapus Pengeluaran"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
 
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setTxToDelete(tx.id)}
-                                                    className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-all cursor-pointer"
-                                                    title="Hapus Pengeluaran"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </td>
+                                        {/* Footer Kartu: Total Nominal Biaya */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-800/40">
+                                            <span className="text-[11px] text-slate-400 font-medium">Nominal Biaya:</span>
+                                            <span className="font-bold text-rose-600 dark:text-rose-400 text-sm font-mono">{formatRupiah(tx.fee_amount)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 3. TAMPILAN DESKTOP (Table Layout) - Di Layar Lebar (>= 640px) */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/40">
+                                            <th scope="col" className="px-6 py-4">
+                                                Rincian Pengeluaran
+                                            </th>
+                                            <th scope="col" className="px-6 py-4 text-right">
+                                                Nominal Biaya
+                                            </th>
+                                            <th scope="col" className="px-6 py-4 text-center">
+                                                Aksi
+                                            </th>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800/60">
+                                        {filteredJournals.map((tx) => (
+                                            <tr key={tx.id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-850/40 transition-colors">
+                                                <td className="px-6 py-4 max-w-xs md:max-w-md">
+                                                    <div className="space-y-1">
+                                                        <span className="font-semibold text-slate-800 dark:text-slate-100 block text-xs leading-snug capitalize">
+                                                            {tx.description || "Tanpa Keterangan"}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
+                                                            <Calendar className="h-3 w-3 text-slate-400" />
+                                                            {formatDateTime(tx.date_issued)}
+                                                            {tx.warehouse?.name && (
+                                                                <>
+                                                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                                    <MapPin className="h-3 w-3 text-slate-400" />
+                                                                    {tx.warehouse.name}
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-6 py-4 text-right whitespace-nowrap font-mono">
+                                                    <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">{formatRupiah(tx.fee_amount)}</span>
+                                                </td>
+
+                                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setTxToDelete(tx.id)}
+                                                        className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 transition-all cursor-pointer"
+                                                        title="Hapus Pengeluaran"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </>
