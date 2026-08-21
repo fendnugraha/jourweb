@@ -41,9 +41,10 @@ import { useUserAttendanceByContactMonthly } from "@/app/hooks/useUserAttendance
 import useCashBankBalance from "@/app/hooks/useCashBankBalance";
 import MobileNavDrawer from "@/app/components/MobileNavDrawer";
 import axios from "@/app/utils/axios";
+import Notification from "@/app/components/Notification";
 
 export default function MyProfile() {
-    const { user } = useAuth();
+    const { user, mutate } = useAuth();
     const { today } = DateTimeNow();
 
     // State untuk Tab (Profil vs Absensi)
@@ -90,6 +91,7 @@ export default function MyProfile() {
     const [contactPhone, setContactPhone] = useState(contact?.phone || "");
     const [contactAddress, setContactAddress] = useState(contact?.address || "");
     const [telegramChatId, setTelegramChatId] = useState(contact?.telegram_chat_id || "");
+    const [notification, setNotification] = useState(null);
 
     const { cashBankBalanceData, error: balanceError, isLoading, isValidating, mutate: mutateBalance } = useCashBankBalance(warehouse?.id, today);
     const primaryCashLiveBalance = cashBankBalanceData?.data.chartOfAccounts.find((account) => account.id === primaryCash?.id).balance;
@@ -176,9 +178,10 @@ export default function MyProfile() {
             });
 
             if (typeof mutate === "function") mutate();
+            setNotification("Foto profil berhasil diperbarui!");
         } catch (error) {
             console.error("Gagal mengompres/mengunggah foto:", error);
-            alert(error.response?.data?.message || "Gagal memperbarui foto profil.");
+            setNotification(error.response?.data?.message || "Gagal memperbarui foto profil.");
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -206,11 +209,11 @@ export default function MyProfile() {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            alert("Informasi pribadi berhasil diperbarui!");
+            setNotification("Informasi pribadi berhasil diperbarui!");
             if (typeof mutate === "function") mutate();
         } catch (error) {
             console.error("Gagal mengupdate informasi kontak:", error);
-            alert(error.response?.data?.message || "Gagal memperbarui profil.");
+            setNotification(error.response?.data?.message || "Gagal memperbarui profil.");
         } finally {
             setUpdatingContact(false);
         }
@@ -218,6 +221,7 @@ export default function MyProfile() {
 
     return (
         <MainContent headerTitle="My Profile">
+            {notification && <Notification message={notification} onClose={() => setNotification(null)} />}
             <div className="max-w-6xl mx-auto space-y-6 pb-12 text-slate-800 dark:text-slate-100">
                 {/* 1. HEADER PROFILE */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs relative overflow-hidden">
