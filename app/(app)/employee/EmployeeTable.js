@@ -3,13 +3,11 @@ import { User, UserCheck, DollarSign, TrendingUp, TrendingDown, Calendar, Briefc
 import EditEmployee from "./EditEmployee";
 import { calculateContractTillEnd, calculateWorkDuration, formatLongDate, formatRupiah } from "@/app/utils/format";
 import { useState } from "react";
+import Image from "next/image";
 
 const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selectedEmployee, setSelectedEmployeeId }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("Edit Employee");
-    const [showEndContract, setShowEndContract] = useState(true);
-
-    const [expandedContractIds, setExpandedContractIds] = useState([]);
 
     // 1. Buat Sub-Komponen Ini (Taruh di luar komponen utama)
     function EmploymentStatusBadge({ employee, formatLongDate }) {
@@ -37,7 +35,6 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
             </button>
         );
     }
-
     return (
         <div className="space-y-6">
             {/* Table Container */}
@@ -118,8 +115,19 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                             {/* 1. Nama Karyawan & Avatar */}
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
-                                                        {initial}
+                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
+                                                        {employee.contact?.contact_photo_url ? (
+                                                            <Image
+                                                                src={employee.contact.contact_photo_url}
+                                                                alt={name}
+                                                                className="h-full w-full object-cover"
+                                                                width={32}
+                                                                height={32}
+                                                                unoptimized
+                                                            />
+                                                        ) : (
+                                                            initial
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <div className="font-semibold text-slate-800 dark:text-slate-100 text-xs">{name}</div>

@@ -15,7 +15,7 @@ export default function HeaderProfile() {
     const contactWarningStatus = user?.contact?.employee?.warning_active || false;
 
     // Foto dari absensi atau default avatar
-    const userPhoto = user?.attendances?.[0]?.photo_url || "/default.png";
+    const userPhoto = user.contact?.contact_photo_url || user?.attendances?.[0]?.photo_url || "/default.png";
 
     const userWarehouseId = user?.warehouse_id;
     const userWarehouseName = user?.warehouse?.name || "No Warehouse";

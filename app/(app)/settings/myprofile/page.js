@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/app/utils/auth";
 import MainContent from "../../main";
+import imageCompression from "browser-image-compression";
 import { motion, AnimatePresence } from "motion/react";
 import {
     User,
@@ -30,14 +31,16 @@ import {
     Briefcase,
     UserCheck,
     CalendarCheck2,
+    Loader2,
 } from "lucide-react";
 import { calculateWorkDuration, DateTimeNow, formatDateTime, formatRupiah } from "@/app/utils/format";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Modal from "@/app/components/Modal";
 import { useUserAttendanceByContactMonthly } from "@/app/hooks/useUserAttendance";
 import useCashBankBalance from "@/app/hooks/useCashBankBalance";
 import MobileNavDrawer from "@/app/components/MobileNavDrawer";
+import axios from "@/app/utils/axios";
 
 export default function MyProfile() {
     const { user } = useAuth();
@@ -82,6 +85,11 @@ export default function MyProfile() {
     const warehouse = user?.warehouse;
     const primaryCash = warehouse?.primary_cash;
     const warning = employee?.warning_active;
+
+    const [contactEmail, setContactEmail] = useState(contact?.email || "");
+    const [contactPhone, setContactPhone] = useState(contact?.phone || "");
+    const [contactAddress, setContactAddress] = useState(contact?.address || "");
+    const [telegramChatId, setTelegramChatId] = useState(contact?.telegram_chat_id || "");
 
     const { cashBankBalanceData, error: balanceError, isLoading, isValidating, mutate: mutateBalance } = useCashBankBalance(warehouse?.id, today);
     const primaryCashLiveBalance = cashBankBalanceData?.data.chartOfAccounts.find((account) => account.id === primaryCash?.id).balance;
@@ -133,21 +141,141 @@ export default function MyProfile() {
         { id: "attendance", label: "Kalender & Riwayat Absensi", icon: CalendarCheck2 },
     ];
 
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const handlePhotoChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const compressionOptions = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+            fileType: "image/jpeg",
+        };
+
+        try {
+            setUploading(true);
+
+            const compressedFile = await imageCompression(file, compressionOptions);
+
+            const formData = new FormData();
+            formData.append("photo", compressedFile, compressedFile.name);
+            formData.append("name", user.contact?.name || user?.name);
+            formData.append("phone", contactPhone);
+            formData.append("telegram_chat_id", telegramChatId);
+            formData.append("address", contactAddress);
+
+            // Method Spoofing untuk Laravel Multipart Request
+            formData.append("_method", "PUT");
+
+            // Kirim via POST
+            await axios.post(`/api/contacts/${user?.contact?.id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (typeof mutate === "function") mutate();
+        } catch (error) {
+            console.error("Gagal mengompres/mengunggah foto:", error);
+            alert(error.response?.data?.message || "Gagal memperbarui foto profil.");
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    // State loading untuk tombol
+    const [updatingContact, setUpdatingContact] = useState(false);
+
+    const handleUpdateContact = async () => {
+        try {
+            setUpdatingContact(true);
+
+            const formData = new FormData();
+            formData.append("name", user.contact?.name || user?.name);
+            formData.append("email", contactEmail);
+            formData.append("phone", contactPhone);
+            formData.append("telegram_chat_id", telegramChatId);
+            formData.append("address", contactAddress);
+
+            // Method spoofing agar Laravel membaca FormData
+            formData.append("_method", "PUT");
+
+            await axios.post(`/api/contacts/${user?.contact?.id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            alert("Informasi pribadi berhasil diperbarui!");
+            if (typeof mutate === "function") mutate();
+        } catch (error) {
+            console.error("Gagal mengupdate informasi kontak:", error);
+            alert(error.response?.data?.message || "Gagal memperbarui profil.");
+        } finally {
+            setUpdatingContact(false);
+        }
+    };
+
     return (
         <MainContent headerTitle="My Profile">
             <div className="max-w-6xl mx-auto space-y-6 pb-12 text-slate-800 dark:text-slate-100">
                 {/* 1. HEADER PROFILE */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+                    {/* Hidden File Input */}
+                    <input type="file" ref={fileInputRef} onChange={handlePhotoChange} accept="image/png, image/jpeg, image/webp" className="hidden" />
+
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
                         <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-tr from-indigo-600 to-violet-500 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
-                                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                            {/* Avatar Container dengan Overlay Kamera */}
+                            <div className="relative group shrink-0">
+                                {user?.contact?.contact_photo_url ? (
+                                    <Image
+                                        src={user.contact.contact_photo_url}
+                                        alt="Profile"
+                                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-slate-100 dark:border-slate-800"
+                                        width={80}
+                                        height={80}
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-tr from-indigo-600 to-violet-500 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center shadow-md shadow-indigo-500/20">
+                                        {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                                    </div>
+                                )}
+
+                                {/* Overlay Action Button */}
+                                <button
+                                    type="button"
+                                    disabled={uploading}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer disabled:cursor-not-allowed"
+                                    title="Ubah Foto Profil"
+                                >
+                                    {uploading ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Camera className="w-5 h-5" />
+                                            <span className="text-[10px] font-medium mt-0.5">Ubah</span>
+                                        </>
+                                    )}
+                                </button>
+
+                                {/* Mobile Badge Trigger (Agat mudah ditekan di layar HP tanpa hover) */}
+                                <button
+                                    type="button"
+                                    disabled={uploading}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="sm:hidden absolute -bottom-1 -right-1 p-1.5 bg-indigo-600 text-white rounded-xl shadow-md cursor-pointer"
+                                >
+                                    {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                                </button>
                             </div>
 
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h1 className="text-xl sm:text-2xl font-bold capitalize tracking-tight text-slate-900 dark:text-white">
-                                        {contact?.name || user?.name}
+                                        {user?.contact?.name || user?.name}
                                     </h1>
                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40">
                                         <ShieldCheck className="w-3.5 h-3.5" />
@@ -237,6 +365,88 @@ export default function MyProfile() {
                                     {/* KOLOM KIRI (2-SPAN): DETAIL PEGAWAI & CABANG */}
                                     <div className="lg:col-span-2 space-y-6">
                                         {/* CARD DETAIL PEGAWAI */}
+                                        {contact && (
+                                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+                                                <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                                                        <Briefcase className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">Informasi Pribadi</h2>
+                                                        <p className="text-[11px] text-slate-400">Informasi kontak dan user login</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                                                    <div>
+                                                        <span className="text-slate-400 block text-[11px]">Alamat Email</span>
+                                                        <input
+                                                            type="email"
+                                                            value={contactEmail}
+                                                            onChange={(e) => setContactEmail(e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-400 block text-[11px]">Username</span>
+                                                        <p className="font-semibold text-slate-800 dark:text-slate-200 capitalize mt-0.5">
+                                                            {user?.name || "-"}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-400 block text-[11px]">No. Telepon</span>
+                                                        <input
+                                                            type="tel"
+                                                            value={contactPhone}
+                                                            onChange={(e) => setContactPhone(e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-slate-400 block text-[11px]">Telegram Chat ID</span>
+                                                        <input
+                                                            type="text"
+                                                            value={telegramChatId}
+                                                            onChange={(e) => setTelegramChatId(e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="sm:col-span-2">
+                                                        <span className="text-slate-400 block text-[11px]">Alamat</span>
+                                                        <input
+                                                            type="text"
+                                                            value={contactAddress}
+                                                            onChange={(e) => setContactAddress(e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Button dengan Status Loading */}
+                                                <div className="flex justify-end pt-2">
+                                                    <button
+                                                        type="button"
+                                                        disabled={updatingContact}
+                                                        onClick={handleUpdateContact}
+                                                        className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition duration-200 disabled:opacity-50 cursor-pointer"
+                                                    >
+                                                        {updatingContact ? (
+                                                            <>
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                <span>Menyimpan...</span>
+                                                            </>
+                                                        ) : (
+                                                            <span>Simpan Perubahan</span>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {employee && (
                                             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
                                                 <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
