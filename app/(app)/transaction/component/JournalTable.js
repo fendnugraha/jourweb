@@ -56,6 +56,14 @@ const JournalTable = ({
         setCurrentPage(1);
     }, [filteredTransactions.length]);
 
+    const whAccountIds = useMemo(() => {
+        if (!Array.isArray(whAccounts)) return [];
+
+        return whAccounts
+            .map((acc) => Number(acc?.id)) // Ambil ID akunnya
+            .filter((id) => !isNaN(id) && id > 0); // Hilangkan NaN, null (0), atau undefined
+    }, [whAccounts]);
+
     // Calculate totals
     const totals = useMemo(() => {
         const accountToCheck = accountFilter !== "all" ? Number(accountFilter) : Number(warehouseCashId);
@@ -179,6 +187,7 @@ const JournalTable = ({
                 filteredTransactions={filteredTransactions}
                 paginatedTransactions={paginatedTransactions}
                 hqAccountIds={hqAccountIds}
+                whAccountIds={whAccountIds}
                 accountFilter={accountFilter}
                 warehouseCashId={warehouseCashId}
                 userRole={userRole}
@@ -269,7 +278,7 @@ const JournalTable = ({
                             /* 3. STATE DATA DESKTOP */
                             paginatedTransactions.map((tx) => {
                                 const accountToCheck = accountFilter !== "all" ? Number(accountFilter) : Number(warehouseCashId);
-                                const isInflow = Number(tx.debt_id) === accountToCheck;
+                                const isInflow = accountFilter !== "all" ? Number(tx.debt_id) === accountToCheck : whAccountIds.includes(Number(tx.debt_id));
 
                                 return (
                                     <tr key={tx.id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150">
