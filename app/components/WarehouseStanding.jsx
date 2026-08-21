@@ -11,6 +11,8 @@ export default function WarehouseStanding() {
     const drawerRef = useRef(null);
     const { profit, mutate } = useGetProfit();
 
+    const userPhoto = user.contact?.contact_photo_url || "/default.png";
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const revenueList = profit?.data?.revenue || [];
@@ -118,16 +120,17 @@ export default function WarehouseStanding() {
                                 return (
                                     <div
                                         key={item.warehouse_id || index}
-                                        className={`group relative flex items-center justify-between rounded-2xl p-3 sm:p-2.5 transition-all ${
-                                            isUserWarehouse
-                                                ? "bg-indigo-50/90 border border-indigo-200 shadow-xs dark:bg-indigo-950/40 dark:border-indigo-800/80"
-                                                : "bg-slate-200/50 hover:bg-slate-100/80 border border-slate-100 dark:bg-slate-800/30 dark:hover:bg-slate-800/60 dark:border-slate-800/50"
-                                        }`}
+                                        className="group relative flex items-center justify-between rounded-2xl p-3 sm:p-2.5 transition-all overflow-hidden bg-cover bg-center border border-indigo-200/50 shadow-xs"
+                                        style={{ backgroundImage: userPhoto ? `url(${userPhoto})` : undefined }}
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
+                                        {/* Overlay Hitam Transparan agar Teks Jelas */}
+                                        <div className="absolute inset-0 bg-linear-to-r from-slate-800/80 via-slate-800/60 to-slate-950/80 backdrop-blur-[1px]" />
+
+                                        {/* Konten Utama (Harus Z-Index diatas Overlay) */}
+                                        <div className="relative z-10 flex items-center gap-3 min-w-0">
                                             {/* Rank Badge */}
                                             <div
-                                                className={`flex h-8 w-8 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-xl text-xs font-black ${rankBadgeClass}`}
+                                                className={`flex h-8 w-8 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-md ${rankBadgeClass}`}
                                             >
                                                 {RankIcon || rank}
                                             </div>
@@ -135,16 +138,16 @@ export default function WarehouseStanding() {
                                             {/* Store Info */}
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
+                                                    <span className="truncate text-xs font-bold text-white drop-shadow-sm">
                                                         {item.warehouse?.code || item.warehouse?.name}
                                                     </span>
                                                     {isUserWarehouse && (
-                                                        <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[8px] font-bold text-white tracking-wide">
+                                                        <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[8px] font-bold text-white tracking-wide shadow-xs">
                                                             KAMU
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                                                <div className="flex items-center gap-1 text-[10px] text-slate-200 mt-0.5 drop-shadow-xs">
                                                     <Store className="h-2.5 w-2.5 shrink-0" />
                                                     <span className="truncate">{item.warehouse?.name || "Cabang"}</span>
                                                 </div>
@@ -152,11 +155,9 @@ export default function WarehouseStanding() {
                                         </div>
 
                                         {/* Revenue Nominal */}
-                                        <div className="text-right shrink-0">
-                                            <div className="text-xs font-extrabold font-mono text-slate-900 dark:text-slate-100">
-                                                {formatRupiah(item.total)}
-                                            </div>
-                                            <div className="flex items-center justify-end gap-0.5 text-[9px] font-semibold text-emerald-500">
+                                        <div className="relative z-10 text-right shrink-0">
+                                            <div className="text-xs font-extrabold font-mono text-white drop-shadow-md">{formatRupiah(item.total)}</div>
+                                            <div className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-400 drop-shadow-xs">
                                                 <TrendingUp className="h-2.5 w-2.5" />
                                                 <span>Omset</span>
                                             </div>
