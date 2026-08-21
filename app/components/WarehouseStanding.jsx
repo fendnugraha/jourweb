@@ -12,8 +12,6 @@ export default function WarehouseStanding() {
     const { profit, mutate } = useGetProfit();
     console.log(profit);
 
-    const userPhoto = profit?.data?.user?.contact?.contact_photo_url || "/default.png";
-
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const revenueList = profit?.data?.revenue || [];
@@ -117,6 +115,8 @@ export default function WarehouseStanding() {
                                     rankBadgeClass = "bg-amber-700/80 text-amber-100";
                                     RankIcon = <Medal className="h-3.5 w-3.5" />;
                                 }
+
+                                const userPhoto = item.user?.contact?.contact_photo_url || "/default.png";
 
                                 return (
                                     <div
