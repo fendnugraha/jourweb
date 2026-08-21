@@ -182,7 +182,7 @@ export default function ClosingReport({
             localStorage.setItem(`last_telegram_data_${warehouseId}`, JSON.stringify(telegramResponseObj));
             localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
 
-            const LOCK_DURATION_MS = 15 * 60 * 1000;
+            const LOCK_DURATION_MS = 2 * 60 * 1000;
             // eslint-disable-next-line react-hooks/purity
             const lockTargetTime = Date.now() + LOCK_DURATION_MS;
 
