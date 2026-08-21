@@ -86,7 +86,7 @@ export default function MyProfile() {
     const primaryCash = warehouse?.primary_cash;
     const warning = employee?.warning_active;
 
-    const [contactEmail, setContactEmail] = useState(contact?.email || "");
+    const [contactEmail, setContactEmail] = useState(user?.email || "");
     const [contactPhone, setContactPhone] = useState(contact?.phone || "");
     const [contactAddress, setContactAddress] = useState(contact?.address || "");
     const [telegramChatId, setTelegramChatId] = useState(contact?.telegram_chat_id || "");
@@ -246,7 +246,7 @@ export default function MyProfile() {
                                 {/* Overlay Action Button */}
                                 <button
                                     type="button"
-                                    disabled={uploading}
+                                    disabled={uploading || !user?.contact?.id || user?.contact?.id === 1}
                                     onClick={() => fileInputRef.current?.click()}
                                     className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs rounded-2xl flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer disabled:cursor-not-allowed"
                                     title="Ubah Foto Profil"
@@ -264,7 +264,7 @@ export default function MyProfile() {
                                 {/* Mobile Badge Trigger (Agat mudah ditekan di layar HP tanpa hover) */}
                                 <button
                                     type="button"
-                                    disabled={uploading}
+                                    disabled={uploading || !user?.contact?.id || user?.contact?.id === 1}
                                     onClick={() => fileInputRef.current?.click()}
                                     className="sm:hidden absolute -bottom-1 -right-1 p-1.5 bg-indigo-600 text-white rounded-xl shadow-md cursor-pointer"
                                 >
@@ -380,13 +380,16 @@ export default function MyProfile() {
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Alamat Email</span>
-                                                        <input
+                                                        <p className="font-semibold text-slate-800 dark:text-slate-200 lowercase mt-0.5">
+                                                            {user?.email || "-"}
+                                                        </p>
+                                                        {/* <input
                                                             type="email"
                                                             value={contactEmail}
                                                             onChange={(e) => setContactEmail(e.target.value)}
                                                             className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                                                             required
-                                                        />
+                                                        /> */}
                                                     </div>
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Username</span>
