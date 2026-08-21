@@ -10,8 +10,9 @@ export default function WarehouseStanding() {
     const userWarehouseId = user?.warehouse_id;
     const drawerRef = useRef(null);
     const { profit, mutate } = useGetProfit();
+    console.log(profit);
 
-    const userPhoto = user.contact?.contact_photo_url || "/default.png";
+    const userPhoto = profit?.data?.user?.contact?.contact_photo_url || "/default.png";
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
