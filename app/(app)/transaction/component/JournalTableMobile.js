@@ -56,8 +56,14 @@ export default function JournalTableMobile({
                 ) : (
                     /* 1.3 STATE DATA MOBILE (LIST KARTU) */
                     paginatedTransactions.map((tx) => {
-                        const accountToCheck = accountFilter !== "all" ? Number(accountFilter) : Number(warehouseCashId);
-                        const isInflow = accountFilter !== "all" ? Number(tx.debt_id) === accountToCheck : whAccountIds.includes(Number(tx.debt_id));
+                        const selectedAccId = Number(accountFilter);
+                        const isFiltered = accountFilter !== "all" && !isNaN(selectedAccId);
+
+                        // Menentukan apakah transaksi adalah Inflow (Uang Masuk)
+                        const isInflow = isFiltered ? Number(tx.debt_id) === selectedAccId : whAccountIds.includes(Number(tx.debt_id));
+
+                        // Menentukan apakah transaksi adalah Outflow (Uang Keluar)
+                        const isOutflow = isFiltered ? Number(tx.cred_id) === selectedAccId : whAccountIds.includes(Number(tx.cred_id));
 
                         return (
                             <div
