@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import DropdownMenu from "@/app/components/DropdownMenu";
 import Modal from "@/app/components/Modal";
-import { formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
+import { calculateFee, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
 import {
     FileText,
     Tag,
@@ -353,7 +353,17 @@ const JournalTable = ({
                                                 </span>
                                             </div>
                                             {!tx.fee_amount || tx.fee_amount === 0 ? null : (
-                                                <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Fee: {formatNumber(tx.fee_amount)}</div>
+                                                <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                                    Fee:{" "}
+                                                    <span
+                                                        className={`font-semibold ${calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) ? "text-rose-600 dark:text-rose-400 animate-ping" : "text-emerald-600 dark:text-emerald-400"}`}
+                                                    >
+                                                        {formatNumber(tx.fee_amount)}{" "}
+                                                        {calculateFee(tx.amount) !== tx.fee_amount &&
+                                                            ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) &&
+                                                            "!!"}
+                                                    </span>
+                                                </div>
                                             )}
                                         </td>
 

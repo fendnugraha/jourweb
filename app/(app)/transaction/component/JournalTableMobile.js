@@ -1,5 +1,5 @@
 import DropdownMenu from "@/app/components/DropdownMenu";
-import { formatDateTime, formatNumber } from "@/app/utils/format";
+import { calculateFee, formatDateTime, formatNumber } from "@/app/utils/format";
 import { AlertCircle, ArrowRightLeft, Calendar, Coins, CreditCard, Ellipsis, FileText, FileWarning, MoreHorizontal, Tag } from "lucide-react";
 
 export default function JournalTableMobile({
@@ -191,7 +191,17 @@ export default function JournalTableMobile({
                                         </span>
 
                                         {!tx.fee_amount || tx.fee_amount === 0 ? null : (
-                                            <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Fee: {formatNumber(tx.fee_amount)}</div>
+                                            <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                                Fee:{" "}
+                                                <span
+                                                    className={`font-semibold ${calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) ? "text-rose-600 dark:text-rose-400 animate-ping" : "text-emerald-600 dark:text-emerald-400"}`}
+                                                >
+                                                    {formatNumber(tx.fee_amount)}{" "}
+                                                    {calculateFee(tx.amount) !== tx.fee_amount &&
+                                                        ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) &&
+                                                        "!!"}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
