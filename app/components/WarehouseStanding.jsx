@@ -10,7 +10,6 @@ export default function WarehouseStanding() {
     const userWarehouseId = user?.warehouse_id;
     const drawerRef = useRef(null);
     const { profit, mutate } = useGetProfit();
-    console.log(profit);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -68,7 +67,7 @@ export default function WarehouseStanding() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                        className="flex h-[65vh] sm:h-130 w-full sm:w-88 flex-col rounded-3xl border border-slate-200/80 bg-white/20 p-4 shadow-2xl backdrop-blur-sm dark:border-slate-800 dark:bg-slate-800/5"
+                        className="flex h-[65vh] sm:h-130 w-full sm:w-88 flex-col rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90"
                     >
                         {/* Drag Handle Indicator */}
                         <div className="mx-auto mb-2 h-1.5 w-10 shrink-0 rounded-full bg-slate-200 dark:bg-slate-700 sm:hidden" />
@@ -78,7 +77,7 @@ export default function WarehouseStanding() {
                             <div className="flex items-center gap-2.5">
                                 <button
                                     onClick={() => mutate()}
-                                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
+                                    className="flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 cursor-pointer active:scale-95 transition-transform"
                                 >
                                     <Podium className="h-4 w-4" />
                                 </button>
@@ -102,7 +101,7 @@ export default function WarehouseStanding() {
                                 const rank = index + 1;
                                 const isUserWarehouse = Number(item.warehouse_id) === Number(userWarehouseId);
 
-                                let rankBadgeClass = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                                let rankBadgeClass = "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
                                 let RankIcon = null;
 
                                 if (rank === 1) {
@@ -116,39 +115,45 @@ export default function WarehouseStanding() {
                                     RankIcon = <Medal className="h-3.5 w-3.5" />;
                                 }
 
-                                const userPhoto = item.user?.contact?.contact_photo_url || "/default.png";
+                                const hasPhoto = Boolean(item.user?.contact?.contact_photo_url);
+                                const userPhoto = item.user?.contact?.contact_photo_url;
 
                                 return (
                                     <div
                                         key={item.warehouse_id || index}
-                                        className="group relative flex items-center justify-between rounded-2xl p-3 sm:p-2.5 transition-all overflow-hidden bg-cover bg-center border border-indigo-200/50 shadow-xs"
-                                        style={{ backgroundImage: userPhoto ? `url(${userPhoto})` : undefined }}
+                                        className={`group relative flex items-center justify-between rounded-2xl p-3 sm:p-2.5 transition-all ${
+                                            isUserWarehouse
+                                                ? "bg-indigo-50/90 border border-indigo-200 shadow-xs dark:bg-indigo-950/40 dark:border-indigo-800/80"
+                                                : "bg-slate-100/60 hover:bg-slate-100 border border-slate-200/50 dark:bg-slate-800/30 dark:hover:bg-slate-800/60 dark:border-slate-800/50"
+                                        }`}
                                     >
-                                        {/* Overlay Hitam Transparan agar Teks Jelas */}
-                                        <div className="absolute inset-0 bg-linear-to-r from-slate-800/80 via-slate-800/60 to-slate-950/80 backdrop-blur-[1px]" />
-
-                                        {/* Konten Utama (Harus Z-Index diatas Overlay) */}
-                                        <div className="relative z-10 flex items-center gap-3 min-w-0">
-                                            {/* Rank Badge */}
+                                        {/* Konten Utama */}
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {/* Rank Badge dengan Foto Profil */}
                                             <div
-                                                className={`flex h-8 w-8 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-md ${rankBadgeClass}`}
+                                                className={`relative flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-xs overflow-hidden bg-cover bg-position-[center_top_20%] ${rankBadgeClass}`}
+                                                style={{ backgroundImage: hasPhoto ? `url(${userPhoto})` : undefined }}
                                             >
-                                                {RankIcon || rank}
+                                                {/* Overlay Gelap Khusus Badge jika Ada Foto */}
+                                                {hasPhoto && <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-[0.5px]" />}
+
+                                                {/* Rank Icon / Angka Rank (z-10 & text-white agar kontras dengan foto) */}
+                                                <span className={`relative z-10 ${hasPhoto ? "text-white drop-shadow-md" : ""}`}>{RankIcon || rank}</span>
                                             </div>
 
                                             {/* Store Info */}
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className="truncate text-xs font-bold text-white drop-shadow-sm">
+                                                    <span className="truncate text-xs font-bold text-slate-800 dark:text-slate-100">
                                                         {item.warehouse?.code || item.warehouse?.name}
                                                     </span>
                                                     {isUserWarehouse && (
                                                         <span className="rounded-md bg-indigo-600 px-1.5 py-0.5 text-[8px] font-bold text-white tracking-wide shadow-xs">
-                                                            KAMU
+                                                            YOU
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[10px] text-slate-200 mt-0.5 drop-shadow-xs">
+                                                <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
                                                     <Store className="h-2.5 w-2.5 shrink-0" />
                                                     <span className="truncate">{item.warehouse?.name || "Cabang"}</span>
                                                 </div>
@@ -156,11 +161,13 @@ export default function WarehouseStanding() {
                                         </div>
 
                                         {/* Revenue Nominal */}
-                                        <div className="relative z-10 text-right shrink-0">
-                                            <div className="text-xs font-extrabold font-mono text-white drop-shadow-md">{formatRupiah(item.total)}</div>
-                                            <div className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-400 drop-shadow-xs">
+                                        <div className="text-right shrink-0">
+                                            <div className="text-xs font-extrabold font-mono text-slate-900 dark:text-slate-100">
+                                                {formatRupiah(item.total)}
+                                            </div>
+                                            <div className="flex items-center justify-end gap-0.5 text-[9px] font-bold text-emerald-500 dark:text-emerald-400">
                                                 <TrendingUp className="h-2.5 w-2.5" />
-                                                <span>Omset</span>
+                                                <span>Fee</span>
                                             </div>
                                         </div>
                                     </div>
