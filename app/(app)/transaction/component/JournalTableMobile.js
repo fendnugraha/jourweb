@@ -56,7 +56,7 @@ export default function JournalTableMobile({
                     /* 1.3 STATE DATA MOBILE (LIST KARTU) */
                     paginatedTransactions.map((tx) => {
                         const accountToCheck = accountFilter !== "all" ? Number(accountFilter) : Number(warehouseCashId);
-                        const isInflow = Number(tx.debt_id) !== accountToCheck;
+                        const isInflow = Number(tx.debt_id) === accountToCheck;
 
                         return (
                             <div

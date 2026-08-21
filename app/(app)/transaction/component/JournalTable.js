@@ -269,7 +269,7 @@ const JournalTable = ({
                             /* 3. STATE DATA DESKTOP */
                             paginatedTransactions.map((tx) => {
                                 const accountToCheck = accountFilter !== "all" ? Number(accountFilter) : Number(warehouseCashId);
-                                const isInflow = Number(tx.debt_id) !== accountToCheck;
+                                const isInflow = Number(tx.debt_id) === accountToCheck;
 
                                 return (
                                     <tr key={tx.id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150">
