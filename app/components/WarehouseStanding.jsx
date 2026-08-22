@@ -135,7 +135,7 @@ export default function WarehouseStanding() {
                                                 style={{ backgroundImage: hasPhoto ? `url(${userPhoto})` : undefined }}
                                             >
                                                 {/* Overlay Gelap Khusus Badge jika Ada Foto */}
-                                                {hasPhoto && <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-[0.5px]" />}
+                                                {hasPhoto && <div className="absolute inset-0 bg-slate-800/20 backdrop-blur-[0.5px]" />}
 
                                                 {/* Rank Icon / Angka Rank (z-10 & text-white agar kontras dengan foto) */}
                                                 <span className={`relative z-10 ${hasPhoto ? "text-white drop-shadow-md" : ""}`}>{RankIcon || rank}</span>
