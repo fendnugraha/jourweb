@@ -1,9 +1,10 @@
 import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
 import { formatNumber } from "@/app/utils/format";
-import { AlertCircle, Loader2, Trash2 } from "lucide-react";
+import { AlertCircle, Camera, Loader2, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import WarningForm from "./WarningForm";
+import Image from "next/image";
 
 // Helper fungsi untuk format initial state
 const formatFormData = (employee) => ({
@@ -23,7 +24,6 @@ const formatFormData = (employee) => ({
 });
 
 const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, mutate }) => {
-    // / 💡 Tidak perlu useEffect lagi!
     const [formData, setFormData] = useState(() => formatFormData(employee));
     const [formDataComponent, setFormDataComponent] = useState({
         employee_id: employee.id,
@@ -35,6 +35,9 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("personal");
 
+    // Foto profil diambil dari relasi contact
+    const profilePhoto = employee?.contact?.contact_photo_url || employee?.contact?.photo;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -42,8 +45,8 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
         try {
             const response = await axios.put(`/api/employees/${employee.id}`, formData);
             notification(response.data.message || "Employee updated successfully.");
-            isModalOpen(false); // Menutup modal
-            mutate(); // Memperbarui data karyawan
+            isModalOpen(false);
+            mutate();
         } catch (error) {
             const errorMsg = error?.response?.data?.message || "An error occurred while updating the employee.";
             notification(errorMsg);
@@ -138,9 +141,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                 <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800">
                     <button
                         type="button"
-                        onClick={() => {
-                            setActiveTab("personal");
-                        }}
+                        onClick={() => setActiveTab("personal")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "personal"
                                 ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
@@ -151,9 +152,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </button>
                     <button
                         type="button"
-                        onClick={() => {
-                            setActiveTab("component");
-                        }}
+                        onClick={() => setActiveTab("component")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "component"
                                 ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
@@ -164,9 +163,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </button>
                     <button
                         type="button"
-                        onClick={() => {
-                            setActiveTab("warning");
-                        }}
+                        onClick={() => setActiveTab("warning")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "warning"
                                 ? "bg-white text-red-600 shadow-sm dark:bg-slate-700 dark:text-red-400"
@@ -177,8 +174,37 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </button>
                 </div>
             </div>
+
             {activeTab === "personal" && (
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Header Foto Profil Baru */}
+                    <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 border border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
+                        <div className="relative group shrink-0">
+                            <div className="w-16 h-16 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 border-2 border-indigo-500/20 shadow-xs flex items-center justify-center">
+                                {profilePhoto ? (
+                                    <Image
+                                        src={profilePhoto}
+                                        alt={employee?.contact?.name || "Profile"}
+                                        className="w-full h-full object-cover"
+                                        width={64}
+                                        height={64}
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <User className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                                )}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-indigo-600 text-white shadow-xs">
+                                <Camera className="w-3 h-3" />
+                            </div>
+                        </div>
+
+                        <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{employee?.contact?.name || "Karyawan"}</h4>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">Foto profil disesuaikan dari menu Kontak.</p>
+                        </div>
+                    </div>
+
                     {formError && (
                         <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
                             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -403,6 +429,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </div>
                 </form>
             )}
+
             {activeTab === "component" && (
                 <>
                     <form onSubmit={handleSubmitComponent}>
@@ -486,6 +513,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </div>
                 </>
             )}
+
             {activeTab === "warning" && <WarningForm isModalOpen={isModalOpen} notification={notification} employee={employee} mutate={mutate} />}
         </div>
     );
