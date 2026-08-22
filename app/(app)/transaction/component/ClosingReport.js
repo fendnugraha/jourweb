@@ -25,6 +25,9 @@ export default function ClosingReport({
     const [isLocking, setIsLocking] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const limitPlusSummary = accountBalance?.data?.chartOfAccounts
+        ?.filter((acc) => acc.balance - acc.limit?.limit_amount > 0 && acc.account_id === 2)
+        .reduce((total, account) => total + Number(account.balance - account.limit?.limit_amount), 0);
 
     const data = dailyDashboard?.data || {};
     const totalCash = data.totalCash ?? 0;
@@ -521,7 +524,7 @@ export default function ClosingReport({
                     <button
                         type="button"
                         onClick={handleCloseStore}
-                        disabled={loading || !isWithinTime}
+                        disabled={loading || !isWithinTime || limitPlusSummary > 0}
                         className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-white font-bold text-sm shadow-sm hover:shadow-md active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {loading ? (
