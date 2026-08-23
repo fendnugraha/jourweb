@@ -175,7 +175,7 @@ export default function DeliveryForm({ warehouses, employees, isModalOpen, notif
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 type="button"
-                                className={`py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                                className={`py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                                     formData.type === "delivery" ? "bg-indigo-600 text-white shadow-xs" : "text-slate-500"
                                 }`}
                                 onClick={() => setFormData({ ...formData, type: "delivery" })}
@@ -185,7 +185,7 @@ export default function DeliveryForm({ warehouses, employees, isModalOpen, notif
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 type="button"
-                                className={`py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                                className={`py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
                                     formData.type === "pick_up" ? "bg-indigo-600 text-white shadow-xs" : "text-slate-500"
                                 }`}
                                 onClick={() => setFormData({ ...formData, type: "pick_up" })}
