@@ -32,6 +32,7 @@ import {
     UserCheck,
     CalendarCheck2,
     Loader2,
+    Contact2,
 } from "lucide-react";
 import { calculateWorkDuration, DateTimeNow, formatDateTime, formatRupiah } from "@/app/utils/format";
 import { useRef, useState } from "react";
@@ -559,49 +560,67 @@ export default function MyProfile() {
                                     {/* KOLOM KANAN (1-SPAN): KAS UTAMA & DETAIL AKUN */}
                                     <div className="space-y-6">
                                         {/* CARD KAS UTAMA & LIMIT */}
-                                        {primaryCash && (
-                                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
-                                                <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                                                        <Wallet className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                                                            Akun Kas Utama ({primaryCash.code})
-                                                        </h2>
-                                                        <p className="text-[10px] text-slate-400">{primaryCash.name}</p>
-                                                    </div>
-                                                </div>
+                                        {/* Safety Variable Calculation */}
+                                        {(() => {
+                                            const empReceivable = parseFloat(user?.contact?.employee_receivables_sum?.total || 0);
+                                            const instReceivable = parseFloat(user?.contact?.installment_receivables_sum?.total || 0);
+                                            const totalReceivables = empReceivable + instReceivable;
 
-                                                <div className="space-y-3 text-xs">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-slate-500 dark:text-slate-400">Sisa Saldo (Live)</span>
-                                                        <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                                                            {formatRupiah(primaryCashLiveBalance)}
+                                            if (totalReceivables <= 0) return null;
+
+                                            return (
+                                                <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+                                                    {/* Card Header */}
+                                                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                                                                <Wallet className="w-4 h-4" />
+                                                            </div>
+                                                            <div>
+                                                                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                                                    Hutang Piutang
+                                                                </h2>
+                                                                <p className="text-[10px] text-slate-400">Rincian Piutang Karyawan</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/50">
+                                                            Aktif
                                                         </span>
                                                     </div>
 
-                                                    {primaryCash.limit && (
-                                                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                                                            <div className="flex items-center justify-between text-[11px]">
-                                                                <span className="text-slate-500">Saldo Awal Kas</span>
-                                                                <span className="font-bold">{formatRupiah(limitAmount)}</span>
-                                                            </div>
-                                                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className={`h-full transition-all ${usedPercentage > 80 ? "bg-rose-500" : "bg-indigo-500"}`}
-                                                                    style={{ width: `${usedPercentage}%` }}
-                                                                />
-                                                            </div>
-                                                            <div className="flex items-center justify-between text-[10px] text-slate-400">
-                                                                <span>Selisih: {formatRupiah(usedAmount)}</span>
-                                                                <span className="text-rose-500 font-semibold">{usedPercentage.toFixed(2)}%</span>
-                                                            </div>
+                                                    {/* Total Balance Highlight */}
+                                                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Sisa Piutang</span>
+                                                        <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
+                                                            {formatRupiah(totalReceivables)}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Itemized Breakdown */}
+                                                    <div className="space-y-2 text-xs">
+                                                        <div className="flex items-center justify-between py-1">
+                                                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                                                Piutang Kasbon / Langsung
+                                                            </span>
+                                                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                                                {formatRupiah(empReceivable)}
+                                                            </span>
                                                         </div>
-                                                    )}
+
+                                                        <div className="flex items-center justify-between py-1">
+                                                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                                Piutang Cicilan
+                                                            </span>
+                                                            <span className="font-semibold text-slate-700 dark:text-slate-200">
+                                                                {formatRupiah(instReceivable)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            );
+                                        })()}
 
                                         {/* CARD DETAIL INFORMASI AKUN */}
                                         <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
@@ -620,7 +639,7 @@ export default function MyProfile() {
 
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                                        <PiggyBank className="w-3.5 h-3.5 text-slate-400" />
+                                                        <Contact2 className="w-3.5 h-3.5 text-slate-400" />
                                                         Contact ID
                                                     </span>
                                                     <span className="font-mono font-bold text-slate-700 dark:text-slate-300">#{user?.contact_id}</span>
