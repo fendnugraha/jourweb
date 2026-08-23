@@ -350,7 +350,7 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                                                     {w.name.replace(/^konter\s*/i, "")}
                                                                 </span>
                                                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block">
-                                                                    ID: #{w.id} | {<TimeAgo timestamp={w.updated_at} locale="id" />}
+                                                                    Updated {<TimeAgo timestamp={w.updated_at} suffix={false} />}
                                                                 </span>
                                                             </div>
                                                         </div>
