@@ -5,9 +5,11 @@ import jsPDF from "jspdf";
 import {
     Building2,
     Calendar,
+    Check,
     CheckCircle2,
     Download,
     Loader2,
+    Pencil,
     Plus,
     Printer,
     Receipt,
@@ -18,6 +20,7 @@ import {
     TrendingUp,
     UserMinus,
     Wallet,
+    X,
 } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -37,27 +40,26 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
     const corpExpenses = filteredCorpCashFlows.filter((c) => c.type === "expense");
 
     const totalCorpIncome = corpIncomes.reduce((total, item) => total + Number(item.amount || 0), 0);
-
     const totalCorpExpense = corpExpenses.reduce((total, item) => total + Number(item.amount || 0), 0);
 
     const reportRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
 
-    // FUNGSI EXPORT LANGSUNG JADI FILE .PDF
+    const [editingIndex, setEditingIndex] = useState(null);
+    const [editForm, setEditForm] = useState({ note: "", amount: "" });
+
     const handleDownloadPDF = async () => {
         if (!reportRef.current) return;
         setIsExporting(true);
 
         try {
-            // 1. Convert DOM ke gambar PNG
             const dataUrl = await toPng(reportRef.current, {
                 quality: 0.95,
-                pixelRatio: 2, // Menjaga gambar tetap tajam saat di-scale
+                pixelRatio: 2,
             });
 
-            // 2. Inisialisasi PDF A4 (Landscape/Portrait)
             const pdf = new jsPDF({
-                orientation: "landscape", // Gunakan "portrait" jika tampilan memanjang ke bawah
+                orientation: "landscape",
                 unit: "mm",
                 format: "a4",
             });
@@ -66,21 +68,16 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
             const pdfHeight = pdf.internal.pageSize.getHeight();
             const imgProps = pdf.getImageProperties(dataUrl);
 
-            // 3. Hitung rasio skala agar PASTI MUAT di 1 halaman
             const widthRatio = pdfWidth / imgProps.width;
             const heightRatio = pdfHeight / imgProps.height;
-
-            // Ambil rasio terkecil agar tidak ada bagian yang terpotong
             const ratio = Math.min(widthRatio, heightRatio);
 
             const finalWidth = imgProps.width * ratio;
             const finalHeight = imgProps.height * ratio;
 
-            // 4. Posisikan konten tepat di tengah halaman (Center alignment)
             const xOffset = (pdfWidth - finalWidth) / 2;
             const yOffset = (pdfHeight - finalHeight) / 2;
 
-            // 5. Render ke PDF
             pdf.addImage(dataUrl, "PNG", xOffset, yOffset, finalWidth, finalHeight);
             pdf.save(`Laporan-Harian-${new Date().toISOString().split("T")[0]}.pdf`);
         } catch (error) {
@@ -104,7 +101,6 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
     );
 
     const totalReceivable = (filteredFinances || []).reduce((sum, finance) => sum + Number(finance.bill_amount || 0), 0);
-
     const totalFee = revenue?.revenue?.reduce((sum, item) => sum + Number(item.fee || 0), 0) || 0;
 
     const diffTotal =
@@ -142,15 +138,30 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
         if (typeof window !== "undefined") {
             localStorage.setItem("cashDetail", JSON.stringify(newCashDetail));
         }
+        if (editingIndex === index) setEditingIndex(null);
+    };
+
+    const handleStartEdit = (index, item) => {
+        setEditingIndex(index);
+        setEditForm({ note: item.note, amount: item.amount });
+    };
+
+    const handleSaveEdit = (index) => {
+        if (!editForm.note.trim() || isNaN(parseFloat(editForm.amount))) return;
+
+        const updated = cashdetail.map((item, i) => (i === index ? { note: editForm.note.trim(), amount: parseFloat(editForm.amount) } : item));
+
+        setCashDetail(updated);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("cashDetail", JSON.stringify(updated));
+        }
+        setEditingIndex(null);
     };
 
     const netProfit = Number(totalFee) + Number(totalCorpIncome) - Number(totalReceivable) - Number(totalCorpExpense + diffTotal);
 
     return (
         <div className="space-y-4 font-sans text-slate-800">
-            {/* ========================================================= */}
-            {/* AREA KHUSUS PDF CONTAINER (THEME: FULL INDIGO SLATE)      */}
-            {/* ========================================================= */}
             <div ref={reportRef} className="p-5 bg-white rounded-2xl border border-indigo-100 space-y-4 font-sans text-slate-900">
                 {/* 1. HEADER LAPORAN DOKUMEN */}
                 <div className="flex justify-between items-end pb-3 border-b-2 border-indigo-200">
@@ -178,7 +189,6 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
 
                 {/* 2. MINI METRICS STRIP */}
                 <div className="grid grid-cols-4 gap-2.5">
-                    {/* Outlets */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span className="text-[9px] font-mono text-slate-400 uppercase font-bold block">Outlets Aktif</span>
@@ -187,7 +197,6 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                         <Store className="w-4 h-4 text-indigo-400" />
                     </div>
 
-                    {/* Biaya Cabang */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span className="text-[9px] font-mono text-slate-400 uppercase font-bold block">Biaya Cabang</span>
@@ -196,7 +205,6 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                         <TrendingDown className="w-4 h-4 text-rose-400" />
                     </div>
 
-                    {/* Kasbon */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span className="text-[9px] font-mono text-slate-400 uppercase font-bold block">Total Kasbon</span>
@@ -205,7 +213,6 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                         <UserMinus className="w-4 h-4 text-amber-500" />
                     </div>
 
-                    {/* Corporate Expense */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                         <div>
                             <span className="text-[9px] font-mono text-slate-400 uppercase font-bold block">Corp Expense</span>
@@ -215,7 +222,7 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                     </div>
                 </div>
 
-                {/* 3. HERO CARD: LABA DITRANSFER (DEEP INDIGO DECK) */}
+                {/* 3. HERO CARD: LABA DITRANSFER */}
                 <div className="p-4 rounded-xl bg-indigo-700 text-white flex items-center justify-between gap-4">
                     <div className="space-y-0.5">
                         <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold tracking-wider text-emerald-400 uppercase">
@@ -233,7 +240,7 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
 
                 {/* 4. GRID DATA TABEL */}
                 <div className="grid grid-cols-12 gap-4 items-start">
-                    {/* TABEL KIRI: OPERASIONAL CABANG (7 KOLOM) */}
+                    {/* TABEL KIRI: OPERASIONAL CABANG */}
                     <div className="col-span-7 rounded-xl border border-indigo-100 overflow-hidden bg-white">
                         <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
@@ -280,7 +287,7 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                         </table>
                     </div>
 
-                    {/* TABEL KANAN: KASBON & CORPORATE (5 KOLOM) */}
+                    {/* TABEL KANAN: KASBON, CORPORATE & TOTAL KAS AKHIR */}
                     <div className="col-span-5 space-y-3">
                         {/* KASBON KARYAWAN */}
                         {filteredFinances?.length > 0 && (
@@ -294,19 +301,12 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                                 </div>
 
                                 <div className="divide-y divide-slate-100 font-mono text-xs">
-                                    {filteredFinances?.length > 0 ? (
-                                        filteredFinances.map((finance) => (
-                                            <div
-                                                key={finance.id}
-                                                className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
-                                            >
-                                                <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
-                                                <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada kasbon.</p>
-                                    )}
+                                    {filteredFinances.map((finance) => (
+                                        <div key={finance.id} className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                            <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
+                                            <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
@@ -328,21 +328,14 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                                 </div>
 
                                 <div className="divide-y divide-slate-100 font-mono text-xs">
-                                    {corpIncomes.length > 0 ? (
-                                        corpIncomes.map((cashflow) => (
-                                            <div
-                                                key={cashflow.id}
-                                                className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
-                                            >
-                                                <span className="font-sans text-slate-700 truncate max-w-54">
-                                                    {cashflow.description || cashflow.category || "Pemasukan"}
-                                                </span>
-                                                <span className="font-bold text-emerald-600">Rp {formatNumber(cashflow.amount)}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada pemasukan corporate.</p>
-                                    )}
+                                    {corpIncomes.map((cashflow) => (
+                                        <div key={cashflow.id} className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                            <span className="font-sans text-slate-700 truncate max-w-54">
+                                                {cashflow.description || cashflow.category || "Pemasukan"}
+                                            </span>
+                                            <span className="font-bold text-emerald-600">Rp {formatNumber(cashflow.amount)}</span>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
@@ -353,52 +346,42 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                         )}
 
                         {/* CORPORATE EXPENSE */}
-                        {corpExpenses.length > 0 ||
-                            (diffTotal !== 0 && (
-                                <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
-                                    <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                            <Receipt className="w-3.5 h-3.5 text-indigo-600" />
-                                            <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Corporate Expense</h3>
-                                        </div>
-                                        <span className="text-[10px] font-mono text-slate-400">{corpExpenses.length + (diffTotal !== 0 ? 1 : 0)} Item</span>
+                        {(corpExpenses.length > 0 || diffTotal !== 0) && (
+                            <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
+                                <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                        <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                                        <h3 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">Corporate Expense</h3>
                                     </div>
-
-                                    <div className="divide-y divide-slate-100 font-mono text-xs">
-                                        {corpExpenses.length > 0 || diffTotal !== 0 ? (
-                                            <>
-                                                {diffTotal !== 0 && (
-                                                    <div className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                                                        <span className="font-sans text-slate-700 truncate max-w-54">Pembulatan Setoran</span>
-                                                        <span className="font-bold text-indigo-600">Rp {formatNumber(diffTotal)}</span>
-                                                    </div>
-                                                )}
-
-                                                {corpExpenses.map((expense) => (
-                                                    <div
-                                                        key={expense.id}
-                                                        className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
-                                                    >
-                                                        <span className="font-sans text-slate-700 truncate max-w-54">
-                                                            {expense.description || expense.category || "Pengeluaran"}
-                                                        </span>
-                                                        <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
-                                                    </div>
-                                                ))}
-                                            </>
-                                        ) : (
-                                            <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada pengeluaran.</p>
-                                        )}
-                                    </div>
-
-                                    <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
-                                        <span className="font-sans text-indigo-950">Total Corporate Expense</span>
-                                        <span className="text-indigo-600">Rp {formatNumber(totalCorpExpense + diffTotal)}</span>
-                                    </div>
+                                    <span className="text-[10px] font-mono text-slate-400">{corpExpenses.length + (diffTotal !== 0 ? 1 : 0)} Item</span>
                                 </div>
-                            ))}
 
-                        {/* TOTAL KAS AKHIR */}
+                                <div className="divide-y divide-slate-100 font-mono text-xs">
+                                    {diffTotal !== 0 && (
+                                        <div className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                            <span className="font-sans text-slate-700 truncate max-w-54">Pembulatan Setoran</span>
+                                            <span className="font-bold text-indigo-600">Rp {formatNumber(diffTotal)}</span>
+                                        </div>
+                                    )}
+
+                                    {corpExpenses.map((expense) => (
+                                        <div key={expense.id} className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                            <span className="font-sans text-slate-700 truncate max-w-54">
+                                                {expense.description || expense.category || "Pengeluaran"}
+                                            </span>
+                                            <span className="font-bold text-indigo-600">Rp {formatNumber(expense.amount)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">
+                                    <span className="font-sans text-indigo-950">Total Corporate Expense</span>
+                                    <span className="text-indigo-600">Rp {formatNumber(totalCorpExpense + diffTotal)}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TOTAL KAS AKHIR & CASH DETAIL LIST */}
                         <div className="rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-xs">
                             <div className="px-3.5 py-2 border-b border-indigo-100 bg-indigo-50/40 flex items-center justify-between">
                                 <div className="flex items-center gap-1.5">
@@ -409,36 +392,81 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                             </div>
 
                             <div className="divide-y divide-slate-100 font-mono text-xs">
-                                {cashdetail?.length > 0 || diffTotal !== 0 ? (
-                                    <>
-                                        <div className="px-3.5 py-2 flex items-center justify-between">
-                                            <span className="font-sans text-slate-700 truncate max-w-54">Setoran Cabang</span>
-                                            <span className="font-bold text-indigo-600">Rp {formatNumber(sumByTrxType("cash"))}</span>
-                                        </div>
+                                <div className="px-3.5 py-2 flex items-center justify-between">
+                                    <span className="font-sans text-slate-700 truncate max-w-54">Setoran Cabang</span>
+                                    <span className="font-bold text-indigo-600">Rp {formatNumber(sumByTrxType("cash"))}</span>
+                                </div>
 
-                                        {cashdetail?.map((detail, index) => (
-                                            <div
-                                                key={index}
-                                                className="px-3.5 py-2 flex items-center justify-between group hover:bg-slate-50/50 transition-colors"
-                                            >
-                                                <span className="font-sans text-slate-700 truncate max-w-54 flex items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveCashDetail(index)}
-                                                        className="text-rose-500 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                        title="Hapus"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </button>
-                                                    <span>{detail.note}</span>
-                                                </span>
-                                                <span className="font-bold text-indigo-600">Rp {formatNumber(detail.amount)}</span>
+                                {cashdetail?.map((detail, index) => (
+                                    <div key={index} className="px-3.5 py-2 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                                        {editingIndex === index ? (
+                                            /* FORM INLINE EDIT ITEM */
+                                            <div className="flex items-center gap-1.5 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={editForm.note}
+                                                    onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                                                    className="w-full rounded-lg border border-slate-300 px-2 py-1 text-xs font-sans text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                                                    placeholder="Catatan"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    step="any"
+                                                    value={editForm.amount}
+                                                    onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                                                    className="w-28 rounded-lg border border-slate-300 px-2 py-1 text-xs font-mono text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 text-right"
+                                                    placeholder="Nominal"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSaveEdit(index)}
+                                                    className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md cursor-pointer shrink-0"
+                                                    title="Simpan"
+                                                >
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingIndex(null)}
+                                                    className="p-1 text-slate-400 hover:bg-slate-100 rounded-md cursor-pointer shrink-0"
+                                                    title="Batal"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
-                                        ))}
-                                    </>
-                                ) : (
-                                    <p className="p-2.5 text-center text-[11px] font-sans text-slate-400">Tidak ada rincian kas.</p>
-                                )}
+                                        ) : (
+                                            /* TAMPILAN ITEM: TOMBOL EDIT DISAMPING TEKS NOTE (TIDAK HALANGI ANGKA NOMINAL) */
+                                            <>
+                                                <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                                                    <span className="font-sans text-slate-700 truncate">{detail.note}</span>
+
+                                                    {!isExporting && (
+                                                        <div className="inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleStartEdit(index, detail)}
+                                                                className="p-0.5 text-slate-400 hover:text-indigo-600 rounded transition-colors cursor-pointer"
+                                                                title="Edit"
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveCashDetail(index)}
+                                                                className="p-0.5 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer"
+                                                                title="Hapus"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <span className="font-bold text-indigo-600 shrink-0">Rp {formatNumber(detail.amount)}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
 
                             {/* Form Tambah Item Kas Detail */}
@@ -463,7 +491,7 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                                         type="text"
                                         required
                                         placeholder="Note"
-                                        className="rounded-xl col-span-3 border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                        className="rounded-xl col-span-3 border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                                     />
                                     <input
                                         name="amount"
@@ -471,7 +499,7 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                                         step="any"
                                         required
                                         placeholder="Amount"
-                                        className="rounded-xl col-span-2 border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                                        className="rounded-xl col-span-2 border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-mono"
                                     />
                                     <button
                                         type="submit"

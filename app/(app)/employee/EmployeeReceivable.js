@@ -20,7 +20,7 @@ const EmployeeReceivable = () => {
     const [notification, setNotification] = useState(null);
     const { contacts, error: contactsError } = useContacts();
     const { finances, financeGroup, loading, error, mutate } = useFinances({
-        contact: selectedContactId,
+        contact: "All",
         financeType,
         start: today,
         end: today,

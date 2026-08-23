@@ -5,6 +5,7 @@ import { AlarmClockPlus, Clock, Ellipsis, Play, Plus, ReceiptText, Search, Star,
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
+import PayrollDetail from "./PayrollDetail";
 
 const CreatePayroll = ({ employees, notification }) => {
     const { thisMonth, thisYear } = DateTimeNow();
@@ -17,6 +18,7 @@ const CreatePayroll = ({ employees, notification }) => {
         const saved = localStorage.getItem("processData");
         return saved ? JSON.parse(saved) : [];
     });
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
@@ -313,7 +315,15 @@ const CreatePayroll = ({ employees, notification }) => {
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-green-400">{calculateTotalItem(employee)}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <button type="button">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedEmployee(employee);
+                                                    setModalTitle("Receipt Detail: " + employee.name);
+                                                    setModalFormActive("receipt-detail");
+                                                    setIsModalOpen(true);
+                                                }}
+                                            >
                                                 <ReceiptText size={16} />
                                             </button>
                                         </td>
@@ -373,6 +383,8 @@ const CreatePayroll = ({ employees, notification }) => {
                 </table>
             </div>
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
+                {modalFormActive === "receipt-detail" && selectedEmployee && <PayrollDetail employee={selectedEmployee} />}
+
                 {modalFormActive === "summary" && (
                     <>
                         {/* Detail */}
