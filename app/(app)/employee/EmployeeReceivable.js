@@ -14,6 +14,7 @@ import ConfirmDialog from "@/app/components/ConfirmDialog";
 import axios from "@/app/utils/axios";
 import PaymentForm from "../finance/PaymentForm";
 import { useAccounts } from "@/app/hooks/useAccounts";
+import EmployeeRcvPayment from "./EmployeeRcvPayment";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
@@ -197,7 +198,7 @@ const EmployeeReceivable = () => {
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
                 {isPaymentActive ? (
-                    <PaymentForm
+                    <EmployeeRcvPayment
                         accounts={accounts}
                         type={financeType}
                         contactId={selectedContactId}
