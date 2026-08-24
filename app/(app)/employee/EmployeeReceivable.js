@@ -12,6 +12,8 @@ import Modal from "@/app/components/Modal";
 import ReceivableForm from "./ReceivableForm";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import axios from "@/app/utils/axios";
+import PaymentForm from "../finance/PaymentForm";
+import { useAccounts } from "@/app/hooks/useAccounts";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
@@ -38,6 +40,8 @@ const EmployeeReceivable = () => {
         { value: "paid", label: "Paid" },
         { value: "unpaid", label: "Unpaid" },
     ];
+
+    const { accounts = [] } = useAccounts();
 
     const contactOption = [
         { value: "", label: "Pilih Kontak" },
@@ -192,7 +196,18 @@ const EmployeeReceivable = () => {
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
-                <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
+                {isPaymentActive ? (
+                    <PaymentForm
+                        accounts={accounts}
+                        type={financeType}
+                        contactId={selectedContactId}
+                        notification={setNotification}
+                        fetchFinance={mutate}
+                        isModalOpen={setIsModalOpen}
+                    />
+                ) : (
+                    <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
+                )}
             </Modal>
 
             <ConfirmDialog

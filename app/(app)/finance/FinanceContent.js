@@ -267,7 +267,7 @@ const FinanceContent = () => {
                 title={modalTitle}
                 maxWidth="max-w-xl"
             >
-                {["Payable", "Receivable"].includes(financeType) ? (
+                {["Payable", "Receivable", "EmployeeReceivable"].includes(financeType) ? (
                     isPaymentActive ? (
                         <PaymentForm
                             accounts={accounts}
