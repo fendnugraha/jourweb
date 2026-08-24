@@ -3,6 +3,7 @@ import { changeLockStatus } from "@/app/hooks/JournalActionService";
 import axios from "@/app/utils/axios";
 import { ClosingShift } from "@/app/utils/ClosingShift";
 import { DateTimeNow, formatDateTime, formatNumber } from "@/app/utils/format";
+import { SendTelegramAlert } from "@/app/utils/SendTelegramAlert";
 import { Check, CircleAlert, Clock, Copy, ExternalLink, QrCode, ShieldCheck, TrendingUp, Wallet } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -25,6 +26,8 @@ export default function ClosingReport({
     const [isLocking, setIsLocking] = useState(false);
     const [loading, setLoading] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [transactions, setTransactions] = useState([]);
+
     const limitPlusSummary = accountBalance?.data?.chartOfAccounts
         ?.filter((acc) => acc.balance - acc.limit?.limit_amount > 0 && acc.account_id === 2)
         .reduce((total, account) => total + Number(account.balance - account.limit?.limit_amount), 0);
@@ -151,6 +154,48 @@ export default function ClosingReport({
         )}`;
     };
 
+    const fetchTransaction = async () => {
+        try {
+            const response = await axios.get(`/api/get-trx-vcr/${warehouseId}/${today}/${today}`);
+            const data = response.data.data;
+
+            setTransactions(data); // Tetap di-set untuk kebutuhan UI/tampilan komponen
+            return data; // 🔥 Kembalikan data untuk kebutuhan proses urutan async
+        } catch (error) {
+            notification(error.response?.data?.message || "Something went wrong.");
+            console.log(error);
+            throw error; // 🔥 Lempar error agar jika API gagal, proses closing otomatis stop
+        }
+    };
+
+    const formatVoucherText = (latestTransactions) => {
+        // 🔥 Jika ada data dari parameter, pakai itu. Jika tidak, pakai state transactions.
+        const dataToUse = latestTransactions || transactions;
+
+        const voucherQty = {};
+        const nonVoucherQty = {};
+
+        // Proses pemisahan voucher dan non-voucher langsung di dalam fungsi menggunakan data terbaru
+        dataToUse?.forEach((trx) => {
+            const name = trx.product?.name || "Produk Tanpa Nama";
+            const qty = Number(trx.quantity) || 0;
+
+            // Sesuaikan kondisi penanda voucher di bawah ini dengan logika filter Anda sebelumnya
+            // Contoh di bawah berasumsi ada properti 'is_voucher' atau sejenisnya pada produk/transaksi
+            if (trx.product?.category === "Voucher & SP") {
+                voucherQty[name] = (voucherQty[name] || 0) + qty;
+            } else {
+                nonVoucherQty[name] = (nonVoucherQty[name] || 0) + qty;
+            }
+        });
+
+        // Ubah objek menjadi baris teks
+        const voucherLines = Object.entries(voucherQty).map(([name, qty]) => `${name}: *${qty * -1}* pcs`);
+        const nonVoucherLines = Object.entries(nonVoucherQty).map(([name, qty]) => `${name}: *${qty * -1}* pcs`);
+
+        return `Voucher ${warehouseName}:\n\n${voucherLines.join("\n") || "Tidak ada data"}\n\n\nNon Voucher :\n${nonVoucherLines.join("\n") || "Tidak ada data"}`;
+    };
+
     const handleCloseStore = async () => {
         // 1. Cegah eksekusi ganda jika sedang loading
         if (loading) return;
@@ -173,6 +218,9 @@ export default function ClosingReport({
 
             setStatusText("Mengunci cabang...");
             await changeLockStatus(warehouseId);
+
+            setStatusText("Mengambil data transaksi...");
+            const latestTransactions = await fetchTransaction();
 
             setStatusText("Mengirim laporan Telegram...");
 
@@ -199,6 +247,15 @@ export default function ClosingReport({
             localStorage.setItem(`lock_warehouse_id_${warehouseId}`, String(warehouseId));
             localStorage.setItem("target_lock_time", String(lockTargetTime));
             localStorage.setItem("lock_warehouse_id", String(warehouseId));
+
+            setStatusText("Mengirim laporan...");
+            await SendTelegramAlert({
+                title: "PENJUALAN BARANG", // Kembali ke teks asli Anda
+                source: warehouseName,
+                message: formatVoucherText(latestTransactions),
+                forwardChatId: 986761281,
+                // forwardChatId: 851552604,
+            });
 
             setCountdown(LOCK_DURATION_MS / 1000);
             setIsLocking(true);
