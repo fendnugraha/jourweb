@@ -1,4 +1,4 @@
-import { Warehouse, Trophy, TrendingUp, Star, Clock, CheckCircle2, AlertTriangle, Loader2, Lock } from "lucide-react";
+import { Warehouse, Trophy, TrendingUp, Star, Clock, CheckCircle2, AlertTriangle, Loader2, Lock, BadgeCheck, UserRoundCog } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../utils/auth";
 import useRankByProfit from "../hooks/useRankByProfit";
@@ -126,7 +126,15 @@ export default function HeaderProfile() {
                             <h2 className="truncate text-base font-extrabold tracking-tight text-slate-900 sm:text-lg dark:text-slate-100">
                                 Hi, <span className="text-indigo-600 dark:text-indigo-400">{user?.name || "Pengguna"}</span>
                             </h2>
-                            <p className="truncate text-xs text-slate-500 dark:text-slate-400 font-medium">{user?.role || "Staff"}</p>
+                            <p className="truncate text-xs text-slate-500 dark:text-slate-400 font-medium inline-flex gap-1 items-center">
+                                {user.email}{" "}
+                                {user.email_verified_at ? (
+                                    <BadgeCheck className="h-4 w-4 text-blue-100 " fill="#246de3" />
+                                ) : (
+                                    <BadgeCheck className="h-4 w-4 text-slate-300" />
+                                )}{" "}
+                                <span>•</span> {user?.role || "Staff"} <UserRoundCog className="h-4 w-4" />
+                            </p>
                         </div>
                     </div>
                 </div>

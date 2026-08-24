@@ -116,7 +116,7 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
         ];
     }, [accounts, warehouseId, effectiveDestinationId, formData.cred_id, isReversed, newType]);
 
-    const warehouseOptions = [{ value: "", label: "Select Warehouse" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
+    const warehouseOptions = [{ value: "", label: "Pilih Cabang" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
 
     useEffect(() => {
         // 1. Pengecekan formData.debt_id DIHAPUS dari kondisi pembatas ini
