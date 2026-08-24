@@ -152,6 +152,9 @@ export default function ClosingReport({
     };
 
     const handleCloseStore = async () => {
+        // 1. Cegah eksekusi ganda jika sedang loading
+        if (loading) return;
+
         const isConfirmed = confirm("Anda yakin ingin menutup shift, pastikan semua data sudah diinput?\n(Semua input data akan terkunci setelah kas disetor)");
         if (!isConfirmed) return;
 
@@ -159,7 +162,8 @@ export default function ClosingReport({
         setStatusText("Memeriksa status gudang...");
 
         try {
-            const { data: warehouseStatus } = await axios.get(`/api/check-warehouse-status/${warehouseId}`);
+            // 2. Gunakan Timeout pada request
+            const { data: warehouseStatus } = await axios.get(`/api/check-warehouse-status/${warehouseId}`, { timeout: 10000 });
 
             if (!warehouseStatus?.data?.is_open) {
                 setStatusText("Gudang sudah ditutup");
@@ -172,6 +176,11 @@ export default function ClosingReport({
 
             setStatusText("Mengirim laporan Telegram...");
 
+            // 3. Hitung lockTargetTime secara bersih
+            const now = new Date().getTime();
+            const LOCK_DURATION_MS = 2 * 60 * 1000;
+            const lockTargetTime = now + LOCK_DURATION_MS;
+
             const result = await ClosingShift({
                 cred_id: warehouseCashId,
                 amount: dailyDashboard?.data?.totalCash - openingCash,
@@ -181,17 +190,14 @@ export default function ClosingReport({
             });
 
             const telegramResponseObj = result?.telegramData?.data || result?.telegramData;
+
+            // Safe Storage Logic
             setRawTelegramData(telegramResponseObj);
             localStorage.setItem(`last_telegram_data_${warehouseId}`, JSON.stringify(telegramResponseObj));
             localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
-
-            const LOCK_DURATION_MS = 2 * 60 * 1000;
-            // eslint-disable-next-line react-hooks/purity
-            const lockTargetTime = Date.now() + LOCK_DURATION_MS;
-
-            localStorage.setItem(`target_lock_time_${warehouseId}`, lockTargetTime);
+            localStorage.setItem(`target_lock_time_${warehouseId}`, String(lockTargetTime));
             localStorage.setItem(`lock_warehouse_id_${warehouseId}`, String(warehouseId));
-            localStorage.setItem("target_lock_time", lockTargetTime);
+            localStorage.setItem("target_lock_time", String(lockTargetTime));
             localStorage.setItem("lock_warehouse_id", String(warehouseId));
 
             setCountdown(LOCK_DURATION_MS / 1000);
@@ -202,7 +208,14 @@ export default function ClosingReport({
             alert("Shift berhasil ditutup!");
         } catch (error) {
             console.error("Closing shift error:", error);
-            if (notification) notification("Terjadi kesalahan saat menutup shift.");
+
+            // 4. Handling Error Koneksi / Timeout Khusus
+            if (error.code === "ECONNABORTED") {
+                if (notification) notification("Koneksi internet lambat/timeout. Silakan periksa jaringan Anda.");
+                alert("Koneksi terputus saat menutup shift. Silakan muat ulang halaman dan periksa kembali statusnya.");
+            } else {
+                if (notification) notification("Terjadi kesalahan saat menutup shift.");
+            }
         } finally {
             setLoading(false);
             setStatusText("");
