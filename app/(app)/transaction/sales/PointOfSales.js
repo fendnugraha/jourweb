@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     ShoppingCart,
     Search,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-// Mock helper function if not imported
+// Helper format Rupiah
 const formatRupiah = (number) => {
     return new Intl.NumberFormat("id-ID", {
         style: "currency",
@@ -31,7 +32,7 @@ const formatRupiah = (number) => {
 };
 
 // ==========================================
-// 1. KOMPONEN KERANJANG (DI LUAR PointOfSale)
+// 1. KOMPONEN KERANJANG
 // ==========================================
 function CartFormContent({
     cart,
@@ -178,18 +179,15 @@ function CartFormContent({
 // ==========================================
 // 2. KOMPONEN UTAMA PointOfSale
 // ==========================================
-export default function PointOfSale({
-    stockItems = [],
-    onPOSCheckout = () => {},
-    currency = "Rp ",
-    accounts = ["Cash", "Bank BCA", "Bank Mandiri", "Bank BRI", "Other Account"],
-    allowOverdraft = false,
-    enableTax = false,
-}) {
+export default function PointOfSale({ stockItems = [], onPOSCheckout = () => {}, currency = "Rp ", allowOverdraft = false, enableTax = false }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("Voucher & SP");
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    // Initial state dari localStorage
     const [cart, setCart] = useState([]);
     const [customerName, setCustomerName] = useState("");
+
     const [paymentAccount, setPaymentAccount] = useState("Cash");
     const [isPrinting, setIsPrinting] = useState(false);
 
@@ -199,7 +197,41 @@ export default function PointOfSale({
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
     const [lastReceipt, setLastReceipt] = useState(null);
 
-    // 1. Build POS catalog
+    // 1. Load data dari localStorage saat kompone di-mount (Client-side)
+    useEffect(() => {
+        const savedCart = localStorage.getItem("pos_cart_items");
+        const savedCustomer = localStorage.getItem("pos_customer_name");
+
+        if (savedCart) {
+            try {
+                setCart(JSON.parse(savedCart));
+            } catch (e) {
+                console.error("Gagal membaca cart dari localStorage", e);
+            }
+        }
+
+        if (savedCustomer) {
+            setCustomerName(savedCustomer);
+        }
+
+        setIsHydrated(true);
+    }, []);
+
+    // 2. Simpan cart ke localStorage saat ada perubahan
+    useEffect(() => {
+        if (isHydrated) {
+            localStorage.setItem("pos_cart_items", JSON.stringify(cart));
+        }
+    }, [cart, isHydrated]);
+
+    // 3. Simpan customerName ke localStorage saat ada perubahan
+    useEffect(() => {
+        if (isHydrated) {
+            localStorage.setItem("pos_customer_name", customerName);
+        }
+    }, [customerName, isHydrated]);
+
+    // Build POS catalog
     const posProducts = useMemo(() => {
         return stockItems.map((item) => {
             const retailPrice = item.price > 0 ? item.price : Math.round((item.cost * 1.8) / 100) * 100;
@@ -217,7 +249,7 @@ export default function PointOfSale({
         });
     }, [stockItems]);
 
-    // 2. Filter products
+    // Filter products
     const filteredProducts = useMemo(() => {
         return posProducts.filter((product) => {
             const skuVal = "sku" in product ? product.sku : "";
@@ -344,6 +376,10 @@ export default function PointOfSale({
             payment: paymentAccount,
         });
 
+        // Bersihkan storage setelah checkout berhasil
+        localStorage.removeItem("pos_cart_items");
+        localStorage.removeItem("pos_customer_name");
+
         setIsPreviewOpen(false);
         setIsReceiptOpen(true);
     };
@@ -352,6 +388,8 @@ export default function PointOfSale({
         setCart([]);
         setCustomerName("");
         setPaymentAccount("Cash");
+        localStorage.removeItem("pos_cart_items");
+        localStorage.removeItem("pos_customer_name");
         setIsReceiptOpen(false);
         setIsPrinting(false);
     };
@@ -363,7 +401,6 @@ export default function PointOfSale({
         }, 2000);
     };
 
-    // Props paket untuk CartFormContent
     const cartProps = {
         cart,
         totalItemsCount,
