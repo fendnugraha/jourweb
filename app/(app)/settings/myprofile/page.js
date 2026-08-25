@@ -46,6 +46,7 @@ import Notification from "@/app/components/Notification";
 
 export default function MyProfile() {
     const { user, mutate } = useAuth();
+    console.log(user);
     const { today } = DateTimeNow();
 
     // State untuk Tab (Profil vs Absensi)
