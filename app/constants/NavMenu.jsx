@@ -49,7 +49,7 @@ export const navMenu = {
             path: "/settings/myprofile",
             href: "/settings/myprofile",
             icon: UserCheck,
-            role: ["Administrator", "courier", "Cashier", "Co-Cashier", "Super Admin"],
+            role: ["Administrator", "Courier", "Cashier", "Co-Cashier", "Super Admin"],
         },
         {
             name: "Settings",
