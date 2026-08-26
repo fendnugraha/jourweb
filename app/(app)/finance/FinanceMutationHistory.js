@@ -1,5 +1,5 @@
 import { formatDateTime, formatRupiah } from "@/app/utils/format";
-import { Trash2, UserCheck } from "lucide-react";
+import { Contact2, Trash2, UserCheck } from "lucide-react";
 import { useMemo } from "react";
 
 const FinanceMutationHistory = ({ finances = [], findContact, selectedContactId, setJournalToDelete }) => {
@@ -54,7 +54,12 @@ const FinanceMutationHistory = ({ finances = [], findContact, selectedContactId,
                                     <tr key={finance.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
                                         <td className="px-6 py-3.5">
                                             <span className="font-semibold capitalize block text-slate-800 dark:text-slate-200">{finance.description}</span>
-                                            <span className="text-[10px] text-slate-400 font-normal">{formatDateTime(finance.date_issued)}</span>
+                                            <div className="flex items-center gap-1">
+                                                <Contact2 size={12} className="text-slate-400" />{" "}
+                                                <span className="text-slate-600 dark:text-slate-300">{finance.contact?.name}</span>
+                                                <span>•</span>
+                                                <span className="text-[10px] text-slate-400 font-normal">{formatDateTime(finance.date_issued)}</span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-3.5 text-right font-mono font-bold">
                                             <span className={isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>
