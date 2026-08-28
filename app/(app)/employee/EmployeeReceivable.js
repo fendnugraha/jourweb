@@ -205,6 +205,7 @@ const EmployeeReceivable = () => {
                         notification={setNotification}
                         fetchFinance={mutate}
                         isModalOpen={setIsModalOpen}
+                        finances={finances}
                     />
                 ) : (
                     <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
