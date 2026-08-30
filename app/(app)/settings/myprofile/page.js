@@ -45,7 +45,7 @@ import axios from "@/app/utils/axios";
 import Notification from "@/app/components/Notification";
 
 export default function MyProfile() {
-    const { user, mutate } = useAuth();
+    const { user, mutate, logout } = useAuth();
     const { today } = DateTimeNow();
 
     // State untuk Tab (Profil vs Absensi)
@@ -654,6 +654,12 @@ export default function MyProfile() {
                                                 </div>
                                             </div>
                                         </div>
+                                        <button
+                                            className="w-full sm:w-auto sm:hidden text-sm px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 dark:text-red-400 font-medium rounded-xl transition"
+                                            onClick={logout}
+                                        >
+                                            Keluar
+                                        </button>
                                     </div>
                                 </div>
                             </div>

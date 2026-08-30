@@ -19,6 +19,7 @@ import {
     TrendingUp,
     TrendingDown,
     Layers,
+    User,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import EditMutationJournal from "./EditMutationJournal";
@@ -294,6 +295,7 @@ const JournalTable = ({
                                                 <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 border border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                                                     <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
                                                     <span>{formatDateTime(tx.date_issued)}</span>
+                                                    <User className="h-3 w-3 text-slate-400 shrink-0" /> {tx.user?.name}
                                                 </div>
                                             </div>
                                         </td>
@@ -338,6 +340,9 @@ const JournalTable = ({
                                                     <span>{tx.cred_id === warehouseCashId ? tx.debt?.group || "Cash" : tx.cred?.group || "Cash"}</span>
                                                 </span>
                                             )}
+                                            <span className="text-slate-500 dark:text-slate-400 block mt-1">
+                                                <User size={14} className="inline-block mr-1" /> {tx.user?.name}
+                                            </span>
                                         </td>
 
                                         <td className="px-5 py-4 text-right whitespace-nowrap font-mono">
