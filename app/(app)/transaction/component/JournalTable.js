@@ -340,9 +340,6 @@ const JournalTable = ({
                                                     <span>{tx.cred_id === warehouseCashId ? tx.debt?.group || "Cash" : tx.cred?.group || "Cash"}</span>
                                                 </span>
                                             )}
-                                            <span className="text-slate-500 dark:text-slate-400 block mt-1">
-                                                <User size={14} className="inline-block mr-1" /> {tx.user?.name}
-                                            </span>
                                         </td>
 
                                         <td className="px-5 py-4 text-right whitespace-nowrap font-mono">
