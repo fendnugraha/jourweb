@@ -33,6 +33,8 @@ import {
     CalendarCheck2,
     Loader2,
     Contact2,
+    EyeOff,
+    Eye,
 } from "lucide-react";
 import { calculateWorkDuration, DateTimeNow, formatDateTime, formatRupiah } from "@/app/utils/format";
 import { useRef, useState } from "react";
@@ -50,6 +52,13 @@ export default function MyProfile() {
 
     // State untuk Tab (Profil vs Absensi)
     const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'attendance'
+
+    const [isVisible, setIsVisible] = useState(false);
+
+    // Helper function untuk masking/sensor teks
+    const renderMaskedValue = (value) => {
+        return isVisible ? value : "••••••••";
+    };
 
     // State Kalender & Modal Absensi
     const [currentDate, setCurrentDate] = useState(new Date(today));
@@ -457,56 +466,87 @@ export default function MyProfile() {
 
                                         {employee && (
                                             <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
-                                                <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-3">
-                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-                                                        <Briefcase className="w-4 h-4" />
+                                                {/* Header Card dengan Tombol Toggle Mata */}
+                                                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                                                            <Briefcase className="w-4 h-4" />
+                                                        </div>
+                                                        <div>
+                                                            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">Data Kepegawaian</h2>
+                                                            <p className="text-[11px] text-slate-400">Informasi pribadi dan status kerja</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">Data Kepegawaian</h2>
-                                                        <p className="text-[11px] text-slate-400">Informasi pribadi dan status kerja</p>
-                                                    </div>
+
+                                                    {/* Tombol Icon Mata */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsVisible(!isVisible)}
+                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                        title={isVisible ? "Sembunyikan Informasi" : "Tampilkan Informasi"}
+                                                    >
+                                                        {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                    </button>
                                                 </div>
 
+                                                {/* Content Data Kepegawaian */}
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Tempat, Tgl Lahir</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                                                            {employee.place_of_birth || "-"}, {formatDateOnly(employee.birth_date)}
+                                                            {renderMaskedValue(`${employee.place_of_birth || "-"}, ${formatDateOnly(employee.birth_date)}`)}
                                                         </p>
                                                     </div>
+
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Agama</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 capitalize mt-0.5">
-                                                            {employee.religion || "-"}
+                                                            {renderMaskedValue(employee.religion || "-")}
                                                         </p>
                                                     </div>
+
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Status Pernikahan</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 capitalize mt-0.5">
-                                                            {employee.marital_status || "-"}
+                                                            {renderMaskedValue(employee.marital_status || "-")}
                                                         </p>
                                                     </div>
+
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Tanggal Bergabung</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                                                            {formatDateOnly(employee.hire_date)}{" "}
-                                                            <span className="text-slate-400 font-normal">{`(${calculateWorkDuration(employee.hire_date)})`}</span>
+                                                            {isVisible ? (
+                                                                <>
+                                                                    {formatDateOnly(employee.hire_date)}{" "}
+                                                                    <span className="text-slate-400 font-normal">{`(${calculateWorkDuration(employee.hire_date)})`}</span>
+                                                                </>
+                                                            ) : (
+                                                                "••••••••"
+                                                            )}
                                                         </p>
                                                     </div>
+
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Tipe Pekerjaan</span>
                                                         <p className="font-semibold text-slate-800 dark:text-slate-200 uppercase mt-0.5">
-                                                            {employee.employment_type?.replace("_", " ")}{" "}
-                                                            <span className="text-slate-400 font-normal capitalize">
-                                                                {employee.employment_type === "contract" &&
-                                                                    "(Berakhir: " + formatDateOnly(employee.contract_end) + ")"}
-                                                            </span>
+                                                            {isVisible ? (
+                                                                <>
+                                                                    {employee.employment_type?.replace("_", " ")}{" "}
+                                                                    <span className="text-slate-400 font-normal capitalize">
+                                                                        {employee.employment_type === "contract" &&
+                                                                            "(Berakhir: " + formatDateOnly(employee.contract_end) + ")"}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                "••••••••"
+                                                            )}
                                                         </p>
                                                     </div>
+
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Gaji Pokok</span>
                                                         <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                                            {formatRupiah(employee.base_salary)}
+                                                            {renderMaskedValue(formatRupiah(employee.base_salary))}
                                                         </p>
                                                     </div>
                                                 </div>
