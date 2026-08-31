@@ -195,6 +195,7 @@ const LogTrack = () => {
                                     {hasData ? (
                                         filteredLogActivities.map((activity) => {
                                             const isUpdate = activity.activity === "Updated Journal";
+                                            const isLogin = activity.activity === "Login";
 
                                             return (
                                                 <tr
@@ -209,6 +210,13 @@ const LogTrack = () => {
                                                                     title="Updated Journal"
                                                                 >
                                                                     <PencilRuler className="h-4 w-4" />
+                                                                </span>
+                                                            ) : isLogin ? (
+                                                                <span
+                                                                    className="p-1.5 rounded-lg bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-200/50 dark:border-green-900/40"
+                                                                    title="Login"
+                                                                >
+                                                                    <User className="h-4 w-4" />
                                                                 </span>
                                                             ) : (
                                                                 <span

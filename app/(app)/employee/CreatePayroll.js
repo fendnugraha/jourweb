@@ -1,7 +1,7 @@
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlarmClockPlus, Clock, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
+import { AlarmClockPlus, Clock, Dot, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
@@ -299,7 +299,10 @@ const CreatePayroll = ({ employees, notification }) => {
                                         className="group text-xs hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150"
                                     >
                                         <td className="px-6 py-4">
-                                            {employee.name}
+                                            <div className="flex gap-1 items-center">
+                                                {employee.name} {employee.employee_receivable > 0 && <div className="bg-green-400 h-2 w-2 rounded-full" />}
+                                                {employee.installment_receivable > 0 && <div className="bg-red-400 h-2 w-2 rounded-full" />}
+                                            </div>
                                             <div className="flex gap-4 items-center font-normal mt-1">
                                                 <div className="flex gap-1 items-center" title="Hadir Tepat Waktu / Good">
                                                     <Star size={12} fill="yellow" className="text-amber-500" />
