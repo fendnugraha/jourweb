@@ -295,7 +295,7 @@ const JournalTable = ({
                                                 <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 border border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                                                     <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
                                                     <span>{formatDateTime(tx.date_issued)}</span>
-                                                    <User className="h-3 w-3 text-slate-400 shrink-0" /> {tx.user?.name}
+                                                    <User className="h-3 w-3 text-slate-400 shrink-0" /> <span className="truncate">{tx.user?.name}</span>
                                                 </div>
                                             </div>
                                         </td>

@@ -3,125 +3,103 @@
 import useSWR from "swr";
 import axios from "./axios";
 import { useCallback, useEffect } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     const router = useRouter();
-    const params = useParams();
     const pathname = usePathname();
 
-    // 1. Fetching data user dengan SWR
+    // 1. Fetching data user dari Laravel API
     const {
         data: user,
         error,
         isLoading,
         mutate,
-    } = useSWR("/api/user", () =>
-        axios
-            .get("/api/user")
-            .then((res) => res.data)
-            .catch((err) => {
-                throw err;
-            }),
+    } = useSWR(
+        typeof window !== "undefined" && localStorage.getItem("sanctum_token") ? "/api/user" : null,
+        () => axios.get("/api/user").then((res) => res.data),
+        {
+            revalidateOnFocus: false,
+            shouldRetryOnError: false,
+        },
     );
 
-    // 2. CSRF Cookie Fetcher
-    const csrf = async () => {
-        await axios.get("/sanctum/csrf-cookie");
-    };
-
-    // 3. Login Action
+    // 2. Action Login Biasa (Email & Password)
     const login = async ({ setErrors, setStatus, setMessage, setLoading, ...props }) => {
-        setLoading(true);
-        await csrf();
+        setLoading?.(true);
+        setErrors?.([]);
+        setStatus?.(null);
 
-        if (setErrors) setErrors([]);
-        if (setStatus) setStatus(null);
+        try {
+            // 🔥 PERBAIKAN: Gunakan '/login' atau '/api/login' dengan slash diawal
+            const response = await axios.post("/api/login", props);
 
-        axios
-            .post("/login", props)
-            .then(() => {
-                mutate();
-                if (setMessage) setMessage("Login successful!");
-                setLoading(false);
-            })
-            .catch((err) => {
-                setLoading(false);
-                // Safe check dengan optional chaining (?.)
-                if (err?.response?.status === 422) {
-                    if (setStatus) setStatus(err.response?.status);
-                    if (setErrors) setErrors(err.response?.data?.errors);
-                } else {
-                    throw err;
-                }
-            });
+            // Simpan token Sanctum ke localStorage
+            if (response.data?.token) {
+                localStorage.setItem("sanctum_token", response.data.token);
+            }
+
+            setMessage?.("Login successful!");
+            await mutate(); // Refresh cache SWR user
+            router.push(redirectIfAuthenticated || "/transaction");
+        } catch (err) {
+            if (err?.response?.status === 422) {
+                setStatus?.(err.response?.status);
+                setErrors?.(err.response?.data?.errors);
+            } else {
+                console.error("Login error:", err);
+            }
+        } finally {
+            setLoading?.(false);
+        }
     };
 
-    // 4. Logout Action (Stabil & Tanpa dependency yang mudah berubah)
+    // 3. Action Logout (Menghapus token dari LocalStorage & Server)
     const logout = useCallback(async () => {
         try {
-            await axios.post("/logout");
-            await mutate(null, false); // Reset cache SWR tanpa re-fetch
+            // 🔥 PERBAIKAN: Panggil endpoint API logout dengan tepat
+            await axios.post("/api/logout");
         } catch (err) {
             console.error("Logout error:", err);
         } finally {
-            window.location.href = "/";
+            // Selalu hapus token dari localStorage agar UI ter-reset
+            localStorage.removeItem("sanctum_token");
+            await mutate(null, false);
+            router.push("/");
         }
-    }, [mutate]);
+    }, [mutate, router]);
 
-    // 5. Auth Middleware & Redirect Guard
+    // 4. Auth Guard & Middleware Logic
     useEffect(() => {
-        // Tunggu sampai SWR selesai loading awal
-        if (isLoading) return;
+        const hasToken = typeof window !== "undefined" && !!localStorage.getItem("sanctum_token");
 
-        // 1. Cek role dasar
-        const isSuperAdmin = user?.role === "Super Admin";
-        const isAdminWarehouse1 = user?.role === "Administrator" && user?.warehouse_id === 1;
-
-        // 2. Tentukan apakah user dikecualikan dari check-in
-        const isExemptFromCheckin = isSuperAdmin || isAdminWarehouse1;
-
-        // 3. Hasil akhir
-        const requiresCheckin = user && !user.has_checked_in && !isExemptFromCheckin;
-
-        // Helper penentu jalur redirect
-        const getRedirectPath = () => {
-            if (requiresCheckin) return "/portal-checkin";
-            if (user?.role === "Courier") return "/delivery";
-            return redirectIfAuthenticated || "/transaction";
-        };
-
-        // Case A: Halaman Guest (misal /login) tapi user sudah authenticated
-        if (middleware === "guest" && redirectIfAuthenticated && user) {
-            router.push(getRedirectPath());
+        // Halaman Guest: Jika user sudah login, lempar ke dashboard
+        if (middleware === "guest" && user) {
+            router.push(redirectIfAuthenticated || "/transaction");
+            return;
         }
 
-        // Case B: Halaman Utama "/" dan user sudah authenticated
-        if (pathname === "/" && user) {
-            router.push(getRedirectPath());
-        }
-
-        // Case C: Halaman Terproteksi (auth)
+        // Halaman Terproteksi (auth)
         if (middleware === "auth") {
-            if (!user && error) {
-                logout();
+            if (!hasToken || error) {
+                localStorage.removeItem("sanctum_token");
+                router.push("/");
                 return;
             }
+
+            if (isLoading) return;
+
+            // Logika Check-in & Routing berbasis Role
+            const isSuperAdmin = user?.role === "Super Admin";
+            const isAdminWarehouse1 = user?.role === "Administrator" && user?.warehouse_id === 1;
+            const isExemptFromCheckin = isSuperAdmin || isAdminWarehouse1;
+            const requiresCheckin = user && !user.has_checked_in && !isExemptFromCheckin;
 
             if (requiresCheckin && pathname !== "/portal-checkin") {
                 router.push("/portal-checkin");
             }
         }
-    }, [
-        middleware,
-        redirectIfAuthenticated,
-        user,
-        error,
-        isLoading,
-        pathname,
-        router,
-        logout, // ✅ Aman dimasukkan karena logout sudah ter-memoize dengan stabil
-    ]);
+    }, [middleware, redirectIfAuthenticated, user, error, isLoading, pathname, router]);
 
     return {
         user,

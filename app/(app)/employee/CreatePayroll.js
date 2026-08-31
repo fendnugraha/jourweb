@@ -1,7 +1,7 @@
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlarmClockPlus, Clock, Ellipsis, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
+import { AlarmClockPlus, Clock, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
@@ -22,7 +22,6 @@ const CreatePayroll = ({ employees, notification }) => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("");
-
     const [modalFormActive, setModalFormActive] = useState("summary");
 
     const monthOptions = [
@@ -51,23 +50,28 @@ const CreatePayroll = ({ employees, notification }) => {
         { value: "one-time", label: "Satu Kali (Bonus)" },
     ];
 
+    const updateLocalStorage = (data) => {
+        setProcessData(data);
+        localStorage.setItem("processData", JSON.stringify(data));
+    };
+
     const AddToProcessData = (employees, month, year, payroll = true) => {
         const payload = employees
             .filter((employee) => employee.status === "active")
             .map((employee) => {
-                const lateCount = employee.attendances.filter((item) => item.approval_status === "Late").length;
-
-                const overtimeCount = employee.attendances.filter((item) => item.approval_status === "Overtime").length;
+                const lateCount = employee.attendances?.filter((item) => item.approval_status === "Late").length || 0;
+                const overtimeCount = employee.attendances?.filter((item) => item.approval_status === "Overtime").length || 0;
 
                 const receivable = Number(employee.contact?.employee_receivables_sum?.total) || 0;
+                const installment = Number(employee.contact?.installment_receivables_sum?.total) || 0;
 
                 const deductions = [
-                    ...employee.salary_components
+                    ...(employee.salary_components
                         ?.filter((sc) => sc.type === "deduction")
                         .map((sc) => ({
                             name: sc.name,
                             amount: Number(sc.amount),
-                        })),
+                        })) || []),
                     ...(lateCount > 0
                         ? [
                               {
@@ -78,7 +82,7 @@ const CreatePayroll = ({ employees, notification }) => {
                         : []),
                 ];
 
-                const totalSavings = deductions?.filter((d) => d.name === "Simpanan Wajib").reduce((sum, d) => sum + d.amount, 0);
+                const totalSavings = deductions?.filter((d) => d.name === "Simpanan Wajib").reduce((sum, d) => sum + d.amount, 0) || 0;
 
                 return {
                     employee_id: employee.id,
@@ -86,11 +90,11 @@ const CreatePayroll = ({ employees, notification }) => {
                     name: employee.contact?.name,
                     ...(payroll && {
                         basic_salary: employee.base_salary,
-                        commission: employee.salary_components?.filter((sc) => sc.type === "allowance").reduce((sum, sc) => sum + Number(sc.amount), 0),
+                        commission: employee.salary_components?.filter((sc) => sc.type === "allowance").reduce((sum, sc) => sum + Number(sc.amount), 0) || 0,
                         overtime: overtimeCount > 0 ? overtimeCount * 100000 : 0,
                         employee_receivable: receivable > 0 ? receivable : 0,
-                        installment_receivable: 0,
-                        attendances: employee.attendances,
+                        installment_receivable: installment > 0 ? installment : 0,
+                        attendances: employee.attendances || [],
                         total_savings: totalSavings,
                         deductions,
                     }),
@@ -100,47 +104,60 @@ const CreatePayroll = ({ employees, notification }) => {
                 };
             });
 
-        setProcessData(payload);
-        localStorage.setItem("processData", JSON.stringify(payload));
+        updateLocalStorage(payload);
     };
 
     const totalSalary = processData.reduce((total, item) => total + Number(item.basic_salary || 0), 0);
     const totalCommission = processData.reduce((total, item) => total + Number(item.commission || 0), 0);
     const totalBonus =
-        processData.reduce((total, item) => total + item.bonuses.reduce((total, bonus) => total + bonus.amount || 0, 0), 0) +
+        processData.reduce((total, item) => total + (item.bonuses?.reduce((t, bonus) => t + (Number(bonus.amount) || 0), 0) || 0), 0) +
         processData.reduce((total, item) => total + Number(item.overtime || 0), 0);
     const totalReceivable =
         processData.reduce((total, item) => total + Number(item.employee_receivable || 0), 0) +
         processData.reduce((total, item) => total + Number(item.installment_receivable || 0), 0);
     const totalDeduction = processData.reduce((total, item) => {
         const deductions = item.deductions || [];
-
-        const deductionTotal = deductions?.reduce((t, deduction) => t + Number(deduction.amount || 0), 0);
-
+        const deductionTotal = deductions.reduce((t, deduction) => t + Number(deduction.amount || 0), 0);
         return total + deductionTotal;
     }, 0);
-    const totalSavingSum = processData.reduce((total, item) => total + item.total_savings || 0, 0);
+    const totalSavingSum = processData.reduce((total, item) => total + (item.total_savings || 0), 0);
 
     const calculateTotalItem = (item) => {
         const basicSalary = Number(item.basic_salary) || 0;
         const commission = Number(item.commission) || 0;
         const overtime = Number(item.overtime) || 0;
-
         const bonuses = item.bonuses?.reduce((t, b) => t + Number(b.amount || 0), 0) || 0;
-
         const deductions = item.deductions?.reduce((t, d) => t + Number(d.amount || 0), 0) || 0;
-
         const receivable = Number(item.employee_receivable) || 0;
         const installment = Number(item.installment_receivable) || 0;
 
         const total = basicSalary + commission + overtime + bonuses - deductions - receivable - installment;
-
         return formatNumber(total);
     };
 
     const clearProcessData = () => {
         setProcessData([]);
         localStorage.removeItem("processData");
+    };
+
+    const handleUpdateDeductionSubmit = (e) => {
+        e.preventDefault();
+        if (!selectedEmployee) return;
+
+        const updatedData = processData.map((item) => {
+            if (item.employee_id === selectedEmployee.employee_id) {
+                return {
+                    ...item,
+                    employee_receivable: Number(selectedEmployee.employee_receivable) || 0,
+                    installment_receivable: Number(selectedEmployee.installment_receivable) || 0,
+                };
+            }
+            return item;
+        });
+
+        updateLocalStorage(updatedData);
+        setIsModalOpen(false);
+        notification(`Potongan/Piutang untuk ${selectedEmployee.name} berhasil diperbarui`);
     };
 
     const handleSubmit = async (e) => {
@@ -166,20 +183,18 @@ const CreatePayroll = ({ employees, notification }) => {
         setLoading(true);
 
         try {
-            const response = await axios.post("/api/store-payroll", {
+            const response = await axios.post("/api/payrolls", {
                 employees: processData,
                 month,
                 year,
                 type: payrollType,
             });
 
-            notification(response.data.message || "Payroll berhasil disimpan");
-            // fetchContacts();
+            notification(response.data?.message || "Payroll berhasil disimpan");
             setIsModalOpen(false);
             clearProcessData();
         } catch (error) {
             console.error(error);
-
             notification(error.response?.data?.message || "Terjadi kesalahan saat menyimpan payroll");
         } finally {
             setLoading(false);
@@ -237,9 +252,7 @@ const CreatePayroll = ({ employees, notification }) => {
                     </button>
                     <button
                         type="button"
-                        onClick={() => {
-                            clearProcessData();
-                        }}
+                        onClick={clearProcessData}
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-500 dark:bg-red-600 dark:hover:bg-red-500 transition-colors"
                         hidden={processData.length === 0}
                     >
@@ -248,6 +261,7 @@ const CreatePayroll = ({ employees, notification }) => {
                     </button>
                 </div>
             </div>
+
             <div className="data-table-wrapper overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                     <thead>
@@ -286,52 +300,72 @@ const CreatePayroll = ({ employees, notification }) => {
                                     >
                                         <td className="px-6 py-4">
                                             {employee.name}
-                                            <div className="flex gap-4 items-center font-normal">
-                                                <div className="flex gap-1 items-center">
+                                            <div className="flex gap-4 items-center font-normal mt-1">
+                                                <div className="flex gap-1 items-center" title="Hadir Tepat Waktu / Good">
                                                     <Star size={12} fill="yellow" className="text-amber-500" />
-                                                    {employee.attendances?.filter((a) => a.approval_status === "Good").length}
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Good").length || 0}
                                                 </div>
-                                                <div className="flex gap-1 items-center">
+                                                <div className="flex gap-1 items-center" title="Lembur">
                                                     <AlarmClockPlus size={12} className="text-violet-500" />
-                                                    {employee.attendances?.filter((a) => a.approval_status === "Overtime").length}
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Overtime").length || 0}
                                                 </div>
-                                                <div className="flex gap-1 items-center">
+                                                <div className="flex gap-1 items-center" title="Terlambat">
                                                     <Clock size={12} className="text-red-500" />
-                                                    {employee.attendances?.filter((a) => a.approval_status === "Late").length}
+                                                    {employee.attendances?.filter((a) => a.approval_status === "Late").length || 0}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">{formatNumber(employee.basic_salary ?? 0)}</td>
                                         <td className="px-6 py-4 text-right">{formatNumber(employee.commission ?? 0)}</td>
                                         <td className="px-6 py-4 text-right">
-                                            {formatNumber(employee.bonuses.reduce((total, bonus) => total + bonus.amount, 0) + employee.overtime)}
+                                            {formatNumber(
+                                                (employee.bonuses?.reduce((total, bonus) => total + Number(bonus.amount || 0), 0) || 0) +
+                                                    (employee.overtime || 0),
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {formatNumber(
-                                                employee?.deductions?.reduce((total, deduction) => total + deduction.amount, 0) +
-                                                    Number(employee.employee_receivable) +
-                                                    Number(employee.installment_receivable),
+                                                (employee?.deductions?.reduce((total, deduction) => total + Number(deduction.amount || 0), 0) || 0) +
+                                                    Number(employee.employee_receivable || 0) +
+                                                    Number(employee.installment_receivable || 0),
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right font-bold text-green-400">{calculateTotalItem(employee)}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-green-500">{calculateTotalItem(employee)}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedEmployee(employee);
-                                                    setModalTitle("Receipt Detail: " + employee.name);
-                                                    setModalFormActive("receipt-detail");
-                                                    setIsModalOpen(true);
-                                                }}
-                                            >
-                                                <ReceiptText size={16} />
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedEmployee(employee);
+                                                        setModalTitle("Edit Potongan Piutang: " + employee.name);
+                                                        setModalFormActive("update-deduction");
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                    className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                                    title="Edit Potongan / Kasbon"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedEmployee(employee);
+                                                        setModalTitle("Receipt Detail: " + employee.name);
+                                                        setModalFormActive("receipt-detail");
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                    className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                                                    title="Rincian Slip Gaji"
+                                                >
+                                                    <ReceiptText size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
                         ) : (
                             <tr>
-                                <td colSpan="8" className="px-6 py-8 text-center">
+                                <td colSpan="7" className="px-6 py-8 text-center">
                                     <div className="grid grid-cols-2 gap-4 mx-auto sm:w-1/3">
                                         <div>
                                             <Dropdown
@@ -340,10 +374,9 @@ const CreatePayroll = ({ employees, notification }) => {
                                                 options={monthOptions}
                                                 selectedValue={month}
                                                 onChange={(val) => setMonth(val)}
-                                                ariaLabel="Filter inventory by status"
+                                                ariaLabel="Filter month"
                                             />
                                         </div>
-
                                         <div>
                                             <Dropdown
                                                 id="year-filter"
@@ -351,7 +384,7 @@ const CreatePayroll = ({ employees, notification }) => {
                                                 options={yearOptions}
                                                 selectedValue={year}
                                                 onChange={(val) => setYear(val)}
-                                                ariaLabel="Filter inventory by status"
+                                                ariaLabel="Filter year"
                                             />
                                         </div>
                                         <div className="sm:col-span-2">
@@ -361,16 +394,13 @@ const CreatePayroll = ({ employees, notification }) => {
                                                 options={payrollTypeOptions}
                                                 selectedValue={payrollType}
                                                 onChange={(val) => setPayrollType(val)}
-                                                ariaLabel="Filter inventory by status"
+                                                ariaLabel="Filter payroll type"
                                             />
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                AddToProcessData(employees, month, year);
-                                            }}
+                                            onClick={() => AddToProcessData(employees, month, year)}
                                             className="w-full sm:w-auto sm:col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
-                                            hidden={processData.length > 0}
                                         >
                                             <Plus className="h-4 w-4" />
                                             <span>Generate new payroll</span>
@@ -382,6 +412,7 @@ const CreatePayroll = ({ employees, notification }) => {
                     </tbody>
                 </table>
             </div>
+
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
                 {modalFormActive === "receipt-detail" && selectedEmployee && <PayrollDetail employee={selectedEmployee} />}
 
@@ -430,15 +461,16 @@ const CreatePayroll = ({ employees, notification }) => {
                             </div>
 
                             <div className="mt-2 text-3xl font-bold">
-                                {formatNumber(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable + totalSavingSum)}
+                                {formatRupiah(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable + totalSavingSum)}
                             </div>
 
                             <button
                                 onClick={handleSubmit}
-                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300"
+                                disabled={loading}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300 disabled:opacity-50"
                             >
                                 <Play size={16} />
-                                Process
+                                {loading ? "Processing..." : "Process"}
                             </button>
                         </div>
                     </>
@@ -446,6 +478,80 @@ const CreatePayroll = ({ employees, notification }) => {
 
                 {modalFormActive === "bonus-deduction" && (
                     <CreateSalaryComponents employees={employees} setProcessData={setProcessData} isModalOpen={setIsModalOpen} notification={notification} />
+                )}
+
+                {modalFormActive === "update-deduction" && selectedEmployee && (
+                    <form onSubmit={handleUpdateDeductionSubmit} className="space-y-4">
+                        <div className="space-y-1">
+                            <label htmlFor="tx-receivable" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                Kasbon (Rp)
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
+                                <input
+                                    id="tx-receivable"
+                                    type="number"
+                                    value={selectedEmployee.employee_receivable ?? ""}
+                                    onChange={(e) =>
+                                        setSelectedEmployee((prev) => ({
+                                            ...prev,
+                                            employee_receivable: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="50000"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                                />
+                            </div>
+                            {selectedEmployee.employee_receivable !== "" && !isNaN(parseFloat(selectedEmployee.employee_receivable)) && (
+                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
+                                    Preview: {formatRupiah(selectedEmployee.employee_receivable)}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="space-y-1">
+                            <label htmlFor="tx-installment" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                Cicilan (Rp)
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
+                                <input
+                                    id="tx-installment"
+                                    type="number"
+                                    value={selectedEmployee.installment_receivable ?? ""}
+                                    onChange={(e) =>
+                                        setSelectedEmployee((prev) => ({
+                                            ...prev,
+                                            installment_receivable: e.target.value,
+                                        }))
+                                    }
+                                    placeholder="50000"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
+                                />
+                            </div>
+                            {selectedEmployee.installment_receivable !== "" && !isNaN(parseFloat(selectedEmployee.installment_receivable)) && (
+                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
+                                    Preview: {formatRupiah(selectedEmployee.installment_receivable)}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsModalOpen(false)}
+                                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+                            >
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
                 )}
             </Modal>
         </div>

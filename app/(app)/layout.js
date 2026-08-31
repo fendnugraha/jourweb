@@ -1,15 +1,21 @@
 "use client";
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { getUserGeoLocation } from "../utils/GetUserGeolocation";
 import { useAuth } from "../utils/auth";
-import Loading from "../components/Loading";
 import Navigation from "./Navigation";
 import SessionVerifier from "./SessionVerifier";
 import AccessDeniedScreen from "./AccessDeniedScreen";
 
 const AppLayout = ({ children }) => {
+    // 1. Guard mount untuk menyamakan render awal Server & Client
+    const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
-        getUserGeoLocation(); // kirim sekali
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+
+        getUserGeoLocation();
 
         const interval = setInterval(
             () => {
@@ -20,17 +26,21 @@ const AppLayout = ({ children }) => {
 
         return () => clearInterval(interval);
     }, []);
-    // Hook akan otomatis mengurus redirect ke / atau ke /portal-checkin lewat useEffect di dalamnya
+
     const { user, authLoading, logout } = useAuth({ middleware: "auth" });
-    if (authLoading) {
+
+    // 2. Selama belum di-mount di client ATAU auth sedang loading, kembalikan SessionVerifier
+    if (!mounted || authLoading) {
         return <SessionVerifier />;
     }
 
-    // 🔥 UPDATE: bypass menggunakan user.role langsung
+    // 3. Logika otorisasi (dieksekusi setelah mounted)
     const isAllowed = user && (user.has_checked_in || ["Administrator", "Super Admin"].includes(user.role));
+
     if (!isAllowed) {
         return <AccessDeniedScreen />;
     }
+
     return (
         <div className="flex h-screen overflow-hidden">
             <Navigation logout={logout} user={user} />

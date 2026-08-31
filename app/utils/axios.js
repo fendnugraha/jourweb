@@ -1,8 +1,8 @@
 import Axios from "axios";
 
 const axios = Axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: true,
+    // Pastikan env name sesuai dengan .env kamu (NEXT_PUBLIC_API_BASE_URL atau NEXT_PUBLIC_API_URL)
+    baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL,
     headers: {
         "X-Requested-With": "XMLHttpRequest",
         Accept: "application/json",
@@ -10,25 +10,39 @@ const axios = Axios.create({
     },
 });
 
-// ✅ Tambahan: set header X-XSRF-TOKEN secara otomatis
-axios.interceptors.request.use((config) => {
-    const xsrfToken = getCookie("XSRF-TOKEN");
-    if (xsrfToken) {
-        config.headers["X-XSRF-TOKEN"] = decodeURIComponent(xsrfToken);
-    }
-    return config;
-});
+// 🔥 Interceptor: Otomatis ambil Bearer Token dari localStorage untuk setiap request
+axios.interceptors.request.use(
+    (config) => {
+        if (typeof window !== "undefined") {
+            const token = localStorage.getItem("sanctum_token");
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        }
+        return config;
+    },
+    (error) => Promise.reject(error),
+);
 
-// Fungsi helper untuk ambil cookie dari document.cookie
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(";");
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === " ") c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
-}
+// 3. Response Interceptor: Tangani 401 Unauthorized & auto-redirect
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (typeof window !== "undefined" && error.response) {
+            const { status } = error.response;
+
+            // Jika Token expired, invalid, atau user dihapus di server
+            if (status === 401) {
+                localStorage.removeItem("sanctum_token");
+
+                // Cegah loop redirect jika sudah berada di halaman login ("/")
+                if (window.location.pathname !== "/") {
+                    window.location.href = "/";
+                }
+            }
+        }
+        return Promise.reject(error);
+    },
+);
 
 export default axios;
