@@ -6,14 +6,17 @@ import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
 import PayrollDetail from "./PayrollDetail";
+import useEmployee from "@/app/hooks/useEmployee";
 
-const CreatePayroll = ({ employees, notification }) => {
+const CreatePayroll = ({ notification }) => {
     const { thisMonth, thisYear } = DateTimeNow();
     const [searchTerm, setSearchTerm] = useState("");
     const [month, setMonth] = useState(thisMonth);
     const [year, setYear] = useState(thisYear);
     const [loading, setLoading] = useState(false);
     const [payrollType, setPayrollType] = useState("monthly");
+
+    const { employees, mutate: mutateEmployee } = useEmployee(month, year);
     const [processData, setProcessData] = useState(() => {
         const saved = localStorage.getItem("processData");
         return saved ? JSON.parse(saved) : [];
