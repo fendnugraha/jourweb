@@ -3,6 +3,7 @@ import { CheckCircle, Plus, Search } from "lucide-react";
 import { useState } from "react";
 
 const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notification }) => {
+    const filteredEmployees = employees.filter((employee) => employee.status === "active");
     const [componentName, setComponentName] = useState("");
     const [componentAmount, setComponentAmount] = useState("");
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
@@ -124,7 +125,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
                     <button
                         type="button"
                         onClick={() => {
-                            setSelectedEmployeeIds(employees.map((emp) => emp.id));
+                            setSelectedEmployeeIds(filteredEmployees.map((emp) => emp.id));
                         }}
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
                     >
@@ -141,7 +142,7 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
                     </button>
                 </div>
                 <div className="mt-4 space-y-2 flex flex-col max-h-50 overflow-y-auto">
-                    {employees.map((employee) => (
+                    {filteredEmployees.map((employee) => (
                         <button
                             type="button"
                             key={employee.id}
