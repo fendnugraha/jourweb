@@ -10,13 +10,21 @@ import useEmployee from "@/app/hooks/useEmployee";
 
 const CreatePayroll = ({ notification }) => {
     const { thisMonth, thisYear } = DateTimeNow();
+
+    const savedProcessData = localStorage.getItem("processData");
+    const parsedData = savedProcessData ? JSON.parse(savedProcessData) : [];
+
+    // Ambil bulan & tahun dari objek pertama di localStorage
+    const storedMonth = parsedData[0]?.month;
+    const storedYear = parsedData[0]?.year;
+
     const [searchTerm, setSearchTerm] = useState("");
-    const [month, setMonth] = useState(thisMonth);
-    const [year, setYear] = useState(thisYear);
+    const [month, setMonth] = useState(storedMonth || thisMonth);
+    const [year, setYear] = useState(storedYear || thisYear);
     const [loading, setLoading] = useState(false);
     const [payrollType, setPayrollType] = useState("monthly");
 
-    const { employees, mutate: mutateEmployee } = useEmployee(month, year);
+    const { employees } = useEmployee(month, year);
     const [processData, setProcessData] = useState(() => {
         const saved = localStorage.getItem("processData");
         return saved ? JSON.parse(saved) : [];
@@ -43,8 +51,8 @@ const CreatePayroll = ({ notification }) => {
     ];
 
     const yearOptions = [
-        { value: 2025, label: 2025 },
         { value: 2026, label: 2026 },
+        { value: 2027, label: 2027 },
     ];
 
     const payrollTypeOptions = [
@@ -101,8 +109,9 @@ const CreatePayroll = ({ notification }) => {
                         total_savings: totalSavings,
                         deductions,
                     }),
-                    month,
-                    year,
+                    // Cek storedMonth (localStorage) dulu, jika tidak ada baru gunakan parameter `month`
+                    month: storedMonth || month,
+                    year: storedYear || year,
                     bonuses: [],
                 };
             });

@@ -15,6 +15,7 @@ import axios from "@/app/utils/axios";
 import PaymentForm from "../finance/PaymentForm";
 import { useAccounts } from "@/app/hooks/useAccounts";
 import EmployeeRcvPayment from "./EmployeeRcvPayment";
+import DateFilterDropdown from "@/app/components/DateFilterDropdown";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
@@ -22,11 +23,18 @@ const EmployeeReceivable = () => {
     const [financeType, setFinanceType] = useState("EmployeeReceivable");
     const [notification, setNotification] = useState(null);
     const { contacts, error: contactsError } = useContacts();
+
+    const [dateFilter, setDateFilter] = useState({
+        preset: "today",
+        startDate: today,
+        endDate: today,
+    });
+
     const { finances, financeGroup, loading, error, mutate } = useFinances({
         contact: "All",
         financeType,
-        start: today,
-        end: today,
+        start: dateFilter.startDate,
+        end: dateFilter.endDate,
     });
 
     // --- Search & Filter State ---
@@ -156,6 +164,15 @@ const EmployeeReceivable = () => {
                             selectedValue={status}
                             onChange={(val) => setStatus(val)}
                             ariaLabel="Filter inventory by status"
+                        />
+                    </div>
+                    <div className="w-full">
+                        <DateFilterDropdown
+                            selectedPreset={dateFilter.preset}
+                            customStartDate={dateFilter.startDate}
+                            customEndDate={dateFilter.endDate}
+                            onChange={(val) => setDateFilter(val)}
+                            label="Transaction Date"
                         />
                     </div>
                 </div>
