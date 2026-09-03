@@ -37,8 +37,10 @@ import { useDeliveries } from "@/app/hooks/useDeliveries";
 import UpdateDelivery from "./UpdateDelivery";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import DeliveryFormMultiple from "./DeliveryFormMultiple";
+import { useRouter } from "next/navigation";
 
 export default function DeliveryContent() {
+    const router = useRouter();
     // 2. MENGGUNAKAN SWR DENGAN FALLBACK DATA DUMMY (TANPA EFFECT)
     const { deliveries, isLoading, isValidating, mutate } = useDeliveries();
     const [inputMode, setInputMode] = useState("single");
@@ -268,13 +270,9 @@ export default function DeliveryContent() {
                         </div>
                     </div>
 
+                    {/* // Ganti handler onClick pada tombol Buat Pengiriman Baru: */}
                     <button
-                        onClick={() => {
-                            setModalName("create");
-                            setModalTitle("Buat Pengiriman");
-                            setSelectedDelivery(null);
-                            setIsModalOpen(true);
-                        }}
+                        onClick={() => router.push("/delivery/create")}
                         className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm shadow-indigo-500/20 transition-all active:scale-95"
                     >
                         <Plus className="w-4 h-4" />

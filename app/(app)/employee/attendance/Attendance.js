@@ -10,6 +10,8 @@ import AttendanceTableMonthly from "./AttendanceTableMonthly";
 import AttendanceSummary from "./AttendanceSummary";
 import useWarehouseZone from "@/app/hooks/useWarehouseZone";
 import Dropdown from "@/app/components/Dropdown";
+import CreateAttendanceManually from "./CreateAttendanceManually";
+import Notification from "@/app/components/Notification";
 
 const AttendancePage = ({ userRole }) => {
     const today = todayDate();
@@ -19,6 +21,7 @@ const AttendancePage = ({ userRole }) => {
     const [modalTitle, setModalTitle] = useState("Create Attendance Record");
     const [activeSubTab, setActiveSubTab] = useState("daily");
     const [selectedZone, setSelectedZone] = useState("all");
+    const [notification, setNotification] = useState(null);
 
     const { zones } = useWarehouseZone();
 
@@ -53,6 +56,7 @@ const AttendancePage = ({ userRole }) => {
 
     return (
         <>
+            <Notification message={notification} onClose={() => setNotification(null)} />
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                 {/* Left Side Filters */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
@@ -152,6 +156,10 @@ const AttendancePage = ({ userRole }) => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Create Attendance Manually">
+                <CreateAttendanceManually isModalOpen={setIsModalOpen} mutate={mutateUserAttendance} notification={setNotification} />
+            </Modal>
         </>
     );
 };
