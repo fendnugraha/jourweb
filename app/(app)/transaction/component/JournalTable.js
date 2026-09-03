@@ -127,7 +127,7 @@ const JournalTable = ({
         }
     };
     return (
-        <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 p-4">
+        <div className="relative rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4 p-3.5 sm:p-4">
             {/* BACKGROUND REVALIDATING INDICATOR */}
             {isJournalValidating && !isJournalLoading && (
                 <div className="absolute top-3 right-5 z-10 flex items-center gap-1.5 rounded-full bg-indigo-50/90 dark:bg-indigo-950/80 px-2.5 py-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-xs">
@@ -139,43 +139,43 @@ const JournalTable = ({
             {/* SUMMARY DASHBOARD HEADER */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300">
+                    <div className="p-2 rounded-lg bg-slate-200/60 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 shrink-0">
                         <Layers className="h-4 w-4" />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Entri</p>
-                        <p className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-100">{totals.totalCount} TRX</p>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">Total Entri</p>
+                        <p className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-100 truncate">{totals.totalCount} TRX</p>
                     </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100/50 dark:border-emerald-900/40 flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400">
+                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 shrink-0">
                         <TrendingUp className="h-4 w-4" />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Kas Masuk (+)</p>
-                        <p className="text-xs sm:text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300">{formatRupiah(totals.totalInflow)}</p>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate">Kas Masuk (+)</p>
+                        <p className="text-xs sm:text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300 truncate">{formatRupiah(totals.totalInflow)}</p>
                     </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100/50 dark:border-rose-900/40 flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400">
+                    <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 shrink-0">
                         <TrendingDown className="h-4 w-4" />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Kas Keluar (-)</p>
-                        <p className="text-xs sm:text-sm font-bold font-mono text-rose-700 dark:text-rose-300">{formatRupiah(totals.totalOutflow)}</p>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider truncate">Kas Keluar (-)</p>
+                        <p className="text-xs sm:text-sm font-bold font-mono text-rose-700 dark:text-rose-300 truncate">{formatRupiah(totals.totalOutflow)}</p>
                     </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100/50 dark:border-indigo-900/40 flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400">
+                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 shrink-0">
                         <Coins className="h-4 w-4" />
                     </div>
-                    <div>
-                        <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Net Arus Kas</p>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider truncate">Net Arus Kas</p>
                         <p
-                            className={`text-xs sm:text-sm font-bold font-mono ${totals.netFlow >= 0 ? "text-indigo-700 dark:text-indigo-300" : "text-rose-600 dark:text-rose-400"}`}
+                            className={`text-xs sm:text-sm font-bold font-mono truncate ${totals.netFlow >= 0 ? "text-indigo-700 dark:text-indigo-300" : "text-rose-600 dark:text-rose-400"}`}
                         >
                             {formatRupiah(totals.netFlow)}
                         </p>
@@ -204,38 +204,38 @@ const JournalTable = ({
             {/* ========================================================================= */}
             {/* 2. DESKTOP VIEW (Hanya Tampil di Layar Sedang/Besar: >= md)               */}
             {/* ========================================================================= */}
-            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
                 <table className="w-full border-collapse text-left">
                     <thead>
-                        <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-950/25">
-                            <th scope="col" className="px-5 py-3.5">
+                        <tr className="border-b border-slate-200/80 bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-800/40">
+                            <th scope="col" className="px-4 py-3.5 min-w-[220px]">
                                 <div className="flex items-center gap-1.5">
-                                    <FileText className="w-3.5 h-3.5" />
-                                    <span>Transaction Details</span>
+                                    <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Detail Transaksi</span>
                                 </div>
                             </th>
-                            <th scope="col" className="px-5 py-3.5">
+                            <th scope="col" className="px-4 py-3.5 w-36">
                                 <div className="flex items-center gap-1.5">
-                                    <Tag className="w-3.5 h-3.5" />
-                                    <span>Category</span>
+                                    <Tag className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Kategori</span>
                                 </div>
                             </th>
-                            <th scope="col" className="px-5 py-3.5">
+                            <th scope="col" className="px-4 py-3.5 min-w-[200px]">
                                 <div className="flex items-center gap-1.5">
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                    <span>Settle Channel</span>
+                                    <CreditCard className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Kanal Transaksi</span>
                                 </div>
                             </th>
-                            <th scope="col" className="px-5 py-3.5 text-right">
+                            <th scope="col" className="px-4 py-3.5 text-right w-40">
                                 <div className="flex items-center justify-end gap-1.5">
-                                    <Coins className="w-3.5 h-3.5" />
-                                    <span>Cash Amount</span>
+                                    <Coins className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Nominal Kas</span>
                                 </div>
                             </th>
-                            <th scope="col" className="px-5 py-3.5 text-center">
+                            <th scope="col" className="px-4 py-3.5 text-center w-20">
                                 <div className="flex items-center justify-center gap-1.5">
-                                    <MoreHorizontal className="w-3.5 h-3.5" />
-                                    <span>Actions</span>
+                                    <MoreHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Aksi</span>
                                 </div>
                             </th>
                         </tr>
@@ -245,21 +245,21 @@ const JournalTable = ({
                         {isJournalLoading ? (
                             Array.from({ length: 5 }).map((_, index) => (
                                 <tr key={index} className="animate-pulse">
-                                    <td className="px-5 py-4 space-y-2">
+                                    <td className="px-4 py-4 space-y-2">
                                         <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded-md w-3/4" />
                                         <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded-md w-1/3" />
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-4">
                                         <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-24" />
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-4">
                                         <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-32" />
                                     </td>
-                                    <td className="px-5 py-4 text-right space-y-1">
+                                    <td className="px-4 py-4 text-right space-y-1">
                                         <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded-lg w-24 ml-auto" />
                                         <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded-md w-12 ml-auto" />
                                     </td>
-                                    <td className="px-5 py-4 text-center">
+                                    <td className="px-4 py-4 text-center">
                                         <div className="h-6 w-6 bg-slate-200 dark:bg-slate-800 rounded-lg mx-auto" />
                                     </td>
                                 </tr>
@@ -270,8 +270,8 @@ const JournalTable = ({
                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                                     <div className="flex flex-col items-center justify-center space-y-2">
                                         <AlertCircle className="h-8 w-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
-                                        <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">No matching transactions found</p>
-                                        <p className="text-[11px] text-slate-400 dark:text-slate-500">Try adjusting your filters or search query</p>
+                                        <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Tidak ada transaksi ditemukan</p>
+                                        <p className="text-[11px] text-slate-400 dark:text-slate-500">Coba sesuaikan filter pencarian akun atau tanggal</p>
                                     </div>
                                 </td>
                             </tr>
@@ -284,23 +284,28 @@ const JournalTable = ({
                                 // Menentukan apakah transaksi adalah Inflow (Uang Masuk)
                                 const isInflow = isFiltered ? Number(tx.debt_id) === selectedAccId : whAccountIds.includes(Number(tx.debt_id));
 
-                                // Menentukan apakah transaksi adalah Outflow (Uang Keluar)
-                                const isOutflow = isFiltered ? Number(tx.cred_id) === selectedAccId : whAccountIds.includes(Number(tx.cred_id));
-
                                 return (
                                     <tr key={tx.id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150">
-                                        <td className="px-5 py-4 max-w-xs md:max-w-md">
+                                        <td className="px-4 py-3.5 max-w-xs md:max-w-md">
                                             <div className="space-y-1">
-                                                <span className="font-semibold text-slate-800 dark:text-slate-100 block wrap-break-word">{tx.description}</span>
-                                                <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 border border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                                                    <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
-                                                    <span>{formatDateTime(tx.date_issued)}</span>
-                                                    <User className="h-3 w-3 text-slate-400 shrink-0" /> <span className="truncate">{tx.user?.name}</span>
+                                                <span className="font-semibold text-slate-800 dark:text-slate-100 block break-words">{tx.description || "Tanpa Keterangan"}</span>
+                                                <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 border border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500 dark:text-slate-400 font-mono flex-wrap">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
+                                                        <span>{formatDateTime(tx.date_issued)}</span>
+                                                    </span>
+                                                    {tx.user?.name && (
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                            <User className="h-3 w-3 text-slate-400 shrink-0" />
+                                                            <span className="truncate max-w-36">{tx.user.name}</span>
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
 
-                                        <td className="px-5 py-4 whitespace-nowrap">
+                                        <td className="px-4 py-3.5 whitespace-nowrap">
                                             <span
                                                 className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium border ${getCategoryBadgeClass(tx.trx_type)}`}
                                             >
@@ -309,11 +314,11 @@ const JournalTable = ({
                                             </span>
                                         </td>
 
-                                        <td className="px-5 py-4 whitespace-nowrap">
+                                        <td className="px-4 py-3.5">
                                             {tx.trx_type === "Mutasi Kas" ? (
-                                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50">
+                                                <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex-wrap">
                                                     <ArrowRightLeft className="h-3 w-3 shrink-0" />
-                                                    <span>
+                                                    <span className="break-words">
                                                         {tx.cred?.group}
                                                         {tx.cred?.warehouse?.id !== warehouseId && (
                                                             <span className="text-slate-500 dark:text-slate-400 font-normal">
@@ -331,7 +336,7 @@ const JournalTable = ({
                                                         )}
                                                     </span>
                                                     {tx.debt?.group !== tx.cred?.group && (
-                                                        <FileWarning className="h-3.5 w-3.5 animate-bounce text-amber-500 ml-0.5 shrink-0" />
+                                                        <FileWarning className="h-3.5 w-3.5 text-amber-500 shrink-0 ml-0.5" />
                                                     )}
                                                 </span>
                                             ) : (
@@ -342,38 +347,41 @@ const JournalTable = ({
                                             )}
                                         </td>
 
-                                        <td className="px-5 py-4 text-right whitespace-nowrap font-mono">
+                                        <td className="px-4 py-3.5 text-right whitespace-nowrap font-mono">
                                             <div className="font-semibold text-slate-800 dark:text-slate-100">
                                                 <span
-                                                    className={`text-sm font-bold px-2 py-1 rounded-lg inline-block border ${
+                                                    className={`text-xs font-bold px-2 py-1 rounded-md inline-block border ${
                                                         isInflow
-                                                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/30"
-                                                            : "text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border-rose-100/30"
+                                                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-100/40 dark:border-emerald-900/40"
+                                                            : "text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border-rose-100/40 dark:border-rose-900/40"
                                                     }`}
                                                 >
                                                     {isInflow ? "+" : "-"} {formatNumber(tx.amount)}
                                                 </span>
                                             </div>
                                             {!tx.fee_amount || tx.fee_amount === 0 ? null : (
-                                                <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                                                    Fee:{" "}
+                                                <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center justify-end gap-1">
+                                                    <span>Fee:</span>
                                                     <span
-                                                        className={`font-semibold ${calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) ? "text-rose-600 dark:text-rose-400 animate-ping" : "text-emerald-600 dark:text-emerald-400"}`}
+                                                        className={`font-semibold ${calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) ? "text-rose-600 dark:text-rose-400 font-bold" : "text-emerald-600 dark:text-emerald-400"}`}
                                                     >
-                                                        {formatNumber(tx.fee_amount)}{" "}
+                                                        {formatNumber(tx.fee_amount)}
                                                         {calculateFee(tx.amount) !== tx.fee_amount &&
-                                                            ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) &&
-                                                            "!!"}
+                                                            ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) && (
+                                                                <span className="ml-1 text-[9px] bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-1 py-0.2 rounded font-bold">
+                                                                    Mismatch
+                                                                </span>
+                                                            )}
                                                     </span>
                                                 </div>
                                             )}
                                         </td>
 
-                                        <td className="px-5 py-4 whitespace-nowrap text-center">
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-center">
                                             <div className="flex justify-center">
                                                 <DropdownMenu
                                                     title={
-                                                        <div className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                                        <div className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
                                                             <Ellipsis className="h-4 w-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" />
                                                         </div>
                                                     }
@@ -436,14 +444,14 @@ const JournalTable = ({
             {/* PAGINATION FOOTER CONTROLS */}
             {filteredTransactions.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
                         <span>
                             Menampilkan <span className="font-semibold text-slate-800 dark:text-slate-200">{startItemIndex}</span> -{" "}
                             <span className="font-semibold text-slate-800 dark:text-slate-200">{endItemIndex}</span> dari{" "}
                             <span className="font-semibold text-slate-800 dark:text-slate-200">{filteredTransactions.length}</span> transaksi
                         </span>
 
-                        <span className="text-slate-300 dark:text-slate-700">|</span>
+                        <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
 
                         <div className="flex items-center gap-1">
                             <span className="text-[11px]">Tampilkan:</span>
@@ -453,7 +461,7 @@ const JournalTable = ({
                                     setPageSize(e.target.value === "all" ? "all" : Number(e.target.value));
                                     setCurrentPage(1);
                                 }}
-                                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                             >
                                 <option value={10}>10</option>
                                 <option value={25}>25</option>
@@ -470,7 +478,7 @@ const JournalTable = ({
                                 type="button"
                                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronLeft className="h-4 w-4" />
                             </button>
@@ -485,7 +493,7 @@ const JournalTable = ({
                                 type="button"
                                 onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                                 disabled={currentPage === totalPages}
-                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                                 <ChevronRight className="h-4 w-4" />
                             </button>

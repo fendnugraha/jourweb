@@ -36,10 +36,12 @@ export default function CreateAttendanceManually({ isModalOpen, mutate, notifica
 
     const contactOptions = [
         { value: "", label: "Select Contact" },
-        ...contacts.map((contact) => ({
-            value: contact.id,
-            label: contact.name,
-        })),
+        ...contacts
+            .filter((contact) => Boolean(contact.employee?.id) === true && contact.employee?.status === "active")
+            .map((contact) => ({
+                value: contact.id,
+                label: contact.name,
+            })),
     ];
 
     const userOptions = [
