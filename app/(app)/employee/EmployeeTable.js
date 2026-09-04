@@ -65,11 +65,7 @@ function EmploymentStatusBadge({ employee, formatLongDate }) {
                 {isEndingSoon && <ClockAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
                 <span>{showDate ? formatLongDate(employee.contract_end) : contractInfo.text}</span>
             </button>
-            {isEndingSoon && !showDate && (
-                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 tracking-wider">
-                    (&le;1 Bln Lagi)
-                </span>
-            )}
+            {isEndingSoon && !showDate && <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 tracking-wider">(&le;1 Bln Lagi)</span>}
         </div>
     );
 }
@@ -94,7 +90,7 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
         <div className="space-y-4">
             {/* Banner Notifikasi jika ada karyawan dengan kontrak berakhir <= 30 hari */}
             {expiringEmployees.length > 0 && (
-                <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/90 p-4 shadow-xs backdrop-blur-xl dark:border-amber-900/60 dark:from-amber-950/40 dark:to-orange-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
+                <div className="rounded-2xl border border-amber-200/90 bg-linear-to-r from-amber-50/90 via-orange-50/50 to-amber-50/90 p-4 shadow-xs backdrop-blur-xl dark:border-amber-900/60 dark:from-amber-950/40 dark:to-orange-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/70 shadow-xs">
                             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -107,7 +103,8 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                 </span>
                             </h4>
                             <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-0.5">
-                                Terdapat {expiringEmployees.length} karyawan dengan masa kontrak yang akan berakhir dalam 1 bulan (&le;30 hari) atau telah kedaluwarsa.
+                                Terdapat {expiringEmployees.length} karyawan dengan masa kontrak yang akan berakhir dalam 1 bulan (&le;30 hari) atau telah
+                                kedaluwarsa.
                             </p>
                         </div>
                     </div>
@@ -205,7 +202,7 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                             {/* 1. Nama Karyawan & Avatar */}
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
+                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
                                                         {employee.contact?.contact_photo_url ? (
                                                             <Image
                                                                 src={employee.contact.contact_photo_url}
@@ -239,10 +236,10 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                                                             : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/50"
                                                                     }`}
                                                                 >
-                                                                    <BellRing className={`w-3 h-3 shrink-0 ${diffDays <= 7 ? "animate-bounce text-rose-500" : "text-amber-500"}`} />
-                                                                    <span>
-                                                                        {diffDays <= 0 ? "Kontrak Expired" : `Kontrak Habis ${diffDays} hr lagi`}
-                                                                    </span>
+                                                                    <BellRing
+                                                                        className={`w-3 h-3 shrink-0 ${diffDays <= 7 ? "animate-bounce text-rose-500" : "text-amber-500"}`}
+                                                                    />
+                                                                    <span>{diffDays <= 0 ? "Kontrak Expired" : `Kontrak Habis ${diffDays} hr lagi`}</span>
                                                                 </span>
                                                             </div>
                                                         )}

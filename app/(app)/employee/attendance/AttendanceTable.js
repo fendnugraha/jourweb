@@ -208,7 +208,9 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                     <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-xs backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80 flex items-center justify-between">
                         <div>
                             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Staf Terlambat</p>
-                            <h3 className={`text-xl font-extrabold mt-0.5 ${stats.lateStaffCount > 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}>
+                            <h3
+                                className={`text-xl font-extrabold mt-0.5 ${stats.lateStaffCount > 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}
+                            >
                                 {stats.lateStaffCount}
                             </h3>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Perlu perhatian</p>
@@ -238,7 +240,7 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                     <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800/80">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className="relative shrink-0">
-                                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-slate-100 text-indigo-600 dark:from-indigo-950/40 dark:to-slate-800 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/50 shadow-xs">
+                                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-linear-to-br from-indigo-50 to-slate-100 text-indigo-600 dark:from-indigo-950/40 dark:to-slate-800 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/50 shadow-xs">
                                                     <Store className="w-5 h-5" />
                                                 </div>
                                                 <span
@@ -347,9 +349,7 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                         </div>
 
                                                         {/* Selisih Waktu (diffTimeHuman) */}
-                                                        <div>
-                                                            {renderDiffBadge(targetOpeningTime, att?.time_in, status)}
-                                                        </div>
+                                                        <div>{renderDiffBadge(targetOpeningTime, att?.time_in, status)}</div>
                                                     </div>
                                                 );
                                             })
@@ -430,7 +430,7 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                 <td className="px-6 py-4 align-middle">
                                                     <div className="flex items-center gap-3.5">
                                                         <div className="relative shrink-0">
-                                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-50 to-slate-100 text-indigo-600 dark:from-indigo-950/50 dark:to-slate-800 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/50 shadow-xs group-hover:scale-105 transition-transform">
+                                                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-indigo-50 to-slate-100 text-indigo-600 dark:from-indigo-950/50 dark:to-slate-800 dark:text-indigo-400 border border-indigo-100/80 dark:border-indigo-900/50 shadow-xs group-hover:scale-105 transition-transform">
                                                                 <Store className="w-5 h-5" />
                                                             </div>
                                                             <span

@@ -4,6 +4,7 @@ import useEmployee from "@/app/hooks/useEmployee";
 import { toOrdinal } from "@/app/utils/format";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Clock, Star, Trophy, Medal, AlertCircle, Crown, Sparkles } from "lucide-react";
+import { useMemo } from "react";
 
 export default function AttendanceSummary({ dateString, search, selectedZone }) {
     const date = new Date(dateString);
@@ -12,19 +13,24 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
 
     const { employees, loading } = useEmployee(month, year);
     // Filter & Sorting logic
-    const filteredSortedEmployees = (employees || [])
-        .filter((employee) => {
-            const matchZone = selectedZone === "all" || Number(employee.user?.warehouse?.warehouse_zone_id) === Number(selectedZone);
-            const matchSearch = !search || employee.contact?.name?.toLowerCase().includes(search.toLowerCase());
-            // const matchZone = !selectedZone || employee.attendances?.warehouse?.warehouse_zone_id === selectedZone;
-            const hasRating = (employee.attendance_rating?.rating ?? 0) > 0;
-            return matchSearch && hasRating && matchZone;
-        })
-        .sort((a, b) => {
-            if (a.attendance_rating?.late === 0 && b.attendance_rating?.late !== 0) return -1;
-            if (a.attendance_rating?.late !== 0 && b.attendance_rating?.late === 0) return 1;
-            return (b.attendance_rating?.rating ?? 0) - (a.attendance_rating?.rating ?? 0);
+    const filteredSortedEmployees = useMemo(() => {
+        return [...employees].sort((a, b) => {
+            // 1. Ambil nilai total menit dari backend
+            const netMinutesA = a.time_diff_summary?.total_net_minutes ?? 0;
+            const netMinutesB = b.time_diff_summary?.total_net_minutes ?? 0;
+
+            // 2. Jika total menit beda, urutkan dari yang terbesar (paling rajin/awal datang)
+            if (netMinutesB !== netMinutesA) {
+                return netMinutesB - netMinutesA;
+            }
+
+            // 3. Jika total menit persis sama, urutkan berdasarkan Rating
+            const ratingA = a.attendance_rating?.rating ?? 0;
+            const ratingB = b.attendance_rating?.rating ?? 0;
+
+            return ratingB - ratingA;
         });
+    }, [employees]);
 
     // Indikator Trend Performance
     const renderTrendBadge = (current, previous) => {
@@ -127,18 +133,31 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
 
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
-                                    className="w-full h-32 sm:h-40 rounded-t-2xl bg-linear-to-b from-slate-200 via-slate-100 to-white dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 border-t-4 border-slate-400 p-2.5 flex flex-col justify-between items-center text-center shadow-md"
+                                    className="w-full h-36 sm:h-44 rounded-t-2xl bg-linear-to-b from-slate-200 via-slate-100 to-white dark:from-slate-800 dark:via-slate-800/80 dark:to-slate-900 border-t-4 border-slate-400 p-2 flex flex-col justify-between items-center text-center shadow-md"
                                 >
                                     <span className="text-xs sm:text-sm font-black text-slate-500 dark:text-slate-400">2nd</span>
-                                    <div className="flex items-center justify-center gap-2 text-[10px] font-mono">
-                                        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                                            <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-                                            {top2.attendance_rating?.good ?? 0}
-                                        </span>
-                                        <span className="flex items-center gap-0.5 text-rose-500 font-bold">
-                                            <Clock className="w-3 h-3 text-rose-500" />
-                                            {top2.attendance_rating?.late ?? 0}
-                                        </span>
+                                    <div className="flex flex-col items-center gap-1 w-full">
+                                        <div className="flex items-center justify-center gap-2 text-[10px] font-mono">
+                                            <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                                                <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                                                {top2.attendance_rating?.good ?? 0}
+                                            </span>
+                                            <span className="flex items-center gap-0.5 text-rose-500 font-bold">
+                                                <Clock className="w-3 h-3 text-rose-500" />
+                                                {top2.attendance_rating?.late ?? 0}
+                                            </span>
+                                        </div>
+                                        {top2.time_diff_summary?.formatted_text && (
+                                            <span
+                                                className={`text-[9px] sm:text-[10px] font-mono font-bold truncate max-w-full px-1.5 py-0.5 rounded ${
+                                                    (top2.time_diff_summary?.total_net_minutes ?? 0) < 0
+                                                        ? "text-rose-600 bg-rose-50 dark:bg-rose-950/40"
+                                                        : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
+                                                }`}
+                                            >
+                                                {top2.time_diff_summary.formatted_text}
+                                            </span>
+                                        )}
                                     </div>
                                 </motion.div>
                             </motion.div>
@@ -174,18 +193,31 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
 
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
-                                    className="w-full h-40 sm:h-52 rounded-t-2xl bg-linear-to-b from-amber-400 via-amber-500/10 to-transparent dark:from-amber-500/30 dark:via-amber-500/10 dark:to-slate-900 border-t-4 border-amber-400 p-2.5 flex flex-col justify-between items-center text-center shadow-lg shadow-amber-500/10"
+                                    className="w-full h-44 sm:h-56 rounded-t-2xl bg-linear-to-b from-amber-400 via-amber-500/10 to-transparent dark:from-amber-500/30 dark:via-amber-500/10 dark:to-slate-900 border-t-4 border-amber-400 p-2 flex flex-col justify-between items-center text-center shadow-lg shadow-amber-500/10"
                                 >
                                     <span className="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400">1st</span>
-                                    <div className="flex items-center justify-center gap-2.5 text-[10px] sm:text-xs font-mono">
-                                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold">
-                                            <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-                                            {top1.attendance_rating?.good ?? 0}
-                                        </span>
-                                        <span className="flex items-center gap-1 text-rose-500 font-extrabold">
-                                            <Clock className="w-3.5 h-3.5 text-rose-500" />
-                                            {top1.attendance_rating?.late ?? 0}
-                                        </span>
+                                    <div className="flex flex-col items-center gap-1 w-full">
+                                        <div className="flex items-center justify-center gap-2.5 text-[10px] sm:text-xs font-mono">
+                                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold">
+                                                <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
+                                                {top1.attendance_rating?.good ?? 0}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-rose-500 font-extrabold">
+                                                <Clock className="w-3.5 h-3.5 text-rose-500" />
+                                                {top1.attendance_rating?.late ?? 0}
+                                            </span>
+                                        </div>
+                                        {top1.time_diff_summary?.formatted_text && (
+                                            <span
+                                                className={`text-[9px] sm:text-[10px] font-mono font-bold truncate max-w-full px-2 py-0.5 rounded ${
+                                                    (top1.time_diff_summary?.total_net_minutes ?? 0) < 0
+                                                        ? "text-rose-600 bg-rose-50 dark:bg-rose-950/40"
+                                                        : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
+                                                }`}
+                                            >
+                                                {top1.time_diff_summary.formatted_text}
+                                            </span>
+                                        )}
                                     </div>
                                 </motion.div>
                             </motion.div>
@@ -217,18 +249,31 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
 
                                 <motion.div
                                     whileHover={{ scale: 1.02 }}
-                                    className="w-full h-28 sm:h-36 rounded-t-2xl bg-linear-to-b from-amber-700/20 via-amber-900/5 to-transparent dark:from-amber-900/30 dark:via-slate-900 dark:to-slate-900 border-t-4 border-amber-600/70 p-2.5 flex flex-col justify-between items-center text-center shadow-md"
+                                    className="w-full h-32 sm:h-40 rounded-t-2xl bg-linear-to-b from-amber-700/20 via-amber-900/5 to-transparent dark:from-amber-900/30 dark:via-slate-900 dark:to-slate-900 border-t-4 border-amber-600/70 p-2 flex flex-col justify-between items-center text-center shadow-md"
                                 >
                                     <span className="text-xs sm:text-sm font-black text-amber-800 dark:text-amber-500">3rd</span>
-                                    <div className="flex items-center justify-center gap-2 text-[10px] font-mono">
-                                        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
-                                            <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-                                            {top3.attendance_rating?.good ?? 0}
-                                        </span>
-                                        <span className="flex items-center gap-0.5 text-rose-500 font-bold">
-                                            <Clock className="w-3 h-3 text-rose-500" />
-                                            {top3.attendance_rating?.late ?? 0}
-                                        </span>
+                                    <div className="flex flex-col items-center gap-1 w-full">
+                                        <div className="flex items-center justify-center gap-2 text-[10px] font-mono">
+                                            <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                                                <Star className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                                                {top3.attendance_rating?.good ?? 0}
+                                            </span>
+                                            <span className="flex items-center gap-0.5 text-rose-500 font-bold">
+                                                <Clock className="w-3 h-3 text-rose-500" />
+                                                {top3.attendance_rating?.late ?? 0}
+                                            </span>
+                                        </div>
+                                        {top3.time_diff_summary?.formatted_text && (
+                                            <span
+                                                className={`text-[9px] sm:text-[10px] font-mono font-bold truncate max-w-full px-1.5 py-0.5 rounded ${
+                                                    (top3.time_diff_summary?.total_net_minutes ?? 0) < 0
+                                                        ? "text-rose-600 bg-rose-50 dark:bg-rose-950/40"
+                                                        : "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
+                                                }`}
+                                            >
+                                                {top3.time_diff_summary.formatted_text}
+                                            </span>
+                                        )}
                                     </div>
                                 </motion.div>
                             </motion.div>
@@ -250,6 +295,7 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
                         const isLateAlert = (employee.attendance_rating?.late ?? 0) > 5;
                         const rating = employee.attendance_rating?.rating ?? 0;
                         const lastRating = employee.attendance_rating_last_month?.rating ?? 0;
+                        const timeDiff = employee.time_diff_summary;
 
                         return (
                             <motion.div
@@ -269,13 +315,24 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
                                             <h4 className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">{employee.contact?.name}</h4>
                                             {isLateAlert && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0 animate-pulse" />}
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
+                                        <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
                                             <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                                                 Tepat: {employee.attendance_rating?.good ?? 0}
                                             </span>
                                             <span>•</span>
                                             <span className="text-rose-500 font-semibold">Telat: {employee.attendance_rating?.late ?? 0}</span>
                                         </div>
+                                        {timeDiff?.formatted_text && (
+                                            <div className="mt-1">
+                                                <span
+                                                    className={`text-[10px] font-mono font-bold ${
+                                                        (timeDiff.total_net_minutes ?? 0) < 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"
+                                                    }`}
+                                                >
+                                                    {timeDiff.formatted_text}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -309,10 +366,13 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
                                 Nama Karyawan
                             </th>
                             <th scope="col" className="px-4 py-3.5 text-center">
-                                Tepat Waktu
+                                Lebih Awal
                             </th>
                             <th scope="col" className="px-4 py-3.5 text-center">
                                 Terlambat
+                            </th>
+                            <th scope="col" className="px-4 py-3.5 text-center">
+                                Selisih Waktu
                             </th>
                             <th scope="col" className="px-4 py-3.5 text-center">
                                 Rating
@@ -327,6 +387,7 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
                             const isLateAlert = (employee.attendance_rating?.late ?? 0) > 5;
                             const rating = employee.attendance_rating?.rating ?? 0;
                             const lastRating = employee.attendance_rating_last_month?.rating ?? 0;
+                            const timeDiff = employee.time_diff_summary;
 
                             return (
                                 <motion.tr
@@ -352,6 +413,24 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
                                         {employee.attendance_rating?.good ?? 0}
                                     </td>
                                     <td className="px-4 py-3.5 text-center font-mono font-extrabold text-rose-500">{employee.attendance_rating?.late ?? 0}</td>
+
+                                    {/* Kolom Baru: Selisih Waktu */}
+                                    <td className="px-4 py-3.5 text-center font-mono">
+                                        {timeDiff?.formatted_text ? (
+                                            <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                                                    (timeDiff.total_net_minutes ?? 0) < 0
+                                                        ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-900/40"
+                                                        : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-900/40"
+                                                }`}
+                                            >
+                                                {timeDiff.formatted_text}
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-[11px]">-</span>
+                                        )}
+                                    </td>
+
                                     <td className="px-4 py-3.5 text-center font-mono font-black text-slate-900 dark:text-slate-100">
                                         {rating}
                                         <span className="text-[10px] font-normal text-slate-400">/10</span>
