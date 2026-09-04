@@ -1,7 +1,7 @@
 import Dropdown from "@/app/components/Dropdown";
 import axios from "@/app/utils/axios";
-import { formatNumber } from "@/app/utils/format";
-import { AlertCircle, Camera, Loader2, Trash2, User } from "lucide-react";
+import { formatNumber, formatLongDate } from "@/app/utils/format";
+import { AlertCircle, Briefcase, Calendar, Camera, Loader2, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import WarningForm from "./WarningForm";
 import Image from "next/image";
@@ -23,6 +23,22 @@ const formatFormData = (employee) => ({
     contract_end: employee?.contract_end || "",
 });
 
+/**
+ * Helper untuk menghitung tanggal akhir berdasarkan tanggal mulai + jumlah bulan
+ */
+const calculateEndDateStr = (startDateStr, months) => {
+    const start = startDateStr ? new Date(startDateStr) : new Date();
+    if (isNaN(start.getTime())) return "";
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + Number(months));
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const year = end.getFullYear();
+    const month = pad(end.getMonth() + 1);
+    const day = pad(end.getDate());
+    return `${year}-${month}-${day}`;
+};
+
 const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, mutate }) => {
     const [formData, setFormData] = useState(() => formatFormData(employee));
     const [formDataComponent, setFormDataComponent] = useState({
@@ -34,6 +50,10 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
     const [formError, setFormError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("personal");
+
+    // Mode pilihan kontrak: "duration" (durasi cepat) vs "custom" (pilih tanggal spesifik)
+    const [contractMode, setContractMode] = useState("duration");
+    const [selectedDuration, setSelectedDuration] = useState(null);
 
     // Foto profil diambil dari relasi contact
     const profilePhoto = employee?.contact?.contact_photo_url || employee?.contact?.photo;
@@ -144,7 +164,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                         onClick={() => setActiveTab("personal")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "personal"
-                                ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
+                                ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-700 dark:text-indigo-400"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
                         }`}
                     >
@@ -155,7 +175,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                         onClick={() => setActiveTab("component")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "component"
-                                ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
+                                ? "bg-white text-emerald-600 shadow-xs dark:bg-slate-700 dark:text-emerald-400"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
                         }`}
                     >
@@ -166,7 +186,7 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                         onClick={() => setActiveTab("warning")}
                         className={`py-1.5 rounded-lg text-xs font-semibold text-center transition-all ${
                             activeTab === "warning"
-                                ? "bg-white text-red-600 shadow-sm dark:bg-slate-700 dark:text-red-400"
+                                ? "bg-white text-red-600 shadow-xs dark:bg-slate-700 dark:text-red-400"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 hover:dark:text-slate-300"
                         }`}
                     >
@@ -356,60 +376,157 @@ const EditEmployee = ({ employee, contacts = [], isModalOpen, notification, muta
                     </div>
 
                     {/* Employment Type Toggle */}
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                        <button
-                            type="button"
-                            className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
-                                formData.employment_type === "full_time"
-                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
-                                    : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            }`}
-                            onClick={() => setFormData({ ...formData, employment_type: "full_time" })}
-                        >
-                            Full-time
-                        </button>
-                        <button
-                            type="button"
-                            className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
-                                formData.employment_type === "contract"
-                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
-                                    : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                            }`}
-                            onClick={() => setFormData({ ...formData, employment_type: "contract" })}
-                        >
-                            Contract
-                        </button>
+                    <div className="space-y-2 pt-1">
+                        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tipe Hubungan Kerja</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
+                                    formData.employment_type === "full_time"
+                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                        : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                }`}
+                                onClick={() => setFormData({ ...formData, employment_type: "full_time" })}
+                            >
+                                Full-time
+                            </button>
+                            <button
+                                type="button"
+                                className={`py-2 rounded-xl border text-xs font-semibold transition-all ${
+                                    formData.employment_type === "contract"
+                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                        : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                }`}
+                                onClick={() => setFormData({ ...formData, employment_type: "contract" })}
+                            >
+                                Contract
+                            </button>
+                        </div>
                     </div>
 
                     {/* Contract Dates (Conditional Render) */}
                     {formData.employment_type === "contract" && (
-                        <div className="grid sm:grid-cols-2 gap-3 pt-1">
-                            <div className="space-y-1">
-                                <label htmlFor="emp-contract-start" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    Start Date
+                        <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80">
+                            {/* Header Mode Kontrak */}
+                            <div className="flex items-center justify-between gap-2">
+                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                    <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
+                                    <span>Pengaturan Kontrak Kerja</span>
                                 </label>
-                                <input
-                                    id="emp-contract-start"
-                                    type="date"
-                                    required={formData.employment_type === "contract"}
-                                    value={formData.contract_start}
-                                    onChange={(e) => setFormData({ ...formData, contract_start: e.target.value })}
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
+                                <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-700 p-0.5 rounded-lg text-[11px]">
+                                    <button
+                                        type="button"
+                                        onClick={() => setContractMode("duration")}
+                                        className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+                                            contractMode === "duration"
+                                                ? "bg-white text-indigo-600 shadow-xs font-bold dark:bg-slate-800 dark:text-indigo-400"
+                                                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Pilih Durasi
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setContractMode("custom")}
+                                        className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+                                            contractMode === "custom"
+                                                ? "bg-white text-indigo-600 shadow-xs font-bold dark:bg-slate-800 dark:text-indigo-400"
+                                                : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+                                        }`}
+                                    >
+                                        Tanggal Spesifik
+                                    </button>
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <label htmlFor="emp-contract-end" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    End Date
-                                </label>
-                                <input
-                                    id="emp-contract-end"
-                                    type="date"
-                                    required={formData.employment_type === "contract"}
-                                    value={formData.contract_end}
-                                    onChange={(e) => setFormData({ ...formData, contract_end: e.target.value })}
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
+
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {/* Tanggal Mulai Kontrak */}
+                                <div className="space-y-1">
+                                    <label htmlFor="emp-contract-start" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                        Tanggal Mulai
+                                    </label>
+                                    <input
+                                        id="emp-contract-start"
+                                        type="date"
+                                        required={formData.employment_type === "contract"}
+                                        value={formData.contract_start}
+                                        onChange={(e) => {
+                                            const newStart = e.target.value;
+                                            setFormData((prev) => {
+                                                const updated = { ...prev, contract_start: newStart };
+                                                if (selectedDuration && contractMode === "duration") {
+                                                    updated.contract_end = calculateEndDateStr(newStart || prev.hire_date, selectedDuration);
+                                                }
+                                                return updated;
+                                            });
+                                        }}
+                                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+
+                                {/* Opsi Durasi atau Pilih Tanggal Spesifik */}
+                                {contractMode === "duration" ? (
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                            Durasi Kontrak
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {[
+                                                { label: "3 Bulan", months: 3 },
+                                                { label: "6 Bulan", months: 6 },
+                                                { label: "1 Tahun", months: 12 },
+                                            ].map((opt) => (
+                                                <button
+                                                    key={opt.months}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedDuration(opt.months);
+                                                        const computedEnd = calculateEndDateStr(
+                                                            formData.contract_start || formData.hire_date,
+                                                            opt.months
+                                                        );
+                                                        setFormData((prev) => ({ ...prev, contract_end: computedEnd }));
+                                                    }}
+                                                    className={`py-2 px-1.5 rounded-xl border text-xs font-bold transition-all ${
+                                                        Number(selectedDuration) === opt.months
+                                                            ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                                            : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                                    }`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-1">
+                                        <label htmlFor="emp-contract-end" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                            Tanggal Selesai
+                                        </label>
+                                        <input
+                                            id="emp-contract-end"
+                                            type="date"
+                                            required={formData.employment_type === "contract"}
+                                            value={formData.contract_end}
+                                            onChange={(e) => setFormData({ ...formData, contract_end: e.target.value })}
+                                            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        />
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Tanggal Selesai Output Info Badge */}
+                            {formData.contract_end && (
+                                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                                    <span className="text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                                        <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                                        <span>Tanggal Selesai Kontrak:</span>
+                                    </span>
+                                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900/40">
+                                        {formatLongDate(formData.contract_end)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
 

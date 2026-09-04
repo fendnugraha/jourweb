@@ -1,42 +1,124 @@
 import Modal from "@/app/components/Modal";
-import { User, UserCheck, DollarSign, TrendingUp, TrendingDown, Calendar, Briefcase, ShieldCheck, Edit2, Mars, Venus } from "lucide-react";
+import {
+    AlertCircle,
+    AlertTriangle,
+    BellRing,
+    Briefcase,
+    Calendar,
+    ClockAlert,
+    DollarSign,
+    Edit2,
+    Mars,
+    ShieldCheck,
+    TrendingDown,
+    TrendingUp,
+    User,
+    UserCheck,
+    Venus,
+} from "lucide-react";
 import EditEmployee from "./EditEmployee";
 import { calculateContractTillEnd, calculateWorkDuration, formatLongDate, formatRupiah } from "@/app/utils/format";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
+
+// Sub-Komponen Status Kontrak
+function EmploymentStatusBadge({ employee, formatLongDate }) {
+    const [showDate, setShowDate] = useState(false);
+
+    // Jika Karyawan Full Time
+    if (employee.employment_type === "full_time") {
+        return (
+            <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                Full Time
+            </span>
+        );
+    }
+
+    if (!employee.contract_end) {
+        return (
+            <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-700/60">
+                Kontrak -
+            </span>
+        );
+    }
+
+    // Ambil teks & class warna dari fungsi calculateContractTillEnd
+    const contractInfo = calculateContractTillEnd(employee.contract_end);
+    const today = new Date();
+    const end = new Date(employee.contract_end);
+    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+
+    const isExpired = diffDays <= 0;
+    const isUrgent = diffDays > 0 && diffDays <= 7;
+    const isEndingSoon = diffDays > 7 && diffDays <= 30;
+
+    return (
+        <div className="flex flex-col items-center gap-1">
+            <button
+                type="button"
+                onClick={() => setShowDate((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer border ${contractInfo.colorClass}`}
+                title="Klik untuk mengubah ke tampilan tanggal persis"
+            >
+                {isExpired && <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
+                {isUrgent && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 animate-pulse shrink-0" />}
+                {isEndingSoon && <ClockAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />}
+                <span>{showDate ? formatLongDate(employee.contract_end) : contractInfo.text}</span>
+            </button>
+            {isEndingSoon && !showDate && (
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 tracking-wider">
+                    (&le;1 Bln Lagi)
+                </span>
+            )}
+        </div>
+    );
+}
 
 const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selectedEmployee, setSelectedEmployeeId }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState("Edit Employee");
 
-    // 1. Buat Sub-Komponen Ini (Taruh di luar komponen utama)
-    function EmploymentStatusBadge({ employee, formatLongDate }) {
-        const [showDate, setShowDate] = useState(false);
+    // Hitung Karyawan dengan Kontrak Berakhir (<= 30 Hari atau Kedaluwarsa)
+    const expiringEmployees = useMemo(() => {
+        const safeData = Array.isArray(filteredEmployee) ? filteredEmployee : [];
+        return safeData.filter((emp) => {
+            if (emp.employment_type === "full_time" || !emp.contract_end) return false;
+            const end = new Date(emp.contract_end);
+            const today = new Date();
+            const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+            return diffDays <= 30; // <= 30 hari (kira-kira 1 bulan) atau sudah kedaluwarsa
+        });
+    }, [filteredEmployee]);
 
-        // Jika Karyawan Full Time
-        if (employee.employment_type === "full_time") {
-            return (
-                <span className="inline-flex items-center rounded-lg bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                    Full Time
-                </span>
-            );
-        }
-
-        // Ambil teks & class warna dari fungsi calculateContractTillEnd
-        const contractInfo = calculateContractTillEnd(employee.contract_end);
-
-        return (
-            <button
-                type="button"
-                onClick={() => setShowDate((prev) => !prev)}
-                className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${contractInfo.colorClass}`}
-            >
-                {showDate ? formatLongDate(employee.contract_end) : contractInfo.text}
-            </button>
-        );
-    }
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
+            {/* Banner Notifikasi jika ada karyawan dengan kontrak berakhir <= 30 hari */}
+            {expiringEmployees.length > 0 && (
+                <div className="rounded-2xl border border-amber-200/90 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/90 p-4 shadow-xs backdrop-blur-xl dark:border-amber-900/60 dark:from-amber-950/40 dark:to-orange-950/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/70 shadow-xs">
+                            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-bold text-amber-950 dark:text-amber-200 flex items-center gap-2">
+                                <span>Peringatan Masa Kontrak Karyawan</span>
+                                <span className="font-mono text-[10px] bg-amber-200/80 dark:bg-amber-900/80 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded font-extrabold">
+                                    {expiringEmployees.length} Karyawan
+                                </span>
+                            </h4>
+                            <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-0.5">
+                                Terdapat {expiringEmployees.length} karyawan dengan masa kontrak yang akan berakhir dalam 1 bulan (&le;30 hari) atau telah kedaluwarsa.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/50 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800/60">
+                        <ClockAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>Perlu Perhatian / Perpanjangan</span>
+                    </div>
+                </div>
+            )}
+
             {/* Table Container */}
             <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
                 <div className="overflow-x-auto">
@@ -110,12 +192,20 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                             ?.filter((c) => c.type === "deduction")
                                             .reduce((total, component) => total + Number(component.amount), 0) || 0;
 
+                                    // Perhitungan sisa hari kontrak
+                                    let diffDays = null;
+                                    if (employee.employment_type !== "full_time" && employee.contract_end) {
+                                        const end = new Date(employee.contract_end);
+                                        const today = new Date();
+                                        diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+                                    }
+
                                     return (
                                         <tr key={employee.id} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors duration-150">
                                             {/* 1. Nama Karyawan & Avatar */}
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
+                                                    <div className="h-8 w-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
                                                         {employee.contact?.contact_photo_url ? (
                                                             <Image
                                                                 src={employee.contact.contact_photo_url}
@@ -139,8 +229,25 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                                                 <span className="text-[10px] text-red-500">Exp: {employee.warning_active?.expired_date}</span>
                                                             </div>
                                                         )}
+                                                        {/* Badge Notifikasi Kontrak Berakhir ~1 Bulan di Kolom Nama */}
+                                                        {diffDays !== null && diffDays <= 30 && (
+                                                            <div className="mt-1">
+                                                                <span
+                                                                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                                                        diffDays <= 0
+                                                                            ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-900/50"
+                                                                            : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-900/50"
+                                                                    }`}
+                                                                >
+                                                                    <BellRing className={`w-3 h-3 shrink-0 ${diffDays <= 7 ? "animate-bounce text-rose-500" : "text-amber-500"}`} />
+                                                                    <span>
+                                                                        {diffDays <= 0 ? "Kontrak Expired" : `Kontrak Habis ${diffDays} hr lagi`}
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                         {employee.contact?.phone && (
-                                                            <div className="text-[10px] text-slate-400 font-normal">{employee.contact.phone}</div>
+                                                            <div className="text-[10px] text-slate-400 font-normal mt-0.5">{employee.contact.phone}</div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -195,7 +302,6 @@ const EmployeeTable = ({ contacts, notification, mutate, filteredEmployee, selec
                                                 )}
                                             </td>
 
-                                            {/* 7. Employment Type */}
                                             {/* 7. Employment Type */}
                                             <td className="px-5 py-3.5 text-center">
                                                 <EmploymentStatusBadge employee={employee} formatLongDate={formatLongDate} />
