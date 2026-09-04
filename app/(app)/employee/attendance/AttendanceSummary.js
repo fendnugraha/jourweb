@@ -12,25 +12,34 @@ export default function AttendanceSummary({ dateString, search, selectedZone }) 
     const year = date.getFullYear();
 
     const { employees, loading } = useEmployee(month, year);
-    // Filter & Sorting logic
+
     const filteredSortedEmployees = useMemo(() => {
-        return [...employees].sort((a, b) => {
-            // 1. Ambil nilai total menit dari backend
-            const netMinutesA = a.time_diff_summary?.total_net_minutes ?? 0;
-            const netMinutesB = b.time_diff_summary?.total_net_minutes ?? 0;
+        return [...employees]
+            .filter((employee) => {
+                const statusActiveOnly = employee.status === "active";
+                const matchZone = selectedZone === "all" || Number(employee.user?.warehouse?.warehouse_zone_id) === Number(selectedZone);
+                const matchSearch = !search || employee.contact?.name?.toLowerCase().includes(search.toLowerCase());
+                // const matchZone = !selectedZone || employee.attendances?.warehouse?.warehouse_zone_id === selectedZone;
+                const hasRating = (employee.attendance_rating?.rating ?? 0) > 0;
+                return statusActiveOnly && matchSearch && hasRating && matchZone;
+            })
+            .sort((a, b) => {
+                // 1. Ambil nilai total menit dari backend
+                const netMinutesA = a.time_diff_summary?.total_net_minutes ?? 0;
+                const netMinutesB = b.time_diff_summary?.total_net_minutes ?? 0;
 
-            // 2. Jika total menit beda, urutkan dari yang terbesar (paling rajin/awal datang)
-            if (netMinutesB !== netMinutesA) {
-                return netMinutesB - netMinutesA;
-            }
+                // 2. Jika total menit beda, urutkan dari yang terbesar (paling rajin/awal datang)
+                if (netMinutesB !== netMinutesA) {
+                    return netMinutesB - netMinutesA;
+                }
 
-            // 3. Jika total menit persis sama, urutkan berdasarkan Rating
-            const ratingA = a.attendance_rating?.rating ?? 0;
-            const ratingB = b.attendance_rating?.rating ?? 0;
+                // 3. Jika total menit persis sama, urutkan berdasarkan Rating
+                const ratingA = a.attendance_rating?.rating ?? 0;
+                const ratingB = b.attendance_rating?.rating ?? 0;
 
-            return ratingB - ratingA;
-        });
-    }, [employees]);
+                return ratingB - ratingA;
+            });
+    }, [employees, search, selectedZone]);
 
     // Indikator Trend Performance
     const renderTrendBadge = (current, previous) => {
