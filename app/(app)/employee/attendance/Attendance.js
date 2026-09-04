@@ -127,7 +127,7 @@ const AttendancePage = ({ userRole }) => {
                         transition={{ duration: 0.15 }}
                         className="space-y-6"
                     >
-                        <AttendanceTable userAttendance={userAttendance} selectedZone={selectedZone} mutate={mutateUserAttendance} userRole={userRole} />
+                        <AttendanceTable userAttendance={userAttendance} selectedZone={selectedZone} searchTerm={searchTerm} mutate={mutateUserAttendance} userRole={userRole} />
                     </motion.div>
                 )}
                 {activeSubTab === "monthly" && (
