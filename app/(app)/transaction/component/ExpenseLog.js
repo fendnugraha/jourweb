@@ -36,6 +36,7 @@ const ExpenseLog = ({
         fee_amount: -expenseAmount,
         trx_type: "Pengeluaran",
         description: "",
+        active_tab: activeTab,
     });
 
     const filteredJournals = useMemo(() => {
@@ -96,6 +97,7 @@ const ExpenseLog = ({
                 fee_amount: 0,
                 trx_type: "Pengeluaran",
                 description: "",
+                active_tab: formData.active_tab,
             });
             setExpenseAmount(0);
             setErrors([]);
@@ -123,6 +125,7 @@ const ExpenseLog = ({
                     debt_id: "",
                     cred_id: warehouseCashId,
                     description: "",
+                    active_tab: "operational",
                 }));
             },
         },
@@ -138,6 +141,7 @@ const ExpenseLog = ({
                     cred_id: formData.cred_id,
                     description: "Biaya Administrasi Bank",
                     amount: expenseAmount,
+                    active_tab: "bankfee",
                 }));
             },
         },

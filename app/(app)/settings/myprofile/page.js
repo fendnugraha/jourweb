@@ -103,15 +103,6 @@ export default function MyProfile() {
     const [telegramChatId, setTelegramChatId] = useState(contact?.telegram_chat_id || "");
     const [notification, setNotification] = useState(null);
 
-    const { cashBankBalanceData, error: balanceError, isLoading, isValidating, mutate: mutateBalance } = useCashBankBalance(warehouse?.id, today);
-    const primaryCashLiveBalance = cashBankBalanceData?.data.chartOfAccounts.find((account) => account.id === primaryCash?.id).balance;
-
-    // Hitung Pemakaian Limit Kas
-    const limitAmount = Number(primaryCash?.limit?.limit_amount) || 0;
-    const diffAmount = Number(primaryCash?.limit?.diff_amount) || 0;
-    const usedAmount = limitAmount - primaryCashLiveBalance;
-    const usedPercentage = limitAmount > 0 ? Math.min(Math.round((usedAmount / limitAmount) * 100), 100) : 0;
-
     const STATUS_CONFIG = {
         Late: {
             label: "Telat",
@@ -600,7 +591,6 @@ export default function MyProfile() {
                                     {/* KOLOM KANAN (1-SPAN): KAS UTAMA & DETAIL AKUN */}
                                     <div className="space-y-6">
                                         {/* CARD KAS UTAMA & LIMIT */}
-                                        {/* Safety Variable Calculation */}
                                         {(() => {
                                             const empReceivable = parseFloat(user?.contact?.employee_receivables_sum?.total || 0);
                                             const instReceivable = parseFloat(user?.contact?.installment_receivables_sum?.total || 0);

@@ -301,12 +301,17 @@ export default function DailyReport({ revenue, hasData, date, corpCashFlows = []
                                 </div>
 
                                 <div className="divide-y divide-slate-100 font-mono text-xs">
-                                    {filteredFinances.map((finance) => (
-                                        <div key={finance.id} className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                                            <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
-                                            <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
-                                        </div>
-                                    ))}
+                                    {filteredFinances
+                                        .filter((finance) => finance.bill_amount > 0)
+                                        .map((finance) => (
+                                            <div
+                                                key={finance.id}
+                                                className="px-3.5 py-2 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+                                            >
+                                                <span className="font-sans text-slate-700">{finance.contact?.name || "Karyawan"}</span>
+                                                <span className="font-bold text-amber-600">Rp {formatNumber(finance.bill_amount)}</span>
+                                            </div>
+                                        ))}
                                 </div>
 
                                 <div className="px-3.5 py-2 bg-indigo-50/50 border-t border-indigo-100 flex justify-between font-mono font-bold text-xs">

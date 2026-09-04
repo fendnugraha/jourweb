@@ -20,6 +20,7 @@ export default function HeaderProfile() {
     const userWarehouseId = user?.warehouse_id;
     const userWarehouseName = user?.warehouse?.name || "No Warehouse";
     const userWarehouseStatus = user?.warehouse?.is_open || 0;
+    console.log(user);
 
     // Hitung Rank & Metric Profit
     const warehouseRankIndex = rankByProfit?.data?.revenue?.findIndex((item) => Number(item.warehouse_id) === Number(userWarehouseId));
