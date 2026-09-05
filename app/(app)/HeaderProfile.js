@@ -194,7 +194,7 @@ export default function HeaderProfile() {
                         </div>
                         <div className="min-w-0">
                             <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">
-                                Piutang: <strong className="text-slate-800 dark:text-slate-200">Rp {formatRupiah(totalReceivables)}</strong>
+                                Piutang: <strong className="text-slate-800 dark:text-slate-200">{formatRupiah(totalReceivables)}</strong>
                             </div>
                             <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                                 Kasbon {formatRupiah(empReceivable)} • Cicilan {formatRupiah(instReceivable)}
