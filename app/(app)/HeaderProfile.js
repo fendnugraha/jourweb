@@ -61,11 +61,16 @@ export default function HeaderProfile() {
         alert("Pengajuan ditolak!");
     };
 
+    // Memotong nama ke format "Aditya R.P." HANYA jika panjang nama > 15 karakter
     const getShortName = (fullName) => {
         if (!fullName) return "Pengguna";
 
-        const words = fullName.trim().split(/\s+/);
-        if (words.length <= 1) return fullName;
+        const trimmed = fullName.trim();
+        // Jika 15 karakter atau kurang, tampilkan nama utuh
+        if (trimmed.length <= 15) return trimmed;
+
+        const words = trimmed.split(/\s+/);
+        if (words.length <= 1) return trimmed;
 
         const firstName = words[0];
         const initials = words
@@ -128,7 +133,7 @@ export default function HeaderProfile() {
                                 <h2 className="truncate text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
                                     Hi, <span className="text-indigo-600 dark:text-indigo-400">{getShortName(user?.name)}</span>
                                 </h2>
-                                {user?.email_verified_at && <BadgeCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" fill="#246de3" />}
+                                {user?.email_verified_at && <BadgeCheck className="h-4 w-4 text-white shrink-0" fill="#246de3" />}
                             </div>
 
                             <div className="flex flex-wrap items-center gap-1 text-[10px]">
