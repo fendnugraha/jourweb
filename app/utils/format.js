@@ -506,3 +506,23 @@ export const getLocationPromise = () =>
             },
         );
     });
+
+export const getShortName = (fullName) => {
+    if (!fullName) return "Pengguna";
+
+    const trimmed = fullName.trim();
+    // Jika 15 karakter atau kurang, tampilkan nama utuh
+    if (trimmed.length <= 15) return trimmed;
+
+    const words = trimmed.split(/\s+/);
+    if (words.length <= 1) return trimmed;
+
+    const firstName = words[0];
+    const initials = words
+        .slice(1)
+        .map((word) => word[0]?.toUpperCase())
+        .filter(Boolean)
+        .join(".");
+
+    return `${firstName} ${initials}.`;
+};

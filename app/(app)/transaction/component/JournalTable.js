@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import DropdownMenu from "@/app/components/DropdownMenu";
 import Modal from "@/app/components/Modal";
-import { calculateFee, formatDateTime, formatNumber, formatRupiah } from "@/app/utils/format";
+import { calculateFee, formatDateTime, formatNumber, formatRupiah, getShortName } from "@/app/utils/format";
 import {
     FileText,
     Tag,
@@ -154,7 +154,9 @@ const JournalTable = ({
                     </div>
                     <div className="min-w-0">
                         <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate">Kas Masuk (+)</p>
-                        <p className="text-xs sm:text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300 truncate">{formatRupiah(totals.totalInflow)}</p>
+                        <p className="text-xs sm:text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300 truncate">
+                            {formatRupiah(totals.totalInflow)}
+                        </p>
                     </div>
                 </div>
 
@@ -208,7 +210,7 @@ const JournalTable = ({
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-b border-slate-200/80 bg-slate-50/70 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-800/40">
-                            <th scope="col" className="px-4 py-3.5 min-w-[220px]">
+                            <th scope="col" className="px-4 py-3.5 min-w-55">
                                 <div className="flex items-center gap-1.5">
                                     <FileText className="w-3.5 h-3.5 text-indigo-500" />
                                     <span>Detail Transaksi</span>
@@ -220,7 +222,7 @@ const JournalTable = ({
                                     <span>Kategori</span>
                                 </div>
                             </th>
-                            <th scope="col" className="px-4 py-3.5 min-w-[200px]">
+                            <th scope="col" className="px-4 py-3.5 min-w-50">
                                 <div className="flex items-center gap-1.5">
                                     <CreditCard className="w-3.5 h-3.5 text-indigo-500" />
                                     <span>Kanal Transaksi</span>
@@ -288,7 +290,9 @@ const JournalTable = ({
                                     <tr key={tx.id} className="group hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors duration-150">
                                         <td className="px-4 py-3.5 max-w-xs md:max-w-md">
                                             <div className="space-y-1">
-                                                <span className="font-semibold text-slate-800 dark:text-slate-100 block break-words">{tx.description || "Tanpa Keterangan"}</span>
+                                                <span className="font-semibold text-slate-800 dark:text-slate-100 block wrap-break-word">
+                                                    {tx.description || "Tanpa Keterangan"}
+                                                </span>
                                                 <div className="inline-flex items-center gap-1.5 rounded-md bg-slate-50 dark:bg-slate-800/50 px-2 py-0.5 border border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500 dark:text-slate-400 font-mono flex-wrap">
                                                     <span className="inline-flex items-center gap-1">
                                                         <Calendar className="h-3 w-3 text-slate-400 shrink-0" />
@@ -298,7 +302,7 @@ const JournalTable = ({
                                                         <span className="inline-flex items-center gap-1">
                                                             <span className="text-slate-300 dark:text-slate-700">•</span>
                                                             <User className="h-3 w-3 text-slate-400 shrink-0" />
-                                                            <span className="truncate max-w-36">{tx.user.name}</span>
+                                                            <span className="truncate max-w-36">{getShortName(tx.user.name)}</span>
                                                         </span>
                                                     )}
                                                 </div>
@@ -318,7 +322,7 @@ const JournalTable = ({
                                             {tx.trx_type === "Mutasi Kas" ? (
                                                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 px-2.5 py-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex-wrap">
                                                     <ArrowRightLeft className="h-3 w-3 shrink-0" />
-                                                    <span className="break-words">
+                                                    <span className="wrap-break-word">
                                                         {tx.cred?.group}
                                                         {tx.cred?.warehouse?.id !== warehouseId && (
                                                             <span className="text-slate-500 dark:text-slate-400 font-normal">

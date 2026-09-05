@@ -1,5 +1,5 @@
 import DropdownMenu from "@/app/components/DropdownMenu";
-import { calculateFee, formatDateTime, formatNumber } from "@/app/utils/format";
+import { calculateFee, formatDateTime, formatNumber, getShortName } from "@/app/utils/format";
 import { AlertCircle, ArrowRightLeft, Calendar, Coins, CreditCard, Ellipsis, FileText, FileWarning, MoreHorizontal, Tag, User } from "lucide-react";
 
 export default function JournalTableMobile({
@@ -73,7 +73,7 @@ export default function JournalTableMobile({
                                 {/* Header Kartu: Judul Transaksi & Menu Action */}
                                 <div className="flex justify-between items-start gap-2">
                                     <div className="space-y-1 min-w-0 flex-1">
-                                        <h4 className="font-semibold text-xs text-slate-800 dark:text-slate-100 leading-snug break-words">
+                                        <h4 className="font-semibold text-xs text-slate-800 dark:text-slate-100 leading-snug wrap-break-word">
                                             {tx.description || "Tanpa Keterangan"}
                                         </h4>
                                         <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-400 dark:text-slate-500 font-mono">
@@ -85,7 +85,7 @@ export default function JournalTableMobile({
                                                 <span className="inline-flex items-center gap-1">
                                                     <span className="text-slate-300 dark:text-slate-700">•</span>
                                                     <User className="h-3 w-3 text-slate-400 shrink-0" />
-                                                    <span className="truncate max-w-32">{tx.user.name}</span>
+                                                    <span className="truncate max-w-32">{getShortName(tx.user.name)}</span>
                                                 </span>
                                             )}
                                         </div>
@@ -163,7 +163,7 @@ export default function JournalTableMobile({
                                     {tx.trx_type === "Mutasi Kas" ? (
                                         <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 max-w-full">
                                             <ArrowRightLeft className="h-2.5 w-2.5 shrink-0" />
-                                            <span className="break-words">
+                                            <span className="wrap-break-word">
                                                 {tx.cred?.group}
                                                 {tx.cred?.warehouse?.id !== warehouseId && (
                                                     <span className="text-slate-400 font-normal"> ({tx.cred?.warehouse?.name.replace(/^konter\s*/i, "")})</span>
@@ -179,7 +179,9 @@ export default function JournalTableMobile({
                                     ) : (
                                         <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50/70 dark:bg-indigo-950/40 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 max-w-full">
                                             <CreditCard className="h-2.5 w-2.5 shrink-0" />
-                                            <span className="truncate">{tx.cred_id === warehouseCashId ? tx.debt?.group || "Cash" : tx.cred?.group || "Cash"}</span>
+                                            <span className="truncate">
+                                                {tx.cred_id === warehouseCashId ? tx.debt?.group || "Cash" : tx.cred?.group || "Cash"}
+                                            </span>
                                         </span>
                                     )}
                                 </div>
@@ -206,12 +208,11 @@ export default function JournalTableMobile({
                                                     className={`font-semibold ${calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) ? "text-rose-600 dark:text-rose-400 font-bold" : "text-emerald-600 dark:text-emerald-400"}`}
                                                 >
                                                     {formatNumber(tx.fee_amount)}
-                                                    {calculateFee(tx.amount) !== tx.fee_amount &&
-                                                        ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) && (
-                                                            <span className="ml-1 text-[9px] bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-1 py-0.2 rounded font-bold">
-                                                                Mismatch
-                                                            </span>
-                                                        )}
+                                                    {calculateFee(tx.amount) !== tx.fee_amount && ["Tarik Tunai", "Transfer Uang"].includes(tx.trx_type) && (
+                                                        <span className="ml-1 text-[9px] bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 px-1 py-0.2 rounded font-bold">
+                                                            Mismatch
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
