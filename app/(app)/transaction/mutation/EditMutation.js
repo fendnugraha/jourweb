@@ -43,6 +43,7 @@ export default function EditMutation({ journal, isModalOpen, mutate, notificatio
             const response = await axios.put(`/api/journals/${journal?.id}`, formData);
             notification(response.data.message);
             mutate();
+            mutateBalance();
             isModalOpen(false);
         } catch (error) {
             console.log(error);

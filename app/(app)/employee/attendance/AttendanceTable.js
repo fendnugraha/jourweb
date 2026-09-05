@@ -11,6 +11,7 @@ import {
     ClockAlert,
     MapPin,
     Sparkles,
+    StarCheck,
     Store,
     UserCheck,
     Users,
@@ -35,7 +36,7 @@ const STATUS_CONFIG = {
     },
     Good: {
         label: "Excellent",
-        Icon: Sparkles,
+        Icon: StarCheck,
         color: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/50",
         iconStyle: "w-3.5 h-3.5 text-amber-500 dark:text-amber-400 fill-amber-400/30",
     },

@@ -257,7 +257,13 @@ const MutationHistoryLog = ({ journals = [], accounts = [], setNotification, mut
             />
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit Mutasi Kas">
-                <EditMutation journal={selectedJournal} isModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
+                <EditMutation
+                    journal={selectedJournal}
+                    isModalOpen={setIsModalOpen}
+                    mutate={mutate}
+                    mutateBalance={mutateBalance}
+                    notification={setNotification}
+                />
             </Modal>
         </div>
     );
