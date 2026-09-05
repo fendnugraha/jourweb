@@ -61,6 +61,22 @@ export default function HeaderProfile() {
         alert("Pengajuan ditolak!");
     };
 
+    const getShortName = (fullName) => {
+        if (!fullName) return "Pengguna";
+
+        const words = fullName.trim().split(/\s+/);
+        if (words.length <= 1) return fullName;
+
+        const firstName = words[0];
+        const initials = words
+            .slice(1)
+            .map((word) => word[0]?.toUpperCase())
+            .filter(Boolean)
+            .join(".");
+
+        return `${firstName} ${initials}.`;
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -110,7 +126,7 @@ export default function HeaderProfile() {
                         <div className="min-w-0 space-y-0.5">
                             <div className="flex items-center gap-1">
                                 <h2 className="truncate text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
-                                    Hi, <span className="text-indigo-600 dark:text-indigo-400">{user?.name || "Pengguna"}</span>
+                                    Hi, <span className="text-indigo-600 dark:text-indigo-400">{getShortName(user?.name)}</span>
                                 </h2>
                                 {user?.email_verified_at && <BadgeCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" fill="#246de3" />}
                             </div>
