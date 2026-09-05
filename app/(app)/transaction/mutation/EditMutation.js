@@ -8,7 +8,7 @@ const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
 const inputClass =
     "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
 
-export default function EditMutation({ journal, isModalOpen, mutate, notification }) {
+export default function EditMutation({ journal, isModalOpen, mutate, mutateBalance, notification }) {
     const [formError, setFormError] = useState("");
     const [loading, setLoading] = useState(false);
     const { accounts = [], loading: loadingAccounts, error: errorAccounts } = useAccounts();
