@@ -9,9 +9,9 @@ import { MapPin, ExternalLink, Clock, User, CheckCircle2, Loader2, ImageOff, Sav
 import useEmployee from "@/app/hooks/useEmployee";
 import axios from "@/app/utils/axios";
 
-const AttendanceDetail = ({ selectedWarehouse, mutate, notification, isModalOpen, userRole }) => {
+const AttendanceDetail = ({ selectedWarehouse, selectedAttendance, mutate, notification, isModalOpen, userRole }) => {
     const isAdmin = ["Administrator", "Super Admin"].includes(userRole);
-    const attendance = selectedWarehouse?.attendance?.[0];
+    const attendance = selectedAttendance || selectedWarehouse?.attendance?.[0];
 
     const [isPending, startTransition] = useTransition();
 
@@ -29,7 +29,7 @@ const AttendanceDetail = ({ selectedWarehouse, mutate, notification, isModalOpen
             time_in: attendance?.time_in || "",
             approval_status: attendance?.approval_status || "Pending",
         });
-    }, [selectedWarehouse, attendance]);
+    }, [selectedWarehouse, selectedAttendance, attendance]);
 
     const handleUpdate = (e) => {
         e.preventDefault();
