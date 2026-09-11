@@ -480,7 +480,7 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                     {hasAttendance ? (
                                                         <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
                                                             {attendances.map((att) => (
-                                                                <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center gap-2.5 min-h-[52px]">
+                                                                <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center gap-2.5 min-h-13">
                                                                     {att?.contact?.contact_photo_url || att?.photo_url ? (
                                                                         <Image
                                                                             src={att?.contact?.contact_photo_url || att?.photo_url}
@@ -513,7 +513,10 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                     {hasAttendance ? (
                                                         <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
                                                             {attendances.map((att) => (
-                                                                <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-center min-h-[52px]">
+                                                                <div
+                                                                    key={att.id}
+                                                                    className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-center min-h-13"
+                                                                >
                                                                     <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
                                                                         {att?.work_start || defaultOpeningTime}
                                                                     </span>
@@ -536,7 +539,10 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                                 const status = att?.approval_status;
 
                                                                 return (
-                                                                    <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex flex-col items-center justify-center gap-1 min-h-[52px]">
+                                                                    <div
+                                                                        key={att.id}
+                                                                        className="py-2.5 first:pt-0 last:pb-0 flex flex-col items-center justify-center gap-1 min-h-13"
+                                                                    >
                                                                         <span className="font-mono text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
                                                                             {att?.time_in || "-"}
                                                                         </span>
@@ -562,7 +568,10 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                                 const { Icon, label, color, iconStyle } = config;
 
                                                                 return (
-                                                                    <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-center min-h-[52px]">
+                                                                    <div
+                                                                        key={att.id}
+                                                                        className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-center min-h-13"
+                                                                    >
                                                                         <span
                                                                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border shadow-xs ${color}`}
                                                                         >
@@ -582,7 +591,10 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                     {hasAttendance ? (
                                                         <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
                                                             {attendances.map((att) => (
-                                                                <div key={att.id} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-end min-h-[52px]">
+                                                                <div
+                                                                    key={att.id}
+                                                                    className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-end min-h-13"
+                                                                >
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleOpenDetail(warehouse, att)}

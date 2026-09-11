@@ -12,17 +12,19 @@ import Modal from "@/app/components/Modal";
 import ReceivableForm from "./ReceivableForm";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import axios from "@/app/utils/axios";
-import PaymentForm from "../finance/PaymentForm";
 import { useAccounts } from "@/app/hooks/useAccounts";
 import EmployeeRcvPayment from "./EmployeeRcvPayment";
 import DateFilterDropdown from "@/app/components/DateFilterDropdown";
+import EmpReceivableReqTable from "./EmpReceivableReqTable";
 
 const EmployeeReceivable = () => {
     const { today } = DateTimeNow();
     const [selectedContactId, setSelectedContactId] = useState("All");
+
+    // Default ke 'EmployeeReceivable'
     const [financeType, setFinanceType] = useState("EmployeeReceivable");
     const [notification, setNotification] = useState(null);
-    const { contacts, error: contactsError } = useContacts();
+    const { contacts = [] } = useContacts();
 
     const [dateFilter, setDateFilter] = useState({
         preset: "today",
@@ -30,9 +32,11 @@ const EmployeeReceivable = () => {
         endDate: today,
     });
 
+    const targetTypes = financeType === "Request" ? ["EmployeeReceivable R", "InstallmentReceivable R"] : financeType;
+
     const { finances, financeGroup, loading, error, mutate } = useFinances({
         contact: "All",
-        financeType,
+        financeType: targetTypes, // Hook useFinances akan memproses array ini
         start: dateFilter.startDate,
         end: dateFilter.endDate,
     });
@@ -44,6 +48,7 @@ const EmployeeReceivable = () => {
     const [modalTitle, setModalTitle] = useState("Add Finance Mutation");
     const [journalToDelete, setJournalToDelete] = useState(null);
     const [status, setStatus] = useState("unpaid");
+
     const statusOptions = [
         { value: "all", label: "All Status" },
         { value: "paid", label: "Paid" },
@@ -52,33 +57,19 @@ const EmployeeReceivable = () => {
 
     const { accounts = [] } = useAccounts();
 
-    const contactOption = [
-        { value: "", label: "Pilih Kontak" },
-        ...contacts.map((contact) => ({
-            value: contact.id,
-            label: contact.name,
-        })),
-    ];
-
     const filteredFinances = useMemo(() => {
+        if (!financeGroup) return [];
         return financeGroup.filter((finance) => {
             const paid = Number(finance.sisa) === 0;
             const unpaid = Number(finance.sisa) > 0;
 
-            if (status === "all") {
-                return true;
-            }
-            if (status === "paid") {
-                return paid;
-            }
-            if (status === "unpaid") {
-                return unpaid;
-            }
+            if (status === "all") return true;
+            if (status === "paid") return paid;
+            if (status === "unpaid") return unpaid;
             return false;
         });
     }, [financeGroup, status]);
 
-    // ✅ Berikan properti default agar tidak undefined saat diakses
     const findContact =
         selectedContactId !== "All"
             ? financeGroup?.find((f) => f.contact_id === selectedContactId) || {
@@ -93,17 +84,25 @@ const EmployeeReceivable = () => {
             setNotification(response.data.message);
             mutate();
         } catch (error) {
-            console.log(error);
             setNotification(error.response?.data?.message || "Gagal menghapus data keuangan.");
         }
     };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setIsPaymentActive(false);
+    };
+
     return (
         <div className="space-y-6">
             <Notification message={notification} onClose={() => setNotification(null)} />
-            <div className="grid sm:grid-cols-2 gap-4">
+
+            {/* 3 Tab Utama */}
+            <div className="grid sm:grid-cols-3 gap-4">
                 {[
                     { id: "EmployeeReceivable", title: "Piutang Karyawan" },
                     { id: "InstallmentReceivable", title: "Piutang Cicilan" },
+                    { id: "Request", title: "Pengajuan Pinjaman" }, // Tab gabungan 2 tipe "R"
                 ].map((item) => {
                     const isSelected = financeType === item.id;
                     return (
@@ -138,10 +137,10 @@ const EmployeeReceivable = () => {
                     );
                 })}
             </div>
+
+            {/* Filter Bar */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between p-4 rounded-xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
-                {/* Left Side Filters */}
                 <div className="flex-1 grid gap-3 sm:grid-cols-3 max-w-3xl">
-                    {/* Search SKU/Name */}
                     <div className="relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500">
                             <Search className="h-4 w-4" aria-hidden="true" />
@@ -155,7 +154,6 @@ const EmployeeReceivable = () => {
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
-                    {/* Status Dropdown */}
                     <div>
                         <Dropdown
                             id="stock-status-filter"
@@ -177,43 +175,51 @@ const EmployeeReceivable = () => {
                     </div>
                 </div>
 
-                {/* Action Button */}
                 <div className="flex gap-4">
                     <button
                         type="button"
                         onClick={() => {
+                            setIsPaymentActive(false);
                             setIsModalOpen(true);
                             setModalTitle("Add Employee Receivable");
                         }}
-                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors cursor-pointer"
                     >
                         <Plus className="h-4 w-4" />
                         <span>Piutang Karyawan</span>
                     </button>
                 </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-                <PayableTable
-                    finances={finances}
-                    financeGroup={filteredFinances}
-                    selectedContactId={selectedContactId}
-                    setSelectedContactId={setSelectedContactId}
-                    searchTerm={searchTerm}
-                    setIsPaymentActive={setIsPaymentActive}
-                    setIsModalOpen={setIsModalOpen}
-                    setModalTitle={setModalTitle}
-                />
-                <div className="space-y-4">
-                    <FinanceMutationHistory
-                        finances={finances}
-                        findContact={findContact}
-                        selectedContactId={selectedContactId}
-                        setJournalToDelete={setJournalToDelete}
-                    />
-                </div>
-            </div>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
+            {/* Tables */}
+            {financeType !== "Request" && (
+                <div className="grid sm:grid-cols-2 gap-4">
+                    <PayableTable
+                        finances={finances}
+                        financeGroup={filteredFinances}
+                        selectedContactId={selectedContactId}
+                        setSelectedContactId={setSelectedContactId}
+                        searchTerm={searchTerm}
+                        setIsPaymentActive={setIsPaymentActive}
+                        setIsModalOpen={setIsModalOpen}
+                        setModalTitle={setModalTitle}
+                        financeType={financeType}
+                    />
+                    <div className="space-y-4">
+                        <FinanceMutationHistory
+                            finances={finances}
+                            findContact={findContact}
+                            selectedContactId={selectedContactId}
+                            setJournalToDelete={setJournalToDelete}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {financeType === "Request" && <EmpReceivableReqTable finances={finances} notification={setNotification} mutate={mutate} />}
+
+            {/* Modal */}
+            <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={modalTitle} maxWidth="max-w-xl">
                 {isPaymentActive ? (
                     <EmployeeRcvPayment
                         accounts={accounts}
@@ -225,7 +231,7 @@ const EmployeeReceivable = () => {
                         finances={finances}
                     />
                 ) : (
-                    <ReceivableForm setIsModalOpen={setIsModalOpen} mutate={mutate} notification={setNotification} />
+                    <ReceivableForm setIsModalOpen={handleCloseModal} mutate={mutate} notification={setNotification} />
                 )}
             </Modal>
 

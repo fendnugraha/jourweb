@@ -1,28 +1,32 @@
 import { Warehouse, Trophy, TrendingUp, Star, Clock, CheckCircle2, AlertTriangle, Loader2, Lock, BadgeCheck, Wallet2, Receipt } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../utils/auth";
+import { useFinances } from "../hooks/useFinance";
 import useRankByProfit from "../hooks/useRankByProfit";
 import { getWarehouseRating } from "../hooks/JournalActionService";
 import Image from "next/image";
 import { formatNumber, formatRupiah } from "../utils/format";
 import { useState } from "react";
 import Modal from "../components/Modal";
+import EmpReceivableRequest from "./employee/EmpReceivableRequest";
 
 export default function HeaderProfile() {
     const { user } = useAuth({ middleware: "auth" });
     const { rankByProfit, isLoading } = useRankByProfit();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        contact_id: user?.contact?.id || "",
-        amount: "",
-        type: "kasbon",
-        description: "",
+    const [modalTab, setModalTab] = useState("form");
+
+    // Periksa status pengajuan pending untuk tombol kasbon
+    const contactId = user?.contact?.id;
+    const { finances: userFinances, mutate: mutateFinances } = useFinances({
+        contact: contactId || "null",
+        financeType: "All",
+        start: "2025-01-01",
+        end: "2027-12-31",
     });
 
-    const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
-    const inputClass =
-        "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
+    const pendingRequest = userFinances?.find((f) => f.finance_type?.endsWith(" R"));
+    const hasPendingRequest = Boolean(pendingRequest);
 
     const isUserCheckedIn = user?.has_checked_in;
     const contactWarningStatus = user?.contact?.employee?.warning_active || false;
@@ -54,11 +58,6 @@ export default function HeaderProfile() {
             .slice(0, 2)
             .join("")
             .toUpperCase();
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        alert("Pengajuan ditolak!");
     };
 
     // Memotong nama ke format "Aditya R.P." HANYA jika panjang nama > 15 karakter
@@ -208,9 +207,18 @@ export default function HeaderProfile() {
 
                 {/* 2. BARIS BAWAH: Info Piutang & Tombol Kasbon (Fit Mobile Baris Tunggal) */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/80 pt-2.5">
-                    {/* Ringkasan Piutang */}
-                    <div className="flex items-center gap-2 min-w-0">
-                        <div className="rounded-lg bg-amber-500/10 p-1.5 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 shrink-0">
+                    {/* Ringkasan Piutang (Clickable untuk langsung melihat riwayat) */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setModalTab("history");
+                            setIsModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 min-w-0 text-left hover:opacity-80 transition-opacity cursor-pointer group"
+                        title="Klik untuk melihat riwayat pengajuan & pembayaran"
+                    >
+                        <div className="rounded-lg bg-amber-500/10 p-1.5 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 shrink-0 group-hover:bg-amber-500/20 transition-colors">
                             <Receipt className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -221,96 +229,55 @@ export default function HeaderProfile() {
                                 Kasbon {formatRupiah(empReceivable)} • Cicilan {formatRupiah(instReceivable)}
                             </div>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Button Pengajuan Kasbon (Compact) */}
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            setIsModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all shrink-0 cursor-pointer"
-                    >
-                        <Wallet2 className="h-3.5 w-3.5" />
-                        <span>Ajukan Kasbon</span>
-                    </motion.button>
-                </div>
-            </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Pengajuan Kasbon">
-                <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div className="space-y-1 sm:col-span-2">
-                        <label htmlFor="tx-amount" className={labelClass}>
-                            Jumlah (Rp IDR)
-                        </label>
-                        <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
-                            <input
-                                id="tx-amount"
-                                type="number"
-                                required
-                                value={formData.amount}
-                                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                                placeholder="50000"
-                                className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
-                            />
-                        </div>
-                        {formData.amount && !isNaN(parseFloat(formData.amount)) && (
-                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                Preview: {formatRupiah(formData.amount)}
-                            </p>
-                        )}
-                    </div>
-                    <div className="space-y-1">
-                        <label className={labelClass}>Deskripsi</label>
-                        <textarea
-                            placeholder="Masukkan deskripsi pengajuan"
-                            className={inputClass}
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="flex space-x-2 bg-slate-300 p-1 rounded-xl">
-                        <button
-                            type="button"
-                            className={`w-full px-4 py-1 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formData.type === "kasbon" ? "bg-indigo-600 text-white" : "text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
-                            onClick={() => setFormData({ ...formData, type: "kasbon" })}
-                        >
-                            Kasbon
-                        </button>
-                        <button
-                            type="button"
-                            className={`w-full px-4 py-1 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${formData.type === "cicilan" ? "bg-indigo-600 text-white" : "text-slate-700 dark:bg-slate-800 dark:text-slate-300"}`}
-                            onClick={() => setFormData({ ...formData, type: "cicilan" })}
-                        >
-                            Cicilan
-                        </button>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex justify-end gap-2 pt-2">
+                    {hasPendingRequest ? (
                         <motion.button
                             whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            type="button"
-                            onClick={() => setIsModalOpen(false)}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+                            whileTap={{ scale: 0.96 }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setModalTab("history");
+                                setIsModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500/15 border border-amber-300/40 px-2.5 py-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 dark:bg-amber-950/40 dark:border-amber-800/60 shadow-xs hover:bg-amber-500/25 transition-all shrink-0 cursor-pointer"
+                            title="Pengajuan Anda sedang diproses. Klik untuk memantau status."
                         >
-                            Batal
+                            <Clock className="h-3.5 w-3.5 animate-pulse text-amber-600 dark:text-amber-400" />
+                            <span>Sedang Diproses</span>
                         </motion.button>
+                    ) : (
                         <motion.button
-                            whileHover={{ scale: loading ? 1 : 1.02 }}
-                            whileTap={{ scale: loading ? 1 : 0.98 }}
-                            type="submit"
-                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60 cursor-pointer"
-                            disabled={loading}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setModalTab("form");
+                                setIsModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 transition-all shrink-0 cursor-pointer"
                         >
-                            {loading ? "Processing..." : "Ajukan Sekarang"}
+                            <Wallet2 className="h-3.5 w-3.5" />
+                            <span>Ajukan Kasbon</span>
                         </motion.button>
-                    </div>
-                </form>
+                    )}
+                </div>
+            </div>
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={modalTab === "history" ? "Riwayat Kasbon & Cicilan" : "Pengajuan Kasbon & Cicilan"}
+                maxWidth="max-w-md"
+            >
+                <EmpReceivableRequest
+                    key={`${modalTab}-${hasPendingRequest}`}
+                    defaultTab={modalTab}
+                    onClose={() => setIsModalOpen(false)}
+                    mutate={mutateFinances}
+                    hasPendingRequest={hasPendingRequest}
+                    pendingRequest={pendingRequest}
+                />
             </Modal>
         </motion.div>
     );
