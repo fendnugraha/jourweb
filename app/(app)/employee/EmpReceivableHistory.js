@@ -190,7 +190,7 @@ export default function EmpReceivableHistory({ onSwitchToForm, onClose }) {
                         placeholder="Cari alasan atau no invoice..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-700 placeholder-slate-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-850 dark:text-slate-200"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-700 placeholder-slate-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                     {searchTerm && (
                         <button
@@ -241,7 +241,7 @@ export default function EmpReceivableHistory({ onSwitchToForm, onClose }) {
                                 key={item.id || item.invoice}
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="group relative rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs hover:border-slate-300 dark:border-slate-800 dark:bg-slate-850/60 dark:hover:border-slate-700 transition-all"
+                                className="group relative rounded-2xl border border-slate-200/80 bg-white p-3 shadow-xs hover:border-slate-300 dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-slate-700 transition-all"
                             >
                                 {/* Baris Atas: Icon Tipe, Tanggal, & Badge Status */}
                                 <div className="flex items-center justify-between gap-2">
