@@ -253,8 +253,9 @@ export default function ClosingReport({
                 title: "PENJUALAN BARANG", // Kembali ke teks asli Anda
                 source: warehouseName,
                 message: formatVoucherText(latestTransactions),
-                forwardChatId: 986761281,
                 // forwardChatId: 851552604,
+                // forwardChatId: 986761281,
+                forwardChatId: 6935745879,
             });
 
             setCountdown(LOCK_DURATION_MS / 1000);
