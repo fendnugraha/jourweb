@@ -5,7 +5,6 @@ import MainContent from "../../main";
 import imageCompression from "browser-image-compression";
 import { motion, AnimatePresence } from "motion/react";
 import {
-    User,
     Mail,
     ShieldCheck,
     Building2,
@@ -19,7 +18,6 @@ import {
     XCircle,
     Navigation,
     KeyRound,
-    PiggyBank,
     ChevronLeft,
     ChevronRight,
     AlertTriangle,
@@ -93,9 +91,9 @@ export default function MyProfile() {
     const contact = user?.contact;
     const employee = contact?.employee;
     const warehouse = user?.warehouse;
-    const primaryCash = warehouse?.primary_cash;
     const warning = employee?.warning_active;
 
+    const [userName, setUserName] = useState(user?.name || "");
     const [contactEmail, setContactEmail] = useState(user?.email || "");
     const [contactPhone, setContactPhone] = useState(contact?.phone || "");
     const [contactAddress, setContactAddress] = useState(contact?.address || "");
@@ -164,7 +162,7 @@ export default function MyProfile() {
 
             const formData = new FormData();
             formData.append("photo", compressedFile, compressedFile.name);
-            formData.append("name", user.contact?.name || user?.name);
+            formData.append("name", userName);
             formData.append("phone", contactPhone);
             formData.append("telegram_chat_id", telegramChatId);
             formData.append("address", contactAddress);
@@ -196,7 +194,7 @@ export default function MyProfile() {
             setUpdatingContact(true);
 
             const formData = new FormData();
-            formData.append("name", user.contact?.name || user?.name);
+            formData.append("name", userName);
             formData.append("email", contactEmail);
             formData.append("phone", contactPhone);
             formData.append("telegram_chat_id", telegramChatId);
@@ -383,23 +381,29 @@ export default function MyProfile() {
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                                     <div>
-                                                        <span className="text-slate-400 block text-[11px]">Alamat Email</span>
-                                                        <p className="font-semibold text-slate-800 dark:text-slate-200 lowercase mt-0.5">
-                                                            {user?.email || "-"}
-                                                        </p>
-                                                        {/* <input
+                                                        <h1 className="text-slate-400 block text-[11px]">
+                                                            Alamat Email{" "}
+                                                            <span className="font-bold text-emerald-500">
+                                                                ({user.email_verified_at ? "Terverifikasi" : "Belum Terverifikasi"})
+                                                            </span>
+                                                        </h1>
+                                                        <input
                                                             type="email"
                                                             value={contactEmail}
                                                             onChange={(e) => setContactEmail(e.target.value)}
                                                             className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                                                             required
-                                                        /> */}
+                                                        />
                                                     </div>
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">Username</span>
-                                                        <p className="font-semibold text-slate-800 dark:text-slate-200 capitalize mt-0.5">
-                                                            {user?.name || "-"}
-                                                        </p>
+                                                        <input
+                                                            type="text"
+                                                            value={userName}
+                                                            onChange={(e) => setUserName(e.target.value)}
+                                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                                            required
+                                                        />
                                                     </div>
                                                     <div>
                                                         <span className="text-slate-400 block text-[11px]">No. Telepon</span>
