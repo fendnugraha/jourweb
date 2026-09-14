@@ -254,8 +254,8 @@ export default function ClosingReport({
                 source: warehouseName,
                 message: formatVoucherText(latestTransactions),
                 // forwardChatId: 851552604,
-                // forwardChatId: 986761281,
-                forwardChatId: 6935745879,
+                forwardChatId: 986761281,
+                // forwardChatId: 6935745879,
             });
 
             setCountdown(LOCK_DURATION_MS / 1000);
