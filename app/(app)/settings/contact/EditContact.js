@@ -8,6 +8,7 @@ const EditContact = ({ isModalOpen, notification, mutate, contact }) => {
     const [updateContactData, setUpdateContactData] = useState({
         name: contact?.name,
         phone: contact?.phone,
+        email: contact?.email,
         address: contact?.address,
         description: contact?.description,
     });
@@ -62,6 +63,21 @@ const EditContact = ({ isModalOpen, notification, mutate, contact }) => {
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors font-mono"
                     />
                 </div>
+            </div>
+
+            <div className="space-y-1">
+                <label htmlFor="update-contact-email" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    Email
+                </label>
+                <input
+                    id="update-contact-email"
+                    type="email"
+                    autoComplete="off"
+                    placeholder="Ex: john.doe@example.com"
+                    value={updateContactData.email || ""}
+                    onChange={(e) => setUpdateContactData({ ...updateContactData, email: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors font-mono"
+                />
             </div>
 
             {/* 3. Address Textarea */}
