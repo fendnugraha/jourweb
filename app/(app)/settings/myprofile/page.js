@@ -94,6 +94,7 @@ export default function MyProfile() {
     const warning = employee?.warning_active;
 
     const [userName, setUserName] = useState(user?.name || "");
+    const [contactName, setContactName] = useState(contact?.name || "");
     const [contactEmail, setContactEmail] = useState(user?.email || "");
     const [contactPhone, setContactPhone] = useState(contact?.phone || "");
     const [contactAddress, setContactAddress] = useState(contact?.address || "");
@@ -194,7 +195,8 @@ export default function MyProfile() {
             setUpdatingContact(true);
 
             const formData = new FormData();
-            formData.append("name", userName);
+            formData.append("name", contactName);
+            formData.append("uname", userName);
             formData.append("email", contactEmail);
             formData.append("phone", contactPhone);
             formData.append("telegram_chat_id", telegramChatId);
