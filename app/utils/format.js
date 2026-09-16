@@ -266,6 +266,12 @@ export const formatTime = (time) => {
     });
 };
 
+export const getMonthName = (monthNumber) => {
+    const date = new Date();
+    date.setMonth(monthNumber - 1);
+    return date.toLocaleString("default", { month: "long" });
+};
+
 export const formatTimeWithSecond = (time) => {
     return new Date(time).toLocaleTimeString("id-ID", {
         hour: "2-digit",
