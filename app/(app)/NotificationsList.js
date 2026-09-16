@@ -1,5 +1,5 @@
 "use client";
-import { Bell, Check, Info, AlertTriangle, CheckCircle2, X, Loader2 } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle, CheckCircle2, X, Loader2, Bike, Wallet2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 import useNotifications from "../hooks/useNotifications";
@@ -35,6 +35,10 @@ export default function NotificationList() {
             case "success":
                 return <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />;
             case "warning":
+            case "delivery_tasks":
+                return <Bike className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />;
+            case "receivable_request":
+                return <Wallet2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />;
             case "danger":
                 return <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />;
             default:
@@ -113,7 +117,7 @@ export default function NotificationList() {
                                     const isUnread = !item.read_at;
                                     const title = item.data?.title || "Notifikasi Baru";
                                     const message = item.data?.body || item.data?.message || "";
-                                    const type = item.data?.type || "info";
+                                    const type = item.data?.extra_data?.type || "info";
 
                                     return (
                                         <div
