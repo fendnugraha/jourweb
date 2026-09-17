@@ -39,6 +39,8 @@ export default function NotificationList() {
                 return <Bike className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />;
             case "receivable_request":
                 return <Wallet2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />;
+            case "receivable_request_rejected":
+                return <X className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />;
             case "danger":
                 return <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />;
             default:

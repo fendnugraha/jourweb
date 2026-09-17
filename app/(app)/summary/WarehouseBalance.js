@@ -217,11 +217,11 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                             </div>
 
                             {/* Grand Total */}
-                            <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-800/40 border border-indigo-200/60 dark:border-indigo-900/40 shadow-2xs flex flex-col justify-between">
-                                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                            <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-600 border border-indigo-200/60 dark:border-indigo-900/40 shadow-2xs flex flex-col justify-between">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-yellow-200">
                                     Grand Total Seluruh Cabang
                                 </span>
-                                <p className="text-lg font-bold font-mono text-indigo-700 dark:text-indigo-300 mt-1">{formatNumber(totals.grandTotal)}</p>
+                                <p className="text-lg font-bold font-mono text-indigo-700 dark:text-yellow-300 mt-1">{formatNumber(totals.grandTotal)}</p>
                             </div>
                         </div>
 
