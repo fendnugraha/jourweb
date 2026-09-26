@@ -304,7 +304,6 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                                         width={32}
                                                                         height={32}
                                                                         className="h-8 w-8 rounded-full object-cover shrink-0 ring-2 ring-slate-100 dark:ring-slate-800"
-                                                                        unoptimized
                                                                     />
                                                                 ) : (
                                                                     <div className="h-8 w-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 border border-indigo-100 dark:border-indigo-900/40">
