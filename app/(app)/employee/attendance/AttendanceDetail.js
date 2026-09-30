@@ -88,6 +88,22 @@ const AttendanceDetail = ({ selectedWarehouse, selectedAttendance, mutate, notif
 
     const statusInfo = getStatusBadge(attendance?.approval_status);
 
+    const handleDeleteAttendance = async (id) => {
+        if (!confirm("Apakah Anda yakin ingin menghapus data absensi ini?")) return;
+        // Implementation for deleting attendance
+        try {
+            const response = await axios.delete(`/api/attendance/${id}`);
+            notification(response.data.message);
+            mutate();
+            isModalOpen(false);
+            // Handle successful deletion (e.g., update UI, show success message)
+        } catch (error) {
+            console.error("Error deleting attendance:", error);
+            notification(error.response.data.message || "Gagal menghapus data absensi");
+            // Handle error (e.g., show error message)
+        }
+    };
+
     return (
         <div className="w-full text-slate-700 dark:text-slate-200 font-sans antialiased space-y-4">
             {/* Content Body (2 Kolom Sejajar) */}
@@ -258,37 +274,47 @@ const AttendanceDetail = ({ selectedWarehouse, selectedAttendance, mutate, notif
 
             {/* Footer Action Button */}
             {isAdmin && (
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
-                    {typeof isModalOpen === "function" && (
-                        <button
-                            type="button"
-                            onClick={() => isModalOpen(false)}
-                            disabled={isPending}
-                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                        >
-                            Batal
-                        </button>
-                    )}
-
-                    <motion.button
-                        whileHover={!isPending ? { scale: 1.01 } : {}}
-                        whileTap={!isPending ? { scale: 0.99 } : {}}
-                        onClick={handleUpdate}
+                <div className="flex justify-between">
+                    <button
+                        type="button"
+                        onClick={() => handleDeleteAttendance(attendance?.id)}
                         disabled={isPending || !formData.approval_status || !attendance?.id}
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-md shadow-indigo-600/10 flex items-center gap-2 text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        className="px-4 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 hover:bg-red-100 dark:hover:bg-red-800 transition-all cursor-pointer"
                     >
-                        {isPending ? (
-                            <>
-                                <Loader2 size={14} className="animate-spin" />
-                                <span>Menyimpan...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Save size={14} />
-                                <span>Simpan Perubahan</span>
-                            </>
+                        Hapus
+                    </button>
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                        {typeof isModalOpen === "function" && (
+                            <button
+                                type="button"
+                                onClick={() => isModalOpen(false)}
+                                disabled={isPending}
+                                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            >
+                                Batal
+                            </button>
                         )}
-                    </motion.button>
+
+                        <motion.button
+                            whileHover={!isPending ? { scale: 1.01 } : {}}
+                            whileTap={!isPending ? { scale: 0.99 } : {}}
+                            onClick={handleUpdate}
+                            disabled={isPending || !formData.approval_status || !attendance?.id}
+                            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-md shadow-indigo-600/10 flex items-center gap-2 text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            {isPending ? (
+                                <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>Menyimpan...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={14} />
+                                    <span>Simpan Perubahan</span>
+                                </>
+                            )}
+                        </motion.button>
+                    </div>
                 </div>
             )}
         </div>
