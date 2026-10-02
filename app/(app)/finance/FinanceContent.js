@@ -17,6 +17,7 @@ import CreateSaving from "./CreateSaving";
 import axios from "@/app/utils/axios";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import DateFilterDropdown from "@/app/components/DateFilterDropdown";
+import DepositWithdraw from "./DepositWithdraw";
 
 const FinanceContent = () => {
     const { today } = DateTimeNow();
@@ -289,7 +290,14 @@ const FinanceContent = () => {
                 ) : (
                     financeType === "Saving" &&
                     (isPaymentActive ? (
-                        <div className="p-4 text-center">Under Construction</div>
+                        <DepositWithdraw
+                            accounts={accounts}
+                            type={financeType}
+                            contactId={selectedContactId}
+                            notification={setNotification}
+                            fetchFinance={mutate}
+                            isModalOpen={setIsModalOpen}
+                        />
                     ) : (
                         <CreateSaving
                             accounts={accounts}
