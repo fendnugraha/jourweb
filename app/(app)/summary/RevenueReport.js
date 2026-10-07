@@ -4,7 +4,7 @@ import SubTabSwitcher from "@/app/components/SubTabSwitcher";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import useRevenueReport from "@/app/hooks/useRevenueReport";
 import { DateTimeNow, formatNumber } from "@/app/utils/format";
-import { BarChart, Building2, Calendar, Loader2, Plus, Search, TrendingUp } from "lucide-react";
+import { BarChart, Building2, Calendar, Loader2, Plus, RefreshCw, Search, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RevenueTable from "./RevenueTable";
 import DailyReport from "./DailyReport";
@@ -27,7 +27,7 @@ const RevenueReport = ({ warehouseBalance }) => {
     const [corpCashFlows, setCorpCashFlows] = useState([]);
     const [corpCashFlowsGrouped, setCorpCashFlowsGrouped] = useState([]);
 
-    const { revenue, error, isLoading, isValidating } = useRevenueReport(dateFilter.startDate, dateFilter.endDate);
+    const { revenue, error, isLoading, isValidating, mutate } = useRevenueReport(dateFilter.startDate, dateFilter.endDate);
 
     const [activeSubTab, setActiveSubTab] = useState("revenue");
     const hasData = revenue?.revenue && revenue.revenue.length > 0;
@@ -105,6 +105,18 @@ const RevenueReport = ({ warehouseBalance }) => {
                             <span>Validating...</span>
                         </div>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            mutate();
+                            fetchCorpCashFlows();
+                        }}
+                        disabled={isValidating}
+                        title="Refresh data"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isValidating ? "animate-spin" : ""}`} />
+                    </button>
                     <button
                         type="button"
                         onClick={() => {

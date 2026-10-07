@@ -5,7 +5,7 @@ import { useWarehouseBalance } from "@/app/hooks/useWarehouseBalance";
 import useWarehouseZone from "@/app/hooks/useWarehouseZone";
 import { DateTimeNow, formatNumber, TimeAgo, todayDate } from "@/app/utils/format";
 import { getStorePerformanceRating } from "@/app/utils/GetStorePerformanceRating";
-import { ArrowUpRight, Building2, Calendar, Loader2, Lock, Search, Unlock } from "lucide-react";
+import { ArrowUpRight, Building2, Calendar, Loader2, Lock, RefreshCw, Search, Unlock } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -170,6 +170,15 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                             className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-100"
                         />
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => mutate()}
+                        disabled={isValidating}
+                        title="Refresh data"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isValidating ? "animate-spin" : ""}`} />
+                    </button>
                     <Link
                         href="/summary/branch-revenue"
                         className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-all cursor-pointer"
