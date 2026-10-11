@@ -480,7 +480,7 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                         </p>
                                     ) : findSourceBalance !== null && remainingBalance !== null ? (
                                         <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
-                                            Sisa: {formatRupiah(remainingBalance)}
+                                            Sisa: - {formatRupiah(formData.amount)} {"->"} {formatRupiah(remainingBalance)}
                                         </p>
                                     ) : null}
                                 </div>
