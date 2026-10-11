@@ -1,22 +1,32 @@
+"use client";
+
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlarmClockPlus, Clock, Dot, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
+import { AlarmClockPlus, Clock, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
 import PayrollDetail from "./PayrollDetail";
 import useEmployee from "@/app/hooks/useEmployee";
 
+const getStoredProcessData = () => {
+    if (typeof window === "undefined") return [];
+    try {
+        const saved = localStorage.getItem("processData");
+        return saved ? JSON.parse(saved) : [];
+    } catch {
+        return [];
+    }
+};
+
 const CreatePayroll = ({ notification }) => {
     const { thisMonth, thisYear } = DateTimeNow();
 
-    const savedProcessData = localStorage.getItem("processData");
-    const parsedData = savedProcessData ? JSON.parse(savedProcessData) : [];
+    const [processData, setProcessData] = useState(getStoredProcessData);
 
-    // Ambil bulan & tahun dari objek pertama di localStorage
-    const storedMonth = parsedData[0]?.month;
-    const storedYear = parsedData[0]?.year;
+    const storedMonth = processData[0]?.month;
+    const storedYear = processData[0]?.year;
 
     const [searchTerm, setSearchTerm] = useState("");
     const [month, setMonth] = useState(storedMonth || thisMonth);
@@ -25,10 +35,6 @@ const CreatePayroll = ({ notification }) => {
     const [payrollType, setPayrollType] = useState("monthly");
 
     const { employees } = useEmployee(month, year);
-    const [processData, setProcessData] = useState(() => {
-        const saved = localStorage.getItem("processData");
-        return saved ? JSON.parse(saved) : [];
-    });
     const [selectedEmployee, setSelectedEmployee] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -152,24 +158,22 @@ const CreatePayroll = ({ notification }) => {
         localStorage.removeItem("processData");
     };
 
-    const handleUpdateDeductionSubmit = (e) => {
-        e.preventDefault();
-        if (!selectedEmployee) return;
+    const handleUpdateEmployeeSalary = (updatedEmployee) => {
+        if (!updatedEmployee) return;
 
         const updatedData = processData.map((item) => {
-            if (item.employee_id === selectedEmployee.employee_id) {
-                return {
-                    ...item,
-                    employee_receivable: Number(selectedEmployee.employee_receivable) || 0,
-                    installment_receivable: Number(selectedEmployee.installment_receivable) || 0,
-                };
+            if (item.employee_id === updatedEmployee.employee_id) {
+                return updatedEmployee;
             }
             return item;
         });
 
         updateLocalStorage(updatedData);
+        setSelectedEmployee(updatedEmployee);
         setIsModalOpen(false);
-        notification(`Potongan/Piutang untuk ${selectedEmployee.name} berhasil diperbarui`);
+        if (typeof notification === "function") {
+            notification(`Rincian gaji untuk ${updatedEmployee.name} berhasil diperbarui`);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -347,32 +351,20 @@ const CreatePayroll = ({ notification }) => {
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-green-500">{calculateTotalItem(employee)}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
+                                            <div className="flex items-center justify-center">
                                                 <button
                                                     type="button"
                                                     onClick={() => {
                                                         setSelectedEmployee(employee);
-                                                        setModalTitle("Edit Potongan Piutang: " + employee.name);
-                                                        setModalFormActive("update-deduction");
-                                                        setIsModalOpen(true);
-                                                    }}
-                                                    className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-                                                    title="Edit Potongan / Kasbon"
-                                                >
-                                                    <Pencil size={16} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedEmployee(employee);
-                                                        setModalTitle("Receipt Detail: " + employee.name);
+                                                        setModalTitle("Rincian & Edit Gaji: " + employee.name);
                                                         setModalFormActive("receipt-detail");
                                                         setIsModalOpen(true);
                                                     }}
-                                                    className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-                                                    title="Rincian Slip Gaji"
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-750 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-2xs cursor-pointer text-xs font-medium"
+                                                    title="Lihat Rincian & Edit Slip Gaji"
                                                 >
-                                                    <ReceiptText size={16} />
+                                                    <ReceiptText size={14} className="text-indigo-600 dark:text-indigo-400" />
+                                                    <span>Detail & Edit</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -429,7 +421,13 @@ const CreatePayroll = ({ notification }) => {
             </div>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
-                {modalFormActive === "receipt-detail" && selectedEmployee && <PayrollDetail employee={selectedEmployee} />}
+                {modalFormActive === "receipt-detail" && selectedEmployee && (
+                    <PayrollDetail
+                        employee={selectedEmployee}
+                        onSave={handleUpdateEmployeeSalary}
+                        onClose={() => setIsModalOpen(false)}
+                    />
+                )}
 
                 {modalFormActive === "summary" && (
                     <>
@@ -492,81 +490,12 @@ const CreatePayroll = ({ notification }) => {
                 )}
 
                 {modalFormActive === "bonus-deduction" && (
-                    <CreateSalaryComponents employees={employees} setProcessData={setProcessData} isModalOpen={setIsModalOpen} notification={notification} />
-                )}
-
-                {modalFormActive === "update-deduction" && selectedEmployee && (
-                    <form onSubmit={handleUpdateDeductionSubmit} className="space-y-4">
-                        <div className="space-y-1">
-                            <label htmlFor="tx-receivable" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Kasbon (Rp)
-                            </label>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
-                                <input
-                                    id="tx-receivable"
-                                    type="number"
-                                    value={selectedEmployee.employee_receivable ?? ""}
-                                    onChange={(e) =>
-                                        setSelectedEmployee((prev) => ({
-                                            ...prev,
-                                            employee_receivable: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="50000"
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
-                                />
-                            </div>
-                            {selectedEmployee.employee_receivable !== "" && !isNaN(parseFloat(selectedEmployee.employee_receivable)) && (
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                    Preview: {formatRupiah(selectedEmployee.employee_receivable)}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="space-y-1">
-                            <label htmlFor="tx-installment" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                Cicilan (Rp)
-                            </label>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
-                                <input
-                                    id="tx-installment"
-                                    type="number"
-                                    value={selectedEmployee.installment_receivable ?? ""}
-                                    onChange={(e) =>
-                                        setSelectedEmployee((prev) => ({
-                                            ...prev,
-                                            installment_receivable: e.target.value,
-                                        }))
-                                    }
-                                    placeholder="50000"
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-850 dark:bg-slate-800 dark:text-slate-100"
-                                />
-                            </div>
-                            {selectedEmployee.installment_receivable !== "" && !isNaN(parseFloat(selectedEmployee.installment_receivable)) && (
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                    Preview: {formatRupiah(selectedEmployee.installment_receivable)}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setIsModalOpen(false)}
-                                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
-                            >
-                                Simpan Perubahan
-                            </button>
-                        </div>
-                    </form>
+                    <CreateSalaryComponents
+                        employees={employees}
+                        setProcessData={setProcessData}
+                        onClose={() => setIsModalOpen(false)}
+                        notification={notification}
+                    />
                 )}
             </Modal>
         </div>

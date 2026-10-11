@@ -163,7 +163,7 @@ const CreateSaving = ({ accounts, notification, mutate, setModalTitle, onClose }
             </div>
             <div className="mt-4 space-y-2 flex flex-col max-h-50 overflow-y-auto">
                 {employees
-                    .filter((employee) => employee.status === "active")
+                    .filter((employee) => employee.status === "active" && employee.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map((employee) => (
                         <button
                             type="button"

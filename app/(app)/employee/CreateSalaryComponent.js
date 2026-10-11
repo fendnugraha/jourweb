@@ -1,14 +1,29 @@
+"use client";
+
 import { formatRupiah } from "@/app/utils/format";
-import { CheckCircle, Plus, Search } from "lucide-react";
+import { CheckCircle, Search } from "lucide-react";
 import { useState } from "react";
 
-const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notification }) => {
-    const filteredEmployees = employees.filter((employee) => employee.status === "active");
+const CreateSalaryComponents = ({ employees, setProcessData, onClose, isModalOpen, notification }) => {
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const handleClose = () => {
+        if (typeof onClose === "function") onClose();
+        else if (typeof isModalOpen === "function") isModalOpen(false);
+    };
+
+    const filteredEmployees = Array.isArray(employees)
+        ? employees.filter((employee) => {
+              const isActive = employee?.status === "active";
+              const matchesSearch = employee?.contact?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false;
+              return isActive && matchesSearch;
+          })
+        : [];
+
     const [componentName, setComponentName] = useState("");
     const [componentAmount, setComponentAmount] = useState("");
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [type, setType] = useState("bonuses");
-    const [searchTerm, setSearchTerm] = useState("");
 
     const handleToggleEmpSelect = (employeeId) => {
         setSelectedEmployeeIds((prev) => {
@@ -23,16 +38,36 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
     const addComponent = (e) => {
         e.preventDefault();
         if (!componentName || !componentAmount) return;
+        if (selectedEmployeeIds.length === 0) {
+            if (typeof notification === "function") {
+                notification("Pilih setidaknya satu karyawan");
+            }
+            return;
+        }
 
+        const amountNum = Number(componentAmount) || 0;
         const component = {
-            name: componentName,
-            amount: Number(componentAmount),
+            name: componentName.trim(),
+            amount: amountNum,
         };
 
         setProcessData((prev) => {
-            const updated = prev.map((item) => (selectedEmployeeIds.includes(item.employee_id) ? { ...item, [type]: [...item[type], component] } : item));
+            const updated = prev.map((item) => {
+                if (selectedEmployeeIds.includes(item.employee_id)) {
+                    const currentList = Array.isArray(item[type]) ? item[type] : [];
+                    const isSaving = type === "deductions" && component.name === "Simpanan Wajib";
+                    return {
+                        ...item,
+                        [type]: [...currentList, component],
+                        ...(isSaving ? { total_savings: (item.total_savings || 0) + amountNum } : {}),
+                    };
+                }
+                return item;
+            });
 
-            localStorage.setItem("processData", JSON.stringify(updated));
+            if (typeof window !== "undefined") {
+                localStorage.setItem("processData", JSON.stringify(updated));
+            }
             return updated;
         });
 
@@ -41,7 +76,11 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
         setComponentAmount("");
         setSelectedEmployeeIds([]);
 
-        notification("Component added successfully!");
+        if (typeof notification === "function") {
+            notification(`Komponen ${type === "bonuses" ? "Tunjangan/Bonus" : "Potongan"} berhasil ditambahkan!`);
+        }
+
+        handleClose();
     };
     return (
         <form onSubmit={addComponent}>
@@ -163,8 +202,8 @@ const CreateSalaryComponents = ({ employees, setProcessData, isModalOpen, notifi
                 <div className="flex justify-end gap-2 pt-2">
                     <button
                         type="button"
-                        onClick={() => isModalOpen(false)}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        onClick={handleClose}
+                        className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>
