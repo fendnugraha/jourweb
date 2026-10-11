@@ -5,12 +5,12 @@ import { useAuth } from "@/app/utils/auth";
 import axios from "@/app/utils/axios";
 import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, ArrowLeftRight, Landmark, Warehouse } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowDown, ArrowLeftRight, Building2, CheckCircle2, Landmark, Warehouse } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400";
+const labelClass = "text-xs font-semibold text-slate-600 dark:text-slate-300";
 const inputClass =
-    "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600";
+    "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800/60";
 
 const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBalance, isModalOpen, notification, warehouses = [], userRole }) => {
     const { user } = useAuth();
@@ -19,10 +19,9 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
     const { today } = DateTimeNow();
     const [formError, setFormError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [isSwapping, setIsSwapping] = useState(false); // State untuk animasi spin
-    const [isReversed, setIsReversed] = useState(false); // State pelacak status reverse/swap
+    const [isSwapping, setIsSwapping] = useState(false);
+    const [isReversed, setIsReversed] = useState(false);
 
-    // Cek apakah role diizinkan swap
     const canSwap = ["Administrator", "Super Admin"].includes(userRole);
 
     const [formData, setFormData] = useState({
@@ -55,18 +54,17 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
 
     const handleTypeChange = (val) => {
         setNewType(val);
-        setIsReversed(false); // Reset status reverse saat ganti tab
-        setFormData((prev) => ({ ...prev, debt_id: "", cred_id: "" }));
+        setIsReversed(false);
+        setFormData((prev) => ({ ...prev, debt_id: "", cred_id: "", admin_fee: 0 }));
         const defaultDestId = ["Administrator", "Super Admin"].includes(userRole) ? null : 1;
         setSelectedDestinationWarehouseId(defaultDestId);
     };
 
     const patch = (fields) => setFormData((prev) => ({ ...prev, ...fields }));
 
-    // Function Swap dengan Animasi & Pembalikan Opsi Filter
     const handleSwapAccounts = () => {
         setIsSwapping(true);
-        setIsReversed((prev) => !prev); // Toggle status reverse
+        setIsReversed((prev) => !prev);
 
         setFormData((prev) => ({
             ...prev,
@@ -74,15 +72,15 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
             debt_id: prev.cred_id,
         }));
 
-        setTimeout(() => setIsSwapping(false), 300); // Durasi animasi putar
+        setTimeout(() => setIsSwapping(false), 300);
     };
 
-    // Filter Creditor (Rekening Asal) - Disesuaikan dengan isReversed
+    // Filter Creditor (Rekening Asal)
     const credOptions = useMemo(() => {
         const sourceWarehouseId = isReversed ? (newType === "self" ? warehouseId : effectiveDestinationId) : warehouseId;
 
         return [
-            { value: "", label: "Pilih Akun" },
+            { value: "", label: "Pilih Rekening Asal" },
             ...accounts
                 .filter((a) => {
                     const matchWarehouse = Number(a.warehouse_id) === Number(sourceWarehouseId);
@@ -90,36 +88,110 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                     const notSameAsDebt = newType === "self" ? Number(a.id) !== Number(formData.debt_id) : true;
                     return matchWarehouse && matchRole && notSameAsDebt;
                 })
-                .map((a) => ({
-                    value: a.id,
-                    label: a.group + (isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code})` : ""),
-                })),
+                .map((a) => {
+                    const branchSuffix = isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code || ""})` : "";
+                    const nameLabel = a.name && a.name !== a.group ? `${a.group} - ${a.name}` : a.group;
+                    return {
+                        value: a.id,
+                        label: `${nameLabel}${branchSuffix}`,
+                    };
+                }),
         ];
     }, [accounts, warehouseId, effectiveDestinationId, userRole, formData.debt_id, isReversed, newType]);
 
-    // Filter Debtor (Rekening Tujuan) - Disesuaikan dengan isReversed
+    // Filter Debtor (Rekening Tujuan)
     const debtOptions = useMemo(() => {
         const targetWarehouseId = isReversed ? warehouseId : newType === "self" ? warehouseId : effectiveDestinationId;
 
         return [
-            { value: "", label: "Pilih Akun" },
+            { value: "", label: "Pilih Rekening Tujuan" },
             ...accounts
                 .filter((a) => {
                     const matchWarehouse = Number(a.warehouse_id) === Number(targetWarehouseId);
                     const notSameAsCred = newType === "self" ? Number(a.id) !== Number(formData.cred_id) : true;
                     return matchWarehouse && notSameAsCred;
                 })
-                .map((a) => ({
-                    value: a.id,
-                    label: a.group + (!isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code})` : ""),
-                })),
+                .map((a) => {
+                    const branchSuffix = !isReversed && newType !== "self" ? ` (${a.warehouse?.code === "HQT" ? "Pusat" : a.warehouse?.code || ""})` : "";
+                    const nameLabel = a.name && a.name !== a.group ? `${a.group} - ${a.name}` : a.group;
+                    return {
+                        value: a.id,
+                        label: `${nameLabel}${branchSuffix}`,
+                    };
+                }),
         ];
     }, [accounts, warehouseId, effectiveDestinationId, formData.cred_id, isReversed, newType]);
 
     const warehouseOptions = [{ value: "", label: "Pilih Cabang" }, ...availableWarehouses.map((w) => ({ value: w.id, label: w.name }))];
 
+    const selectedCredAccount = useMemo(() => {
+        if (!formData.cred_id) return null;
+        return accounts.find((a) => Number(a.id) === Number(formData.cred_id));
+    }, [accounts, formData.cred_id]);
+
+    const selectedDebtAccount = useMemo(() => {
+        if (!formData.debt_id) return null;
+        return accounts.find((a) => Number(a.id) === Number(formData.debt_id));
+    }, [accounts, formData.debt_id]);
+
+    const hasBothAccounts = Boolean(selectedCredAccount && selectedDebtAccount);
+    const isGroupMismatch = Boolean(
+        hasBothAccounts &&
+        selectedCredAccount?.group &&
+        selectedDebtAccount?.group &&
+        selectedCredAccount.group.trim().toUpperCase() !== selectedDebtAccount.group.trim().toUpperCase(),
+    );
+    const isGroupMatched = Boolean(
+        hasBothAccounts &&
+        selectedCredAccount?.group &&
+        selectedDebtAccount?.group &&
+        selectedCredAccount.group.trim().toUpperCase() === selectedDebtAccount.group.trim().toUpperCase(),
+    );
+
+    // Cari akun dengan grup yang sama di cabang tujuan untuk opsi quick match
+    const matchingDestAccountWithSameGroup = useMemo(() => {
+        if (!selectedCredAccount?.group) return null;
+        const targetWId = isReversed ? warehouseId : newType === "self" ? warehouseId : effectiveDestinationId;
+        return accounts.find(
+            (a) =>
+                Number(a.warehouse_id) === Number(targetWId) &&
+                a.group?.trim().toUpperCase() === selectedCredAccount.group?.trim().toUpperCase() &&
+                Number(a.id) !== Number(formData.cred_id),
+        );
+    }, [selectedCredAccount, accounts, isReversed, warehouseId, newType, effectiveDestinationId, formData.cred_id]);
+
+    const sourceWarehouseInfo = useMemo(() => {
+        const srcWId = isReversed ? (newType === "self" ? warehouseId : effectiveDestinationId) : warehouseId;
+        return warehouses.find((w) => Number(w.id) === Number(srcWId));
+    }, [warehouses, isReversed, newType, warehouseId, effectiveDestinationId]);
+
+    const destWarehouseInfo = useMemo(() => {
+        const targetWId = isReversed ? warehouseId : newType === "self" ? warehouseId : effectiveDestinationId;
+        return warehouses.find((w) => Number(w.id) === Number(targetWId));
+    }, [warehouses, isReversed, newType, warehouseId, effectiveDestinationId]);
+
+    const findSourceBalance = useMemo(() => {
+        if (!formData.cred_id || !accountBalance?.data?.chartOfAccounts) return null;
+        const acc = accountBalance.data.chartOfAccounts.find((a) => Number(a.id) === Number(formData.cred_id));
+        return acc ? acc.balance : null;
+    }, [accountBalance, formData.cred_id]);
+
+    const isInsufficientBalance = Boolean(
+        findSourceBalance !== null &&
+        findSourceBalance !== undefined &&
+        formData.amount &&
+        !isNaN(parseFloat(formData.amount)) &&
+        parseFloat(formData.amount) > parseFloat(findSourceBalance),
+    );
+
+    const remainingBalance = useMemo(() => {
+        if (findSourceBalance === null || findSourceBalance === undefined || !formData.amount) return null;
+        const numAmount = parseFloat(formData.amount);
+        if (isNaN(numAmount)) return null;
+        return parseFloat(findSourceBalance) - numAmount;
+    }, [findSourceBalance, formData.amount]);
+
     useEffect(() => {
-        // 1. Pengecekan formData.debt_id DIHAPUS dari kondisi pembatas ini
         if (newType !== "other" || !formData.cred_id || !accounts?.length || !effectiveDestinationId) return;
 
         const selectedCred = accounts.find((a) => Number(a.id) === Number(formData.cred_id));
@@ -128,10 +200,7 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
         const targetWId = isReversed ? warehouseId : effectiveDestinationId;
         const matchingDebt = accounts.find((a) => a.group === selectedCred.group && Number(a.warehouse_id) === Number(targetWId));
 
-        // 2. Set debt_id ke akun yang cocok, atau reset jika tidak ditemukan pasangan yang cocok
         patch({ debt_id: matchingDebt ? matchingDebt.id : "" });
-
-        // 3. formData.debt_id JUGA DIHAPUS dari dependency array di bawah ini
     }, [formData.cred_id, accounts, effectiveDestinationId, warehouseId, newType, isReversed]);
 
     const handleSubmit = async (e) => {
@@ -169,10 +238,9 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
             setLoading(false);
         }
     };
-    const findSourceBalance = accountBalance?.data?.chartOfAccounts?.find((acc) => Number(acc.id) === Number(formData.cred_id))?.balance;
 
     return (
-        <>
+        <div className="w-full text-xs">
             <TabSwitcher
                 buttonList={[
                     { icon: Warehouse, value: "self", label: "Akun Sendiri" },
@@ -181,15 +249,15 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                 activeTab={newType}
                 setActiveTab={handleTypeChange}
             >
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Alert Error dengan Motion */}
+                <form onSubmit={handleSubmit} className="space-y-3 pt-1">
+                    {/* Alert Error */}
                     <AnimatePresence>
                         {formError && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0, y: -6 }}
-                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/30 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40 overflow-hidden"
+                                className="p-2.5 bg-rose-50 text-rose-700 text-xs rounded-xl flex items-center gap-2 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-900/40 overflow-hidden"
                             >
                                 <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
                                 <span>{formError}</span>
@@ -197,90 +265,194 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                         )}
                     </AnimatePresence>
 
-                    <div className="space-y-1" hidden={!["Administrator", "Super Admin"].includes(userRole)}>
-                        <label htmlFor="tx-date" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                            Tanggal Transaksi
-                        </label>
+                    {/* Section 1: Tanggal & Cabang */}
+                    {["Administrator", "Super Admin"].includes(userRole) ? (
+                        <div className={`grid gap-2.5 ${newType === "other" ? "grid-cols-2" : "grid-cols-1"}`}>
+                            <div className="space-y-1">
+                                <label htmlFor="tx-date" className={labelClass}>
+                                    Tanggal Transaksi
+                                </label>
+                                <input
+                                    id="tx-date"
+                                    type="datetime-local"
+                                    required
+                                    value={formData.date_issued}
+                                    onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
+                                    className={inputClass}
+                                />
+                            </div>
 
-                        <input
-                            id="tx-date"
-                            type="datetime-local"
-                            required
-                            value={formData.date_issued}
-                            onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
-                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
-                        />
-                    </div>
-
-                    {/* Destination / Source Warehouse Dropdown Header */}
-                    {["Administrator", "Super Admin"].includes(userRole) && newType === "other" && (
-                        <div className="space-y-1">
-                            <label htmlFor="tx-destination-warehouse" className={labelClass}>
-                                {isReversed ? "Cabang Asal Mutasi" : "Cabang Tujuan Mutasi"}
-                            </label>
-                            <Dropdown
-                                id="tx-destination-warehouse"
-                                label="Warehouse Selector"
-                                options={warehouseOptions}
-                                selectedValue={selectedDestinationWarehouseId}
-                                onChange={(val) => {
-                                    setSelectedDestinationWarehouseId(val);
-                                    setFormData({ ...formData, date_issued: today });
-                                }}
-                            />
+                            {newType === "other" && (
+                                <div className="space-y-1 min-w-0">
+                                    <label htmlFor="tx-destination-warehouse" className={labelClass}>
+                                        {isReversed ? "Cabang Asal" : "Cabang Tujuan"}
+                                    </label>
+                                    <Dropdown
+                                        id="tx-destination-warehouse"
+                                        label="Warehouse Selector"
+                                        options={warehouseOptions}
+                                        selectedValue={selectedDestinationWarehouseId}
+                                        onChange={(val) => {
+                                            setSelectedDestinationWarehouseId(val);
+                                            setFormData({ ...formData, date_issued: today });
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
+                    ) : (
+                        newType === "other" && (
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 text-xs text-slate-600 dark:text-slate-300">
+                                <Building2 className="w-4 h-4 text-indigo-500 shrink-0" />
+                                <span>
+                                    Tujuan Mutasi: <strong>Kantor Pusat (HQT)</strong>
+                                </span>
+                            </div>
+                        )
                     )}
 
-                    {/* Source & Destination Accounts */}
-                    <div className={`grid grid-cols-1 ${canSwap ? "sm:grid-cols-[1fr_auto_1fr]" : "sm:grid-cols-2"} items-end gap-2`}>
+                    {/* Section 2: Card Rekening Asal & Tujuan */}
+                    <div className="p-3 rounded-2xl border border-slate-200/90 dark:border-slate-700/70 bg-slate-50/60 dark:bg-slate-800/30 space-y-2.5">
+                        {/* Rekening Asal (Dari) */}
                         <div className="space-y-1">
-                            <label htmlFor="tx-cred-account" className={labelClass}>
-                                Rekening Asal (Dari)
-                            </label>
+                            <div className="flex items-center justify-between text-xs">
+                                <label htmlFor="tx-cred-account" className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 inline-block shrink-0" />
+                                    <span>Asal (Dari)</span>
+                                </label>
+                                <div className="flex items-center gap-1.5 text-[11px]">
+                                    <span className="text-slate-400 dark:text-slate-500">
+                                        Cabang:{" "}
+                                        <strong className="text-slate-700 dark:text-slate-300">
+                                            {sourceWarehouseInfo?.name || sourceWarehouseInfo?.code || "Asal"}
+                                        </strong>
+                                    </span>
+                                    {findSourceBalance !== null && findSourceBalance !== undefined && (
+                                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+                                            {formatRupiah(findSourceBalance)}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                             <Dropdown
                                 id="tx-cred-account"
-                                label="Rekening Asal"
+                                label="Asal"
                                 options={credOptions}
                                 selectedValue={formData.cred_id}
                                 onChange={(val) => patch({ cred_id: val })}
+                                disabled={selectedDestinationWarehouseId === null && newType !== "self"}
                             />
                         </div>
 
-                        {/* Tombol Swap / Tukar */}
-                        {canSwap && (
-                            <div className="flex justify-center pb-0.5">
-                                <motion.button
-                                    whileHover={{ scale: 1.08 }}
-                                    whileTap={{ scale: 0.92 }}
-                                    type="button"
-                                    onClick={handleSwapAccounts}
-                                    title="Tukar Rekening Asal & Tujuan"
-                                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:border-indigo-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer shadow-xs"
-                                >
-                                    <motion.div animate={{ rotate: isSwapping ? 180 : 0 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
-                                        <ArrowLeftRight className="w-4 h-4" />
-                                    </motion.div>
-                                </motion.button>
+                        {/* Divider & Tombol Swap di Tengah */}
+                        <div className="relative flex items-center justify-center my-0.5">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-slate-200 dark:border-slate-700/60" />
                             </div>
-                        )}
-
-                        <div className="space-y-1">
-                            <label htmlFor="tx-debt-account" className={labelClass}>
-                                Ke {newType === "self" ? "Akun" : isReversed ? "Cabang Saat Ini" : "Cabang Lain / Pusat"}
-                            </label>
-                            <Dropdown
-                                id="tx-debt-account"
-                                label="Rekening Tujuan"
-                                options={debtOptions}
-                                selectedValue={formData.debt_id}
-                                onChange={(val) => patch({ debt_id: val })}
-                            />
+                            <div className="relative flex justify-center">
+                                {canSwap ? (
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        type="button"
+                                        onClick={handleSwapAccounts}
+                                        title="Tukar Asal & Tujuan"
+                                        className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 shadow-2xs text-[11px] font-medium cursor-pointer transition-colors"
+                                    >
+                                        <motion.div animate={{ rotate: isSwapping ? 180 : 0 }} transition={{ duration: 0.25 }}>
+                                            <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-500" />
+                                        </motion.div>
+                                        <span>Tukar Rekening</span>
+                                    </motion.button>
+                                ) : (
+                                    <div className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
+                                        <ArrowDown className="w-3.5 h-3.5" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
+                        {/* Tujuan (Ke) */}
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                                <label htmlFor="tx-debt-account" className="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+                                    <span>Tujuan ({newType === "self" ? "Akun Sendiri" : isReversed ? "Cabang Saat Ini" : "Cabang / Pusat"})</span>
+                                </label>
+                                <div className="flex items-center gap-1.5 text-[11px]">
+                                    <span className="text-slate-400 dark:text-slate-500">
+                                        Cabang:{" "}
+                                        <strong className="text-slate-700 dark:text-slate-300">
+                                            {destWarehouseInfo?.name || destWarehouseInfo?.code || "Tujuan"}
+                                        </strong>
+                                    </span>
+                                </div>
+                            </div>
+                            <div className={isGroupMismatch ? "ring-2 ring-amber-400/80 rounded-xl" : ""}>
+                                <Dropdown
+                                    id="tx-debt-account"
+                                    label="Rekening Tujuan"
+                                    options={debtOptions}
+                                    selectedValue={formData.debt_id}
+                                    onChange={(val) => patch({ debt_id: val })}
+                                    disabled={!formData.cred_id}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Indikator Peringatan Beda Grup */}
+                        <AnimatePresence>
+                            {isGroupMismatch && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="p-2.5 rounded-xl border border-amber-300 dark:border-amber-700/70 bg-amber-50/90 dark:bg-amber-950/40 text-xs text-amber-900 dark:text-amber-200 overflow-hidden"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                                            <span className="truncate">
+                                                <strong>Transfer Antar Bank!</strong> ({selectedCredAccount?.group} ➔{" "}
+                                                <strong>{selectedDebtAccount?.group}</strong>)
+                                            </span>
+                                        </div>
+                                        {matchingDestAccountWithSameGroup && (
+                                            <button
+                                                type="button"
+                                                onClick={() => patch({ debt_id: matchingDestAccountWithSameGroup.id })}
+                                                className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-200/90 hover:bg-amber-300 dark:bg-amber-900 dark:hover:bg-amber-800 font-semibold text-[11px] text-amber-900 dark:text-amber-100 cursor-pointer transition-colors shadow-2xs"
+                                            >
+                                                Samakan ke {matchingDestAccountWithSameGroup.group}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p className="text-[11px] text-amber-700 dark:text-amber-300/80 mt-1">
+                                        Pastikan mutasi antar-bank atau kas ke bank ini sudah sesuai.
+                                    </p>
+                                </motion.div>
+                            )}
+
+                            {isGroupMatched && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="px-2.5 py-1.5 rounded-xl border border-emerald-200/70 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 overflow-hidden"
+                                >
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                    <span>
+                                        Transfer ke sesama <strong>{selectedCredAccount.group}</strong>
+                                    </span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
-                    {/* Amount */}
-                    <div className="grid sm:grid-cols-3 gap-3">
-                        <div className="space-y-1 sm:col-span-2">
+                    {/* Section 3: Nominal & Admin Bank */}
+                    <div className="grid grid-cols-[1fr_130px] gap-2.5">
+                        {/* Jumlah */}
+                        <div className="space-y-1">
                             <label htmlFor="tx-amount" className={labelClass}>
                                 Jumlah (Rp IDR)
                             </label>
@@ -293,18 +465,29 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                     value={formData.amount}
                                     onChange={(e) => patch({ amount: e.target.value })}
                                     placeholder="50000"
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800/60"
                                     disabled={!formData.cred_id || !formData.debt_id}
                                 />
                             </div>
+
+                            {/* Info Sisa Saldo Real-Time */}
                             {formData.amount && !isNaN(parseFloat(formData.amount)) && (
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                    Preview: {formatNumber(findSourceBalance)} - {formatNumber(formData.amount)} ={" "}
-                                    {formatRupiah(findSourceBalance - formData.amount)}
-                                </p>
+                                <div className="pt-0.5">
+                                    {isInsufficientBalance ? (
+                                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                                            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Melebihi saldo ({formatRupiah(findSourceBalance)})</span>
+                                        </p>
+                                    ) : findSourceBalance !== null && remainingBalance !== null ? (
+                                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+                                            Sisa: {formatRupiah(remainingBalance)}
+                                        </p>
+                                    ) : null}
+                                </div>
                             )}
                         </div>
 
+                        {/* Admin Bank */}
                         <div className="space-y-1">
                             <label htmlFor="tx-admin-fee" className={labelClass}>
                                 Admin Bank
@@ -317,20 +500,35 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                     required
                                     value={formData.admin_fee}
                                     onChange={(e) => patch({ admin_fee: e.target.value })}
-                                    placeholder="2500"
-                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-200 dark:disabled:bg-slate-600"
+                                    placeholder="0"
+                                    className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-800 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800/60"
                                     disabled={!formData.amount}
                                 />
                             </div>
-                            {formData.admin_fee !== 0 && !isNaN(parseFloat(formData.admin_fee)) && (
-                                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1 font-semibold">
-                                    Preview: Rp {parseFloat(formData.admin_fee).toLocaleString("id-ID")}
-                                </p>
+
+                            {/* Quick Buttons Fee saat Beda Grup */}
+                            {isGroupMismatch && (
+                                <div className="flex items-center gap-1 pt-1">
+                                    {[0, 2500, 6500].map((fee) => (
+                                        <button
+                                            key={fee}
+                                            type="button"
+                                            onClick={() => patch({ admin_fee: fee })}
+                                            className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-colors cursor-pointer ${
+                                                Number(formData.admin_fee) === fee
+                                                    ? "bg-indigo-600 text-white border-indigo-600"
+                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+                                            }`}
+                                        >
+                                            {fee === 0 ? "0" : fee === 2500 ? "2.5k" : "6.5k"}
+                                        </button>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Description */}
+                    {/* Section 4: Keterangan (Memo) */}
                     <div className="space-y-1">
                         <label htmlFor="tx-desc" className={labelClass}>
                             Keterangan / Memo
@@ -340,35 +538,42 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                             type="text"
                             value={formData.description}
                             onChange={(e) => patch({ description: e.target.value })}
-                            placeholder="e.g. Kelebihan Saldo"
+                            placeholder="Contoh: Kelebihan Saldo, Setor Kasir"
                             className={inputClass}
                         />
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-end gap-2 pt-2">
+                    {/* Section 5: Footer Actions */}
+                    <div className="flex justify-end items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             type="button"
                             onClick={() => typeof isModalOpen === "function" && isModalOpen(false)}
-                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+                            className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer shadow-2xs transition-colors"
                         >
                             Batal
                         </motion.button>
                         <motion.button
-                            whileHover={{ scale: loading ? 1 : 1.02 }}
-                            whileTap={{ scale: loading ? 1 : 0.98 }}
+                            whileHover={{ scale: loading || !formData.cred_id || !formData.debt_id || !formData.amount ? 1 : 1.02 }}
+                            whileTap={{ scale: loading || !formData.cred_id || !formData.debt_id || !formData.amount ? 1 : 0.98 }}
                             type="submit"
-                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60 cursor-pointer"
-                            disabled={loading}
+                            className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs flex items-center gap-1.5"
+                            disabled={loading || !formData.cred_id || !formData.debt_id || !formData.amount}
                         >
-                            {loading ? "Menyimpan data..." : "Tambah Mutasi"}
+                            {loading ? (
+                                <>
+                                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Menyimpan...</span>
+                                </>
+                            ) : (
+                                "Simpan Mutasi"
+                            )}
                         </motion.button>
                     </div>
                 </form>
             </TabSwitcher>
-        </>
+        </div>
     );
 };
 
