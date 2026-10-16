@@ -268,7 +268,7 @@ export default function HeaderProfile() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={modalTab === "history" ? "Riwayat Kasbon & Cicilan" : "Pengajuan Kasbon & Cicilan"}
-                maxWidth="max-w-md"
+                maxWidth="max-w-xl"
             >
                 <EmpReceivableRequest
                     key={`${modalTab}-${hasPendingRequest}`}

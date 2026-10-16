@@ -35,6 +35,9 @@ export default function EmpReceivableRequest({
         type: "EmployeeReceivable R",
     });
 
+    // State tenor cicilan (default 3 bulan)
+    const [tenor, setTenor] = useState(3);
+
     const empReceivable = parseFloat(user?.contact?.employee_receivables_sum?.total || 0);
     const instReceivable = parseFloat(user?.contact?.installment_receivables_sum?.total || 0);
     const totalReceivables = empReceivable + instReceivable;
@@ -80,6 +83,8 @@ export default function EmpReceivableRequest({
 
         setLoading(true);
 
+        const isKasbon = formData.type === "EmployeeReceivable R";
+
         const payload = {
             date_issued: today,
             contact_id: effectiveContactId,
@@ -90,14 +95,15 @@ export default function EmpReceivableRequest({
             debt_code: 8,
             cred_code: 1,
             type: formData.type,
+            tenor: !isKasbon ? tenor : 1, // Kirim tenor jika cicilan
         };
 
         try {
             const response = await axios.post("/api/finance", payload);
             setSubmittedData({
                 amount: numericAmount,
-                type: formData.type === "EmployeeReceivable R" ? "Kasbon" : "Cicilan",
-                message: response.data?.message || "Pengajuan kasbon berhasil dikirim.",
+                type: isKasbon ? "Kasbon" : `Cicilan (${tenor}x)`,
+                message: response.data?.message || "Pengajuan berhasil dikirim.",
             });
             setIsSuccess(true);
             if (mutateAuth) mutateAuth();
@@ -248,7 +254,7 @@ export default function EmpReceivableRequest({
                                 </button>
                             </div>
                         ) : (
-                            /* FORM PENGAJUAN NORMAL */
+                            /* FORM PENGAJUAN NORMAL (LAYOUT 2 KOLOM) */
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* 1. Context Pengaju */}
                                 <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
@@ -266,201 +272,194 @@ export default function EmpReceivableRequest({
                                     </div>
                                 </div>
 
-                                {/* 2. Toggle Tipe */}
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Skema Pengajuan</label>
-                                    <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1.5 dark:bg-slate-800/80">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFormData((prev) => ({ ...prev, type: "EmployeeReceivable R" }));
-                                                if (formError) setFormError("");
-                                            }}
-                                            className={`relative flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                                                isKasbon
-                                                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                                                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                            }`}
-                                        >
-                                            <Wallet2 className={`h-4 w-4 shrink-0 ${isKasbon ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
-                                            <div className="text-left">
-                                                <div className="leading-tight font-bold">Kasbon</div>
-                                                <div className="text-[9px] opacity-70 font-normal">Potong Gaji Bulan Ini</div>
-                                            </div>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFormData((prev) => ({ ...prev, type: "InstallmentReceivable R" }));
-                                                if (formError) setFormError("");
-                                            }}
-                                            className={`relative flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-xs font-semibold transition-colors cursor-pointer ${
-                                                !isKasbon
-                                                    ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
-                                                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                                            }`}
-                                        >
-                                            <Receipt className={`h-4 w-4 shrink-0 ${!isKasbon ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`} />
-                                            <div className="text-left">
-                                                <div className="leading-tight font-bold">Cicilan</div>
-                                                <div className="text-[9px] opacity-70 font-normal">Pembayaran Bertahap</div>
-                                            </div>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* 3. Input Nominal */}
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label htmlFor="req-amount" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                            Nominal (IDR) <span className="text-rose-500">*</span>
-                                        </label>
-                                        {formData.amount && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData((prev) => ({ ...prev, amount: "" }))}
-                                                className="text-[10px] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
-                                            >
-                                                Reset
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="relative">
-                                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-mono text-sm font-bold">
-                                            Rp
-                                        </div>
-                                        <input
-                                            id="req-amount"
-                                            type="number"
-                                            min="1000"
-                                            step="1000"
-                                            required
-                                            value={formData.amount}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, amount: e.target.value });
-                                                if (formError) setFormError("");
-                                            }}
-                                            placeholder="0"
-                                            className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-11 pr-9 text-base font-bold font-mono text-slate-800 placeholder-slate-300 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-600 transition-colors"
-                                        />
-                                        {formData.amount && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData((prev) => ({ ...prev, amount: "" }))}
-                                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    {formData.amount && !isNaN(parseFloat(formData.amount)) && (
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="flex items-center gap-1.5 px-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 font-mono"
-                                        >
-                                            <span>Terbaca:</span>
-                                            <span>{formatRupiah(formData.amount)}</span>
-                                        </motion.div>
-                                    )}
-                                    <div className="pt-1">
-                                        <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mb-1.5">Pilihan Cepat:</p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {QUICK_AMOUNTS.map((val) => {
-                                                const isSelected = String(val) === String(formData.amount);
-                                                const label = val >= 1000000 ? `${val / 1000000}jt` : `${val / 1000}rb`;
-                                                return (
-                                                    <button
-                                                        key={val}
-                                                        type="button"
-                                                        onClick={() => handleSelectAmount(val)}
-                                                        className={`rounded-lg px-2.5 py-1 text-[11px] font-mono font-medium transition-colors cursor-pointer ${
-                                                            isSelected
-                                                                ? "bg-indigo-600 text-white shadow-xs dark:bg-indigo-500"
-                                                                : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750"
-                                                        }`}
-                                                    >
-                                                        Rp {label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 4. Deskripsi */}
-                                <div className="space-y-1.5">
-                                    <label htmlFor="req-desc" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        Alasan / Keperluan <span className="text-rose-500">*</span>
-                                    </label>
-                                    <textarea
-                                        id="req-desc"
-                                        rows={2}
-                                        required
-                                        placeholder="Contoh: Kebutuhan medis mendadak, biaya darurat keluarga..."
-                                        value={formData.description}
-                                        onChange={(e) => {
-                                            setFormData({ ...formData, description: e.target.value });
-                                            if (formError) setFormError("");
-                                        }}
-                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 transition-colors resize-none"
-                                    />
-                                    <div className="flex flex-wrap items-center gap-1">
-                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 mr-0.5">Saran:</span>
-                                        {QUICK_REASONS.map((reason) => (
-                                            <button
-                                                key={reason}
-                                                type="button"
-                                                onClick={() => handleQuickReason(reason)}
-                                                className="rounded-md border border-slate-200/80 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-600 hover:bg-slate-100 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer transition-colors"
-                                            >
-                                                + {reason}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* 5. Catatan */}
-                                <div className="flex items-start gap-2 rounded-xl bg-amber-50/70 p-2.5 text-[11px] text-amber-800 dark:bg-amber-950/20 dark:text-amber-300/90 border border-amber-200/60 dark:border-amber-900/40">
-                                    <Info className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-                                    <p className="leading-tight">
-                                        Pengajuan akan diteruskan ke manajemen untuk diverifikasi. Pencairan dilakukan setelah pengajuan disetujui.
-                                    </p>
-                                </div>
-
-                                {/* 6. Error */}
-                                <AnimatePresence>
-                                    {formError && (
-                                        <motion.div
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: "auto" }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
-                                                <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
-                                                <span className="flex-1 leading-snug">{formError}</span>
+                                {/* GRID 2 KOLOM */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Kolom Kiri: Skema, Tenor, & Nominal */}
+                                    <div className="space-y-3.5">
+                                        {/* Toggle Tipe */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Skema</label>
+                                            <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-slate-100 p-1.5 dark:bg-slate-800/80">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setFormError("")}
-                                                    className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 cursor-pointer"
+                                                    onClick={() => {
+                                                        setFormData((prev) => ({ ...prev, type: "EmployeeReceivable R" }));
+                                                        if (formError) setFormError("");
+                                                    }}
+                                                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-[11px] font-semibold transition-colors cursor-pointer ${
+                                                        isKasbon
+                                                            ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
+                                                            : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
+                                                    }`}
                                                 >
-                                                    <X className="h-3.5 w-3.5" />
+                                                    <Wallet2 className={`h-3.5 w-3.5 shrink-0 ${isKasbon ? "text-indigo-600" : "text-slate-400"}`} />
+                                                    <span>Kasbon</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData((prev) => ({ ...prev, type: "InstallmentReceivable R" }));
+                                                        if (formError) setFormError("");
+                                                    }}
+                                                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-[11px] font-semibold transition-colors cursor-pointer ${
+                                                        !isKasbon
+                                                            ? "bg-white text-indigo-600 shadow-xs dark:bg-slate-900 dark:text-indigo-400"
+                                                            : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
+                                                    }`}
+                                                >
+                                                    <Receipt className={`h-3.5 w-3.5 shrink-0 ${!isKasbon ? "text-indigo-600" : "text-slate-400"}`} />
+                                                    <span>Cicilan</span>
                                                 </button>
                                             </div>
-                                        </motion.div>
+                                        </div>
+
+                                        {/* Opsi Tenor Cicilan (Muncul jika Cicilan) */}
+                                        <AnimatePresence>
+                                            {!isKasbon && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="space-y-1.5 overflow-hidden"
+                                                >
+                                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Tenor Cicilan</label>
+                                                    <div className="grid grid-cols-3 gap-1.5">
+                                                        {[2, 3, 6].map((t) => {
+                                                            const isSelected = tenor === t;
+                                                            return (
+                                                                <button
+                                                                    key={t}
+                                                                    type="button"
+                                                                    onClick={() => setTenor(t)}
+                                                                    className={`flex flex-col items-center justify-center p-1.5 rounded-xl border transition-all cursor-pointer ${
+                                                                        isSelected
+                                                                            ? "border-indigo-600 bg-indigo-50/70 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-300 ring-1 ring-indigo-500/30"
+                                                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                                                    }`}
+                                                                >
+                                                                    <span className="text-xs font-bold font-mono">{t}x</span>
+                                                                    <span className="text-[9px] text-slate-400">Bulan</span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        {/* Input Nominal */}
+                                        <div className="space-y-1.5">
+                                            <label htmlFor="req-amount" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                Nominal (IDR) <span className="text-rose-500">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs font-bold">
+                                                    Rp
+                                                </div>
+                                                <input
+                                                    id="req-amount"
+                                                    type="number"
+                                                    min="1000"
+                                                    step="1000"
+                                                    required
+                                                    value={formData.amount}
+                                                    onChange={(e) => {
+                                                        setFormData({ ...formData, amount: e.target.value });
+                                                        if (formError) setFormError("");
+                                                    }}
+                                                    placeholder="0"
+                                                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm font-bold font-mono text-slate-800 placeholder-slate-300 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                                />
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 pt-0.5">
+                                                {QUICK_AMOUNTS.map((val) => {
+                                                    const label = val >= 1000000 ? `${val / 1000000}jt` : `${val / 1000}rb`;
+                                                    return (
+                                                        <button
+                                                            key={val}
+                                                            type="button"
+                                                            onClick={() => handleSelectAmount(val)}
+                                                            className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-mono text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                                                        >
+                                                            {label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Kolom Kanan: Alasan & Simulasi Cicilan */}
+                                    <div className="space-y-3.5 flex flex-col justify-between">
+                                        <div className="space-y-3">
+                                            {/* Deskripsi */}
+                                            <div className="space-y-1.5">
+                                                <label htmlFor="req-desc" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                    Alasan / Keperluan <span className="text-rose-500">*</span>
+                                                </label>
+                                                <textarea
+                                                    id="req-desc"
+                                                    rows={3}
+                                                    required
+                                                    placeholder="Contoh: Kebutuhan medis mendadak..."
+                                                    value={formData.description}
+                                                    onChange={(e) => {
+                                                        setFormData({ ...formData, description: e.target.value });
+                                                        if (formError) setFormError("");
+                                                    }}
+                                                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 resize-none"
+                                                />
+                                                <div className="flex flex-wrap gap-1">
+                                                    {QUICK_REASONS.map((reason) => (
+                                                        <button
+                                                            key={reason}
+                                                            type="button"
+                                                            onClick={() => handleQuickReason(reason)}
+                                                            className="rounded-md border border-slate-200/80 bg-slate-50 px-1.5 py-0.5 text-[9px] text-slate-600 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-400 cursor-pointer"
+                                                        >
+                                                            + {reason}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Simulasi Cicilan */}
+                                            {formData.amount && !isKasbon && !isNaN(parseFloat(formData.amount)) && (
+                                                <div className="rounded-xl bg-indigo-50/60 dark:bg-indigo-950/20 p-2 text-[11px] border border-indigo-100 dark:border-indigo-900/40 text-indigo-900 dark:text-indigo-200 flex justify-between items-center">
+                                                    <span className="font-medium">Cicilan /bln ({tenor}x):</span>
+                                                    <span className="font-mono font-bold">± {formatRupiah(parseFloat(formData.amount) / tenor)}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                                            *Pencairan diproses setelah disetujui manajemen.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Error Alert */}
+                                <AnimatePresence>
+                                    {formError && (
+                                        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
+                                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+                                            <span className="flex-1">{formError}</span>
+                                            <button type="button" onClick={() => setFormError("")} className="text-rose-400 hover:text-rose-600 cursor-pointer">
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     )}
                                 </AnimatePresence>
 
-                                {/* 7. Actions */}
-                                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                {/* Tombol Aksi */}
+                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                                     {onClose && (
                                         <button
                                             type="button"
                                             onClick={onClose}
                                             disabled={loading}
-                                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750 transition-colors cursor-pointer disabled:opacity-50"
+                                            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
                                         >
                                             Batal
                                         </button>
@@ -468,19 +467,10 @@ export default function EmpReceivableRequest({
                                     <button
                                         type="submit"
                                         disabled={loading || !formData.amount || !formData.description?.trim()}
-                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-500 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 cursor-pointer disabled:opacity-50"
                                     >
-                                        {loading ? (
-                                            <>
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                <span>Memproses...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Send className="h-3.5 w-3.5" />
-                                                <span>Kirim Pengajuan</span>
-                                            </>
-                                        )}
+                                        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                        <span>Kirim Pengajuan</span>
                                     </button>
                                 </div>
                             </form>
