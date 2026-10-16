@@ -268,20 +268,6 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                     {/* Section 1: Tanggal & Cabang */}
                     {["Administrator", "Super Admin"].includes(userRole) ? (
                         <div className={`grid gap-2.5 ${newType === "other" ? "grid-cols-2" : "grid-cols-1"}`}>
-                            <div className="space-y-1">
-                                <label htmlFor="tx-date" className={labelClass}>
-                                    Tanggal Transaksi
-                                </label>
-                                <input
-                                    id="tx-date"
-                                    type="datetime-local"
-                                    required
-                                    value={formData.date_issued}
-                                    onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
-                                    className={inputClass}
-                                />
-                            </div>
-
                             {newType === "other" && (
                                 <div className="space-y-1 min-w-0">
                                     <label htmlFor="tx-destination-warehouse" className={labelClass}>
@@ -299,6 +285,19 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                     />
                                 </div>
                             )}
+                            <div className="space-y-1">
+                                <label htmlFor="tx-date" className={labelClass}>
+                                    Tanggal Transaksi
+                                </label>
+                                <input
+                                    id="tx-date"
+                                    type="datetime-local"
+                                    required
+                                    value={formData.date_issued}
+                                    onChange={(e) => setFormData({ ...formData, date_issued: e.target.value })}
+                                    className={inputClass}
+                                />
+                            </div>
                         </div>
                     ) : (
                         newType === "other" && (
