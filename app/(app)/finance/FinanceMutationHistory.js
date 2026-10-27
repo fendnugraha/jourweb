@@ -60,6 +60,10 @@ const FinanceMutationHistory = ({ finances = [], findContact, selectedContactId,
                                                 <span>•</span>
                                                 <span className="text-[10px] text-slate-400 font-normal">{formatDateTime(finance.date_issued)}</span>
                                             </div>
+                                            <span className="text-[10px] text-slate-400 font-normal">
+                                                Sumber Dana:{" "}
+                                                {finance.journal?.cred_id === 1 ? "Potong Laba (Profit)" : finance.journal?.cred?.name || "Tidak Diketahui"}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-3.5 text-right font-mono font-bold">
                                             <span className={isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}>

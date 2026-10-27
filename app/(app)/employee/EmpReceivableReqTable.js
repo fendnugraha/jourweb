@@ -1,3 +1,5 @@
+import Dropdown from "@/app/components/Dropdown";
+import { useAccounts } from "@/app/hooks/useAccounts";
 import axios from "@/app/utils/axios";
 import { formatDateTime, formatRupiah } from "@/app/utils/format";
 import { Check, Contact2, Trash2, X, Clock, CheckCircle2, Inbox, Calendar, CheckSquare, Square, Loader2, Scissors, LayoutList, Wallet2 } from "lucide-react";
@@ -51,6 +53,16 @@ function StatusBadge({ isPending }) {
 }
 
 export default function RequestTable({ finances = [], setJournalToDelete, notification, mutate }) {
+    const { accounts } = useAccounts(); // Assuming you have a custom hook to fetch accounts
+    const filteredAccounts = accounts.filter((account) => account.warehouse_id === 1);
+
+    const accountOptions = [
+        { value: 1, label: "Potong Laba (Pendapatan)" },
+        ...filteredAccounts.map((account) => ({
+            value: account.id,
+            label: account.name,
+        })),
+    ];
     const [selectedIds, setSelectedIds] = useState([]);
     const [batchLoading, setBatchLoading] = useState(null); // "approve" | "reject" | null
 
@@ -116,6 +128,16 @@ export default function RequestTable({ finances = [], setJournalToDelete, notifi
         }
     };
 
+    const updateFundSource = async (financeId, newFundSource) => {
+        try {
+            const response = await axios.put(`/api/update-fund-source/${financeId}`, { fund_source: newFundSource });
+            notification(response.data?.message || "Sumber dana berhasil diperbarui.");
+            mutate();
+        } catch (error) {
+            notification(error.response?.data?.message || "Gagal memperbarui sumber dana.");
+        }
+    };
+
     return (
         <div className="w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 transition-all">
             {/* Batch Action Toolbar */}
@@ -175,6 +197,9 @@ export default function RequestTable({ finances = [], setJournalToDelete, notifi
                             <th scope="col" className="px-4 py-3.5">
                                 Skema
                             </th>
+                            <th scope="col" className="px-4 py-3.5">
+                                Sumber Dana
+                            </th>
                             <th scope="col" className="px-4 py-3.5 text-right">
                                 Nominal
                             </th>
@@ -193,6 +218,7 @@ export default function RequestTable({ finances = [], setJournalToDelete, notifi
                                 const isPending = finance.payment_status === 0;
                                 const isSelectable = isRequest && isPending;
                                 const isChecked = selectedIds.includes(finance.id);
+                                const accountId = Number(finance.journal?.cred_id) || 1;
 
                                 return (
                                     <tr
@@ -248,6 +274,20 @@ export default function RequestTable({ finances = [], setJournalToDelete, notifi
                                             <SchemaBadge financeType={finance.finance_type} />
                                         </td>
 
+                                        <td className="px-4 py-3.5 align-middle">
+                                            <Dropdown
+                                                id={`tx-account_id-${finance.id}`}
+                                                label="Account Selector"
+                                                options={accountOptions}
+                                                // Paksa ubah ke string agar cocok dengan format value di accountOptions
+                                                selectedValue={accountId}
+                                                disabled={finance.finance_type === "EmployeeReceivable R"}
+                                                onChange={(val) => {
+                                                    updateFundSource(finance.id, val);
+                                                }}
+                                            />
+                                        </td>
+
                                         {/* Nominal */}
                                         <td className="px-4 py-3.5 text-right align-middle">
                                             <span
@@ -298,7 +338,7 @@ export default function RequestTable({ finances = [], setJournalToDelete, notifi
                             })
                         ) : (
                             <tr>
-                                <td colSpan={5} className="px-6 py-14 text-center">
+                                <td colSpan={6} className="px-6 py-14 text-center">
                                     <div className="flex flex-col items-center gap-2">
                                         <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400">
                                             <Inbox className="w-6 h-6" />

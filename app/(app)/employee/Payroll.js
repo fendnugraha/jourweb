@@ -191,7 +191,7 @@ const Payroll = ({ employees, notification, mutateEmployee }) => {
 
             {/* Register New Employee Modal */}
             <Modal isOpen={isModalAddEmployeeOpen} onClose={() => setIsModalAddEmployeeOpen(false)} title="Register New Employee" maxWidth="max-w-2xl">
-                <CreateEmployee contacts={contacts} notification={notification} mutateEmployee={mutateEmployee} />
+                <CreateEmployee contacts={contacts} notification={notification} isModalOpen={setIsModalAddEmployeeOpen} mutateEmployee={mutateEmployee} />
             </Modal>
         </div>
     );

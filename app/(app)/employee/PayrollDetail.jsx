@@ -1,22 +1,15 @@
 "use client";
 
+import Dropdown from "@/app/components/Dropdown";
+import { useAccounts } from "@/app/hooks/useAccounts";
 import { formatNumber, formatRupiah } from "@/app/utils/format";
-import {
-    Wallet,
-    TrendingUp,
-    TrendingDown,
-    DollarSign,
-    Plus,
-    Trash2,
-    Save,
-    Eye,
-    Edit3,
-    AlertCircle,
-} from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Save, Eye, Edit3, AlertCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const PayrollDetail = ({ employee, onSave, onClose }) => {
+const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) => {
     const [activeTab, setActiveTab] = useState("edit"); // "edit" | "preview"
+    const { accounts: hookAccounts = [] } = useAccounts();
+    const accounts = accountsProp || hookAccounts;
 
     // Local form state
     const [formData, setFormData] = useState(() => ({
@@ -25,13 +18,37 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
         overtime: employee?.overtime ?? 0,
         employee_receivable: employee?.employee_receivable ?? 0,
         installment_receivable: employee?.installment_receivable ?? 0,
-        bonuses: Array.isArray(employee?.bonuses)
-            ? employee.bonuses.map((b) => ({ name: b.name || "", amount: b.amount || 0 }))
-            : [],
-        deductions: Array.isArray(employee?.deductions)
-            ? employee.deductions.map((d) => ({ name: d.name || "", amount: d.amount || 0 }))
-            : [],
+        installment_account_id: employee?.installment_account_id
+            ? Number(employee.installment_account_id)
+            : employee?.account_id
+              ? Number(employee.account_id)
+              : "",
+        bonuses: Array.isArray(employee?.bonuses) ? employee.bonuses.map((b) => ({ name: b.name || "", amount: b.amount || 0 })) : [],
+        deductions: Array.isArray(employee?.deductions) ? employee.deductions.map((d) => ({ name: d.name || "", amount: d.amount || 0 })) : [],
     }));
+
+    // Opsi pilihan akun rekening / kas
+    const accountOptions = useMemo(() => {
+        return [
+            { value: "", label: "-- Pilih Akun Pembayaran Cicilan --" },
+            ...accounts.map((acc) => {
+                const whName = acc.warehouse?.name ? acc.warehouse.name.replace(/^konter\s*/i, "") : null;
+                return {
+                    value: Number(acc.id),
+                    label: whName && acc.warehouse_id !== 1 ? `${acc.name} (${whName})` : acc.name,
+                };
+            }),
+        ];
+    }, [accounts]);
+
+    // Nama akun terpilih untuk label / preview
+    const selectedAccountName = useMemo(() => {
+        if (!formData.installment_account_id) return null;
+        const acc = accounts.find((a) => Number(a.id) === Number(formData.installment_account_id));
+        if (!acc) return null;
+        const whName = acc.warehouse?.name ? acc.warehouse.name.replace(/^konter\s*/i, "") : null;
+        return whName && acc.warehouse_id !== 1 ? `${acc.name} (${whName})` : acc.name;
+    }, [accounts, formData.installment_account_id]);
 
     // Input change handlers
     const handleFieldChange = (field, value) => {
@@ -127,9 +144,7 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
         e?.preventDefault();
 
         // Calculate total savings if deduction named "Simpanan Wajib" exists
-        const totalSavings = formData.deductions
-            .filter((d) => d.name?.trim() === "Simpanan Wajib")
-            .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+        const totalSavings = formData.deductions.filter((d) => d.name?.trim() === "Simpanan Wajib").reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
 
         const updatedEmployee = {
             ...employee,
@@ -138,6 +153,9 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
             overtime: Number(formData.overtime) || 0,
             employee_receivable: Number(formData.employee_receivable) || 0,
             installment_receivable: Number(formData.installment_receivable) || 0,
+            installment_account_id: formData.installment_account_id ? Number(formData.installment_account_id) : null,
+            installment_account_name: selectedAccountName || null,
+            account_id: formData.installment_account_id ? Number(formData.installment_account_id) : (employee?.account_id ?? null),
             bonuses: formData.bonuses.map((b) => ({
                 name: b.name?.trim() || "Bonus",
                 amount: Number(b.amount) || 0,
@@ -163,12 +181,8 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                         <Wallet className="w-5 h-5" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                            Detail & Edit Slip Gaji
-                        </p>
-                        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                            {employee?.name || "Nama Karyawan"}
-                        </h2>
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Detail & Edit Slip Gaji</p>
+                        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">{employee?.name || "Nama Karyawan"}</h2>
                     </div>
                 </div>
 
@@ -220,16 +234,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                 {/* Gaji Pokok */}
                                 <div className="space-y-1">
-                                    <label
-                                        htmlFor="edit-basic-salary"
-                                        className="text-[11px] font-semibold text-slate-600 dark:text-slate-300"
-                                    >
+                                    <label htmlFor="edit-basic-salary" className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                                         Gaji Pokok
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">
-                                            Rp
-                                        </span>
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">Rp</span>
                                         <input
                                             id="edit-basic-salary"
                                             type="number"
@@ -243,16 +252,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
 
                                 {/* Tunjangan / Komisi */}
                                 <div className="space-y-1">
-                                    <label
-                                        htmlFor="edit-commission"
-                                        className="text-[11px] font-semibold text-slate-600 dark:text-slate-300"
-                                    >
+                                    <label htmlFor="edit-commission" className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                                         Tunjangan / Komisi
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">
-                                            Rp
-                                        </span>
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">Rp</span>
                                         <input
                                             id="edit-commission"
                                             type="number"
@@ -266,16 +270,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
 
                                 {/* Lembur */}
                                 <div className="space-y-1">
-                                    <label
-                                        htmlFor="edit-overtime"
-                                        className="text-[11px] font-semibold text-slate-600 dark:text-slate-300"
-                                    >
+                                    <label htmlFor="edit-overtime" className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                                         Uang Lembur
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">
-                                            Rp
-                                        </span>
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">Rp</span>
                                         <input
                                             id="edit-overtime"
                                             type="number"
@@ -291,9 +290,7 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                             {/* Daftar Bonus / Tambahan Lainnya */}
                             <div className="pt-2 border-t border-emerald-100/80 dark:border-emerald-900/30 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
-                                        Bonus & Tambahan Lainnya
-                                    </span>
+                                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">Bonus & Tambahan Lainnya</span>
                                     <button
                                         type="button"
                                         onClick={handleAddBonus}
@@ -365,15 +362,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                     >
                                         <span>Kasbon</span>
                                         {formData.employee_receivable > 0 && (
-                                            <span className="text-[10px] text-emerald-600 font-normal">
-                                                {formatRupiah(formData.employee_receivable)}
-                                            </span>
+                                            <span className="text-[10px] text-emerald-600 font-normal">{formatRupiah(formData.employee_receivable)}</span>
                                         )}
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">
-                                            Rp
-                                        </span>
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">Rp</span>
                                         <input
                                             id="edit-receivable"
                                             type="number"
@@ -393,15 +386,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                     >
                                         <span>Cicilan</span>
                                         {formData.installment_receivable > 0 && (
-                                            <span className="text-[10px] text-emerald-600 font-normal">
-                                                {formatRupiah(formData.installment_receivable)}
-                                            </span>
+                                            <span className="text-[10px] text-emerald-600 font-normal">{formatRupiah(formData.installment_receivable)}</span>
                                         )}
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">
-                                            Rp
-                                        </span>
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 font-mono text-[11px]">Rp</span>
                                         <input
                                             id="edit-installment"
                                             type="number"
@@ -414,12 +403,46 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                 </div>
                             </div>
 
+                            {/* Pilihan Akun Pembayaran Cicilan */}
+                            {Number(formData.installment_receivable) > 0 && (
+                                <div className="p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 space-y-2">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                        <label
+                                            htmlFor="installment-account-dropdown"
+                                            className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5"
+                                        >
+                                            <Wallet className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                            <span>Akun Penerima Pembayaran Cicilan</span>
+                                        </label>
+                                        <span className="text-[10px] text-slate-500 dark:text-slate-400">Pilih rekening/kas penampung cicilan ini</span>
+                                    </div>
+
+                                    <Dropdown
+                                        id="installment-account-dropdown"
+                                        label="Pilih Akun Rekening / Kas"
+                                        options={accountOptions}
+                                        selectedValue={formData.installment_account_id !== "" ? Number(formData.installment_account_id) : ""}
+                                        onChange={(val) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                installment_account_id: val,
+                                            }))
+                                        }
+                                    />
+
+                                    {!formData.installment_account_id && (
+                                        <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                            <AlertCircle className="w-3 h-3 shrink-0" />
+                                            <span>Silakan pilih akun tujuan untuk mencatat setoran cicilan gaji.</span>
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Daftar Potongan Lainnya */}
                             <div className="pt-2 border-t border-rose-100/80 dark:border-rose-900/30 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
-                                        Potongan Lainnya (Denda, Simpanan, dll)
-                                    </span>
+                                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">Potongan Lainnya (Denda, Simpanan, dll)</span>
                                     <button
                                         type="button"
                                         onClick={handleAddDeduction}
@@ -450,9 +473,7 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                                     <input
                                                         type="number"
                                                         value={deduction.amount}
-                                                        onChange={(e) =>
-                                                            handleDeductionChange(index, "amount", e.target.value)
-                                                        }
+                                                        onChange={(e) => handleDeductionChange(index, "amount", e.target.value)}
                                                         placeholder="0"
                                                         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-1.5 pl-8 pr-2.5 text-xs text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus:ring-2 focus:ring-rose-500"
                                                     />
@@ -480,15 +501,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                 <DollarSign className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider">
-                                    Take Home Pay (Bersih)
-                                </p>
+                                <p className="text-[10px] uppercase font-bold text-indigo-200 tracking-wider">Take Home Pay (Bersih)</p>
                                 <p className="text-xs font-semibold">Total yang akan diterima karyawan</p>
                             </div>
                         </div>
-                        <span className="text-lg font-extrabold font-mono tracking-tight">
-                            Rp {formatNumber(calculations.netSalary)}
-                        </span>
+                        <span className="text-lg font-extrabold font-mono tracking-tight">Rp {formatNumber(calculations.netSalary)}</span>
                     </div>
 
                     {/* FORM ACTION BUTTONS */}
@@ -527,43 +544,30 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                             <div className="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-3 border border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs">
                                 <div className="flex justify-between text-slate-600 dark:text-slate-300">
                                     <span>Gaji Pokok</span>
-                                    <span className="font-mono font-medium">
-                                        Rp {formatNumber(calculations.basicSalary)}
-                                    </span>
+                                    <span className="font-mono font-medium">Rp {formatNumber(calculations.basicSalary)}</span>
                                 </div>
 
                                 {calculations.commission > 0 && (
                                     <div className="flex justify-between text-slate-600 dark:text-slate-300">
                                         <span>Tunjangan / Komisi</span>
-                                        <span className="font-mono font-medium">
-                                            Rp {formatNumber(calculations.commission)}
-                                        </span>
+                                        <span className="font-mono font-medium">Rp {formatNumber(calculations.commission)}</span>
                                     </div>
                                 )}
 
                                 {calculations.overtime > 0 && (
                                     <div className="flex justify-between text-slate-600 dark:text-slate-300">
                                         <span>Lembur</span>
-                                        <span className="font-mono font-medium">
-                                            Rp {formatNumber(calculations.overtime)}
-                                        </span>
+                                        <span className="font-mono font-medium">Rp {formatNumber(calculations.overtime)}</span>
                                     </div>
                                 )}
 
                                 {formData.bonuses?.length > 0 && (
                                     <div className="pt-1.5 space-y-1 border-t border-slate-200/60 dark:border-slate-700/50">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">
-                                            Pendapatan Lainnya
-                                        </span>
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Pendapatan Lainnya</span>
                                         {formData.bonuses.map((item, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex justify-between pl-2 text-slate-500 dark:text-slate-400 text-[11px]"
-                                            >
+                                            <div key={index} className="flex justify-between pl-2 text-slate-500 dark:text-slate-400 text-[11px]">
                                                 <span>• {item?.name || "Bonus"}</span>
-                                                <span className="font-mono">
-                                                    Rp {formatNumber(Number(item?.amount) || 0)}
-                                                </span>
+                                                <span className="font-mono">Rp {formatNumber(Number(item?.amount) || 0)}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -571,9 +575,7 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
 
                                 <div className="flex justify-between font-bold text-slate-800 dark:text-slate-100 pt-2 border-t border-slate-200 dark:border-slate-700">
                                     <span>Total Pendapatan</span>
-                                    <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                                        Rp {formatNumber(calculations.totalIncome)}
-                                    </span>
+                                    <span className="font-mono text-emerald-600 dark:text-emerald-400">Rp {formatNumber(calculations.totalIncome)}</span>
                                 </div>
                             </div>
                         </div>
@@ -589,35 +591,31 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                 {calculations.employeeReceivable > 0 && (
                                     <div className="flex justify-between text-slate-600 dark:text-slate-300">
                                         <span>Kasbon</span>
-                                        <span className="font-mono font-medium">
-                                            Rp {formatNumber(calculations.employeeReceivable)}
-                                        </span>
+                                        <span className="font-mono font-medium">Rp {formatNumber(calculations.employeeReceivable)}</span>
                                     </div>
                                 )}
 
                                 {calculations.installmentReceivable > 0 && (
-                                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                                        <span>Cicilan</span>
-                                        <span className="font-mono font-medium">
-                                            Rp {formatNumber(calculations.installmentReceivable)}
-                                        </span>
+                                    <div className="flex justify-between items-start text-slate-600 dark:text-slate-300">
+                                        <div>
+                                            <span>Cicilan</span>
+                                            {selectedAccountName && (
+                                                <span className="block text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">
+                                                    Masuk ke: {selectedAccountName}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="font-mono font-medium">Rp {formatNumber(calculations.installmentReceivable)}</span>
                                     </div>
                                 )}
 
                                 {formData.deductions?.length > 0 && (
                                     <div className="pt-1.5 space-y-1 border-t border-slate-200/60 dark:border-slate-700/50">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">
-                                            Potongan Lainnya
-                                        </span>
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Potongan Lainnya</span>
                                         {formData.deductions.map((item, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex justify-between pl-2 text-slate-500 dark:text-slate-400 text-[11px]"
-                                            >
+                                            <div key={index} className="flex justify-between pl-2 text-slate-500 dark:text-slate-400 text-[11px]">
                                                 <span>• {item?.name || "Potongan"}</span>
-                                                <span className="font-mono">
-                                                    Rp {formatNumber(Number(item?.amount) || 0)}
-                                                </span>
+                                                <span className="font-mono">Rp {formatNumber(Number(item?.amount) || 0)}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -625,9 +623,7 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
 
                                 <div className="flex justify-between font-bold text-slate-800 dark:text-slate-100 pt-2 border-t border-slate-200 dark:border-slate-700">
                                     <span>Total Potongan</span>
-                                    <span className="font-mono text-rose-600 dark:text-rose-400">
-                                        Rp {formatNumber(calculations.totalDeduction)}
-                                    </span>
+                                    <span className="font-mono text-rose-600 dark:text-rose-400">Rp {formatNumber(calculations.totalDeduction)}</span>
                                 </div>
                             </div>
                         </div>
@@ -640,15 +636,11 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
                                 <DollarSign className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                                <p className="text-[9px] uppercase font-bold text-indigo-200 tracking-wider">
-                                    Take Home Pay
-                                </p>
+                                <p className="text-[9px] uppercase font-bold text-indigo-200 tracking-wider">Take Home Pay</p>
                                 <p className="text-xs font-semibold">Total Diterima</p>
                             </div>
                         </div>
-                        <span className="text-base font-extrabold font-mono tracking-tight">
-                            Rp {formatNumber(calculations.netSalary)}
-                        </span>
+                        <span className="text-base font-extrabold font-mono tracking-tight">Rp {formatNumber(calculations.netSalary)}</span>
                     </div>
 
                     <div className="flex justify-end gap-2 pt-1">
@@ -677,4 +669,3 @@ const PayrollDetail = ({ employee, onSave, onClose }) => {
 };
 
 export default PayrollDetail;
-

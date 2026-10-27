@@ -9,6 +9,7 @@ import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
 import PayrollDetail from "./PayrollDetail";
 import useEmployee from "@/app/hooks/useEmployee";
+import { useAccounts } from "@/app/hooks/useAccounts";
 
 const getStoredProcessData = () => {
     if (typeof window === "undefined") return [];
@@ -35,6 +36,7 @@ const CreatePayroll = ({ notification }) => {
     const [payrollType, setPayrollType] = useState("monthly");
 
     const { employees } = useEmployee(month, year);
+    const { accounts = [] } = useAccounts();
     const [selectedEmployee, setSelectedEmployee] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -423,7 +425,9 @@ const CreatePayroll = ({ notification }) => {
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={modalTitle} maxWidth="max-w-xl">
                 {modalFormActive === "receipt-detail" && selectedEmployee && (
                     <PayrollDetail
+                        key={selectedEmployee?.employee_id}
                         employee={selectedEmployee}
+                        accounts={accounts}
                         onSave={handleUpdateEmployeeSalary}
                         onClose={() => setIsModalOpen(false)}
                     />

@@ -475,7 +475,9 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                     {isInsufficientBalance ? (
                                         <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
                                             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                            <span>Melebihi saldo ({formatRupiah(findSourceBalance)})</span>
+                                            <span>
+                                                Melebihi saldo - {formatRupiah(formData.amount)} ({formatRupiah(findSourceBalance)})
+                                            </span>
                                         </p>
                                     ) : findSourceBalance !== null && remainingBalance !== null ? (
                                         <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">

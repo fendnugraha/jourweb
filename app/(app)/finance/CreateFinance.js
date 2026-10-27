@@ -6,7 +6,7 @@ import { DateTimeNow } from "@/app/utils/format";
 import { AlertCircle, CreditCard, Wallet2 } from "lucide-react";
 import { useState } from "react";
 
-const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
+const CreateFinance = ({ contacts, accounts, notification, mutate, onClose }) => {
     const { today } = DateTimeNow();
     const [type, setType] = useState("Payable");
     const [loading, setLoading] = useState(false);
@@ -44,6 +44,8 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setFormError("");
+
         try {
             const response = await axios.post("/api/finance", formData);
             notification(response.data.message);
@@ -55,11 +57,20 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                 description: "",
                 debt_id: "",
                 cred_id: "",
-                type: "Payable",
+                type: type, // Pertahankan tipe tab aktif
             });
+            if (onClose) onClose(); // Tutup modal jika sukses (opsional)
         } catch (error) {
-            setFormError(error.response?.data?.errors || ["Something went wrong."]);
-            notification(error.response?.data?.message || "Something went wrong.");
+            // Ambil pesan error dengan aman (ubah array/objek jadi string jika perlu)
+            const errData = error.response?.data?.errors;
+            const errorMsg = Array.isArray(errData)
+                ? errData[0]
+                : typeof errData === "string"
+                  ? errData
+                  : error.response?.data?.message || "Something went wrong.";
+
+            setFormError(errorMsg);
+            notification(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -71,10 +82,13 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
             value: "Payable",
             label: "Hutang Usaha",
             onClick: () => {
-                setFormData({
-                    ...formData,
+                setType("Payable");
+                setFormData((prev) => ({
+                    ...prev,
                     type: "Payable",
-                });
+                    debt_id: "",
+                    cred_id: "",
+                }));
             },
         },
         {
@@ -82,10 +96,13 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
             value: "Receivable",
             label: "Piutang Usaha",
             onClick: () => {
-                setFormData({
-                    ...formData,
+                setType("Receivable");
+                setFormData((prev) => ({
+                    ...prev,
                     type: "Receivable",
-                });
+                    debt_id: "",
+                    cred_id: "",
+                }));
             },
         },
     ];
@@ -119,12 +136,10 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                 </div>
 
                 <div className="space-y-1">
-                    <label id="tx-debt_id-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Kontak
-                    </label>
+                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Kontak</label>
                     <Dropdown
-                        id="tx-debt_id"
-                        label="Account Selector"
+                        id="tx-contact_id"
+                        label="Contact Selector"
                         options={contacts}
                         selectedValue={formData.contact_id}
                         onChange={(val) => {
@@ -136,9 +151,7 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                 {/* Category drop down */}
                 <div className="grid sm:grid-cols-2 gap-2">
                     <div className="space-y-1">
-                        <label id="tx-payable-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Akun {type === "Payable" ? "Hutang" : "Piutang"}
-                        </label>
+                        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Akun {type === "Payable" ? "Hutang" : "Piutang"}</label>
                         <Dropdown
                             id="tx-payable"
                             label="payable Selector"
@@ -150,11 +163,9 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                         />
                     </div>
                     <div className="space-y-1">
-                        <label id="tx-debt_id-label" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            Rekening
-                        </label>
+                        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Rekening</label>
                         <Dropdown
-                            id="tx-debt_id"
+                            id="tx-rekening"
                             label="Account Selector"
                             options={accountOptions}
                             selectedValue={type === "Payable" ? formData.debt_id : formData.cred_id}
@@ -165,7 +176,7 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                     </div>
                 </div>
 
-                {/* Amount and Date input rows */}
+                {/* Amount input */}
                 <div className="space-y-1">
                     <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Amount (Rp IDR)
@@ -213,14 +224,14 @@ const CreateFinance = ({ contacts, accounts, notification, mutate }) => {
                 <div className="flex justify-end gap-2 pt-2">
                     <button
                         type="button"
-                        onClick={() => isModalOpen(false)}
-                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                        onClick={() => onClose?.()}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+                        className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors cursor-pointer"
                         disabled={loading}
                     >
                         {loading ? "Adding..." : "Add Entry"}

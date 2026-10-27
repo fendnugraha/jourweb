@@ -20,12 +20,7 @@ const calculateEndDateStr = (startDateStr, months) => {
     return `${year}-${month}-${day}`;
 };
 
-const CreateEmployee = ({
-    contacts = [],
-    notification,
-    isModalOpen,
-    mutateEmployee,
-}) => {
+const CreateEmployee = ({ contacts = [], notification, isModalOpen, mutateEmployee }) => {
     const [formData, setFormData] = useState({
         contact_id: "",
         hire_date: "",
@@ -86,12 +81,11 @@ const CreateEmployee = ({
         try {
             const response = await axios.post("/api/employees", formData);
             notification(response.data.message || "Employee created successfully.");
-            isModalOpen(false); // Menutup modal
             mutateEmployee();
+            isModalOpen(false); // Menutup modal
         } catch (error) {
-            const errorMsg =
-                error?.response?.data?.message ||
-                "An error occurred while creating the employee.";
+            const errorMsg = error?.response?.data?.message || "An error occurred while creating the employee.";
+            console.log(error);
             notification(errorMsg);
             setFormError(errorMsg);
         } finally {
@@ -110,10 +104,7 @@ const CreateEmployee = ({
             <div className="grid sm:grid-cols-2 gap-3">
                 {/* Contact Selector */}
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-contact"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-contact" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Nama Kontak
                     </label>
                     <Dropdown
@@ -125,10 +116,7 @@ const CreateEmployee = ({
                     />
                 </div>
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-hire-date"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-hire-date" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Tanggal Masuk
                     </label>
                     <input
@@ -136,9 +124,7 @@ const CreateEmployee = ({
                         type="date"
                         required
                         value={formData.hire_date}
-                        onChange={(e) =>
-                            setFormData({ ...formData, hire_date: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
@@ -147,10 +133,7 @@ const CreateEmployee = ({
             {/* ID Card & Salary */}
             <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-id-card"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-id-card" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         No. Kartu ID
                     </label>
                     <input
@@ -158,17 +141,12 @@ const CreateEmployee = ({
                         type="text"
                         required
                         value={formData.id_card_number}
-                        onChange={(e) =>
-                            setFormData({ ...formData, id_card_number: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, id_card_number: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-base-salary"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-base-salary" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Gaji Pokok
                     </label>
                     <input
@@ -176,9 +154,7 @@ const CreateEmployee = ({
                         type="number"
                         required
                         value={formData.base_salary}
-                        onChange={(e) =>
-                            setFormData({ ...formData, base_salary: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, base_salary: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
@@ -187,10 +163,7 @@ const CreateEmployee = ({
             {/* Place & Date of Birth */}
             <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-birth-place"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-birth-place" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Tempat Lahir
                     </label>
                     <input
@@ -198,17 +171,12 @@ const CreateEmployee = ({
                         type="text"
                         required
                         value={formData.place_of_birth}
-                        onChange={(e) =>
-                            setFormData({ ...formData, place_of_birth: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, place_of_birth: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-birth-date"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-birth-date" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Tanggal Lahir
                     </label>
                     <input
@@ -216,9 +184,7 @@ const CreateEmployee = ({
                         type="date"
                         required
                         value={formData.birth_date}
-                        onChange={(e) =>
-                            setFormData({ ...formData, birth_date: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
@@ -227,10 +193,7 @@ const CreateEmployee = ({
             {/* Gender, Religion, Marital Status */}
             <div className="grid sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-gender"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-gender" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Gender
                     </label>
                     <Dropdown
@@ -242,10 +205,7 @@ const CreateEmployee = ({
                     />
                 </div>
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-religion"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-religion" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Agama
                     </label>
                     <Dropdown
@@ -257,10 +217,7 @@ const CreateEmployee = ({
                     />
                 </div>
                 <div className="space-y-1">
-                    <label
-                        htmlFor="emp-marital"
-                        className="text-xs font-semibold text-slate-500 dark:text-slate-400"
-                    >
+                    <label htmlFor="emp-marital" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         Status Perkawinan
                     </label>
                     <Dropdown
@@ -268,9 +225,7 @@ const CreateEmployee = ({
                         label="Marital Status Selector"
                         options={maritalStatusOptions}
                         selectedValue={formData.marital_status}
-                        onChange={(val) =>
-                            setFormData({ ...formData, marital_status: val })
-                        }
+                        onChange={(val) => setFormData({ ...formData, marital_status: val })}
                     />
                 </div>
             </div>
@@ -287,7 +242,13 @@ const CreateEmployee = ({
                                 : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                         }`}
                         onClick={() =>
-                            setFormData({ ...formData, employment_type: "full_time" })
+                            setFormData({
+                                ...formData,
+                                employment_type: "full_time",
+                                contract_start: "",
+                                contract_end: "",
+                                contract_duration: "",
+                            })
                         }
                     >
                         Full-time
@@ -299,9 +260,7 @@ const CreateEmployee = ({
                                 ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
                                 : "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                         }`}
-                        onClick={() =>
-                            setFormData({ ...formData, employment_type: "contract" })
-                        }
+                        onClick={() => setFormData({ ...formData, employment_type: "contract" })}
                     >
                         Contract
                     </button>
@@ -371,9 +330,7 @@ const CreateEmployee = ({
                         {/* Opsi Durasi atau Pilih Tanggal Spesifik */}
                         {contractMode === "duration" ? (
                             <div className="space-y-1">
-                                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    Durasi Kontrak
-                                </label>
+                                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Durasi Kontrak</label>
                                 <div className="grid grid-cols-3 gap-1.5">
                                     {[
                                         { label: "3 Bulan", months: 3 },
@@ -385,10 +342,7 @@ const CreateEmployee = ({
                                             type="button"
                                             onClick={() => {
                                                 setSelectedDuration(opt.months);
-                                                const computedEnd = calculateEndDateStr(
-                                                    formData.contract_start || formData.hire_date,
-                                                    opt.months
-                                                );
+                                                const computedEnd = calculateEndDateStr(formData.contract_start || formData.hire_date, opt.months);
                                                 setFormData((prev) => ({
                                                     ...prev,
                                                     contract_duration: opt.months,
