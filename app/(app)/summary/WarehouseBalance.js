@@ -273,9 +273,7 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                                 key={w.id || i}
                                                 onClick={() => handleSelectBranch(w)}
                                                 className={`p-4 space-y-3 cursor-pointer transition-colors ${
-                                                    isSelected
-                                                        ? "bg-indigo-50/70 dark:bg-indigo-950/30"
-                                                        : "hover:bg-slate-50/60 dark:hover:bg-slate-800/20"
+                                                    isSelected ? "bg-indigo-50/70 dark:bg-indigo-950/30" : "hover:bg-slate-50/60 dark:hover:bg-slate-800/20"
                                                 }`}
                                             >
                                                 {/* Header Card */}
@@ -283,9 +281,7 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                                     <div className="flex items-center gap-2 min-w-0">
                                                         <div
                                                             className={`p-1.5 rounded-lg shrink-0 transition-colors ${
-                                                                isSelected
-                                                                    ? "bg-indigo-600 text-white"
-                                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                                                isSelected ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                                                             }`}
                                                         >
                                                             <Building2 className="w-4 h-4" />
@@ -319,47 +315,49 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                                     </div>
                                                 </div>
 
-                                            {/* Body Card */}
-                                            <div className="bg-slate-50/50 dark:bg-slate-850/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 space-y-2.5">
-                                                {/* Tunai + Limit Progress */}
-                                                <div className="flex justify-between items-center text-xs">
-                                                    <div>
-                                                        <span className="text-[10px] font-sans text-slate-400 block">Tunai</span>
-                                                        <span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">
-                                                            {formatNumber(w.cash)}
+                                                {/* Body Card */}
+                                                <div className="bg-slate-50/50 dark:bg-slate-850/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60 space-y-2.5">
+                                                    {/* Tunai + Limit Progress */}
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <div>
+                                                            <span className="text-[10px] font-sans text-slate-400 block">Tunai</span>
+                                                            <span className="text-slate-700 dark:text-slate-300 font-mono font-semibold">
+                                                                {formatNumber(w.cash)}
+                                                            </span>
+                                                        </div>
+
+                                                        <CashLimitProgress
+                                                            cash={w.cash}
+                                                            limit={w.total_cash_limit}
+                                                            calculateLimitPercentage={calculateLimitPercentage}
+                                                        />
+                                                    </div>
+
+                                                    {/* Bank */}
+                                                    <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/40 dark:border-slate-800/50">
+                                                        <div>
+                                                            <span className="text-[10px] font-sans text-slate-400 block">Bank</span>
+                                                            <span className="text-slate-700 dark:text-slate-300 font-mono">{formatNumber(w.bank)}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Total Saldo */}
+                                                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center">
+                                                        <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400">
+                                                            Total Saldo
+                                                        </span>
+                                                        <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
+                                                            {formatNumber((w.cash || 0) + (w.bank || 0))}
                                                         </span>
                                                     </div>
-
-                                                    <CashLimitProgress
-                                                        cash={w.cash}
-                                                        limit={w.total_cash_limit}
-                                                        calculateLimitPercentage={calculateLimitPercentage}
-                                                    />
-                                                </div>
-
-                                                {/* Bank */}
-                                                <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/40 dark:border-slate-800/50">
-                                                    <div>
-                                                        <span className="text-[10px] font-sans text-slate-400 block">Bank</span>
-                                                        <span className="text-slate-700 dark:text-slate-300 font-mono">{formatNumber(w.bank)}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Total Saldo */}
-                                                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center">
-                                                    <span className="text-[11px] font-sans font-semibold text-slate-500 dark:text-slate-400">Total Saldo</span>
-                                                    <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">
-                                                        {formatNumber((w.cash || 0) + (w.bank || 0))}
-                                                    </span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <div className="p-6 text-center text-slate-400 font-sans text-xs">Tidak ada data cabang yang ditemukan.</div>
-                            )}
-                        </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="p-6 text-center text-slate-400 font-sans text-xs">Tidak ada data cabang yang ditemukan.</div>
+                                )}
+                            </div>
 
                             {/* ========================================================= */}
                             {/* 4. TAMPILAN DESKTOP: TABLE */}
@@ -468,7 +466,9 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
 
                                                                 // 2. Jika total_limit tidak diisi atau 0, tampilkan "No Limit"
                                                                 if (!limit || limit <= 0) {
-                                                                    return <span className="text-[10px] text-slate-400 font-sans block font-normal">No Limit</span>;
+                                                                    return (
+                                                                        <span className="text-[10px] text-slate-400 font-sans block font-normal">No Limit</span>
+                                                                    );
                                                                 }
 
                                                                 // 3. Hitung persentase terpakai
@@ -564,14 +564,10 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                 <Building2 className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                                <div className="text-xs font-bold text-white truncate">
-                                    {selectedBranch.name?.replace(/^konter\s*/i, "")}
-                                </div>
+                                <div className="text-xs font-bold text-white truncate">{selectedBranch.name?.replace(/^konter\s*/i, "")}</div>
                                 <div className="text-[11px] text-slate-300 font-mono flex items-center gap-1.5">
                                     <span>Kas:</span>
-                                    <span className="text-emerald-400 font-semibold">
-                                        {formatNumber(selectedBranch.cash || 0)}
-                                    </span>
+                                    <span className="text-emerald-400 font-semibold">{formatNumber(selectedBranch.cash || 0)}</span>
                                 </div>
                             </div>
                         </div>
@@ -605,16 +601,11 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
             <Modal
                 isOpen={isModalTransferOpen}
                 onClose={() => setIsModalTransferOpen(false)}
-                title={
-                    selectedBranch
-                        ? `Transfer Kas — ${selectedBranch.name?.replace(/^konter\s*/i, "")}`
-                        : "Transfer Kas Antar Cabang"
-                }
+                title={selectedBranch ? `Transfer Kas — ${selectedBranch.name?.replace(/^konter\s*/i, "")}` : "Transfer Kas Antar Cabang"}
             >
                 <TransferWarehouseCash
                     sourceWarehouse={selectedBranch}
                     warehouses={warehouseBalance?.warehouse || warehouses || []}
-                    selectedDate={selectedDate}
                     onSuccess={handleTransferSuccess}
                     onClose={() => setIsModalTransferOpen(false)}
                 />

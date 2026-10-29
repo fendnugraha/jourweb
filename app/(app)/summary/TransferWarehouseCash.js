@@ -9,12 +9,12 @@ import Dropdown from "@/app/components/Dropdown";
 const inputClass =
     "w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white px-3.5 py-2 text-sm text-slate-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800/60";
 
-const TransferWarehouseCash = ({ sourceWarehouse, warehouses = [], selectedDate, onSuccess, onClose }) => {
+const TransferWarehouseCash = ({ sourceWarehouse, warehouses = [], onSuccess, onClose }) => {
     const { today } = DateTimeNow();
     const [fromWarehouseId, setFromWarehouseId] = useState(sourceWarehouse?.id || "");
     const [toWarehouseId, setToWarehouseId] = useState("");
     const [amount, setAmount] = useState("");
-    const [date, setDate] = useState(selectedDate || today);
+    const [date, setDate] = useState(today);
     const [description, setDescription] = useState("");
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState("");
@@ -116,7 +116,7 @@ const TransferWarehouseCash = ({ sourceWarehouse, warehouses = [], selectedDate,
             {/* Tanggal Transaksi */}
             <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Tanggal Mutasi Kas</label>
-                <input type="date" required value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
+                <input type="datetime-local" required value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
             </div>
 
             {/* Transfer Route Card */}
