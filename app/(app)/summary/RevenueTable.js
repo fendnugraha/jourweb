@@ -17,6 +17,7 @@ export default function RevenueTable({ revenue, hasData }) {
     const [selectedItemForSetting, setSelectedItemForSetting] = useState(null);
     const [tempDepId, setTempDepId] = useState("");
     const [copiedId, setCopiedId] = useState(null);
+    const [showDepButton, setShowDepButton] = useState(false);
 
     // Load depositData dari localStorage saat mount (Client-side)
     useEffect(() => {
@@ -129,7 +130,7 @@ export default function RevenueTable({ revenue, hasData }) {
                     type="button"
                     onClick={() => handleCopy(item)}
                     className="p-1 rounded hover:text-slate-700 dark:hover:text-slate-200 transition-colors relative"
-                    title={depId ? `Salin: ${depId}.${depositAmount}.300891` : "Klik untuk atur ID Deposit"}
+                    title={depId ? `Salin: ${depId}.${depositAmount}` : "Klik untuk atur ID Deposit"}
                 >
                     {isCopied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
                     {isCopied && (
@@ -215,7 +216,7 @@ export default function RevenueTable({ revenue, hasData }) {
                                     <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
                                         <Building2 className="w-4 h-4" />
                                     </div>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                    <div className={`flex items-center gap-1.5 flex-wrap ${showDepButton ? "block" : "hidden"}`}>
                                         <span className="font-semibold text-xs text-slate-800 dark:text-slate-100">
                                             {item.warehouse.replace(/^konter\s*/i, "")}
                                         </span>
