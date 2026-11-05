@@ -27,8 +27,8 @@ const FinanceContent = () => {
 
     const [dateFilter, setDateFilter] = useState({
         preset: "today",
-        startDate: "",
-        endDate: "",
+        startDate: today,
+        endDate: today,
     });
 
     // Hapus `contact: selectedContactId` dari hook useFinances
