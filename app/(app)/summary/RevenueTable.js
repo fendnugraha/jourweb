@@ -105,7 +105,7 @@ export default function RevenueTable({ revenue, hasData }) {
 
         const depositAmount = Math.round(Number(item.deposit || 0));
         // Format: (ID Deposit).(item.deposit).300891
-        const textToCopy = `TRF.${depId}.${depositAmount}.300891`;
+        const textToCopy = `TRF.${depId}.${depositAmount}`;
 
         try {
             await navigator.clipboard.writeText(textToCopy);
