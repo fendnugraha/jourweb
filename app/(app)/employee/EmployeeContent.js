@@ -21,14 +21,12 @@ const EmployeeContent = () => {
     const [notification, setNotification] = useState(null);
 
     // 1. Menu dasar untuk semua role
-    const menuList = [
-        { id: "attendance", label: "Absensi Karyawan", icon: ClipboardCheck },
-        { id: "dayOff", label: "Jadwal Libur (Event)", icon: Calendar1 },
-    ];
+    const menuList = [{ id: "attendance", label: "Absensi Karyawan", icon: ClipboardCheck }];
 
     // 2. Tambahkan menu khusus jika user adalah Admin
     if (["Administrator", "Super Admin"].includes(userRole)) {
         menuList.push(
+            { id: "dayOff", label: "Jadwal Libur (Event)", icon: Calendar1 },
             { id: "payroll", label: "Gaji & Tunjangan", icon: ReceiptText },
             { id: "receivable", label: "Piutang Karyawan", icon: CreditCard },
             { id: "report", label: "Laporan Keuangan", icon: Scale },

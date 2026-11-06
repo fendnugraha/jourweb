@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Calendar from "@/app/components/Calendar";
 import Modal from "@/app/components/Modal";
 import axios from "@/app/utils/axios";
-import { FileSpreadsheet, Loader2, CalendarCheck } from "lucide-react";
+import { FileSpreadsheet, Loader2 } from "lucide-react";
 
 const TYPE_CONFIG = {
     weekly_off: {
