@@ -17,7 +17,65 @@ export default function RevenueTable({ revenue, hasData }) {
     const [selectedItemForSetting, setSelectedItemForSetting] = useState(null);
     const [tempDepId, setTempDepId] = useState("");
     const [copiedId, setCopiedId] = useState(null);
-    const [showDepButton, setShowDepButton] = useState(false);
+    const [copiedTable, setCopiedTable] = useState(false);
+
+    const handleCopyTableForSheets = async () => {
+        if (!hasData) return;
+
+        const headers = [
+            "Cabang",
+            "Transfer",
+            "Tarik Tunai",
+            "Voucher",
+            "Acc.",
+            "Deposit",
+            "Tx",
+            "Bank Fee",
+            "Biaya",
+            "Laba Bersih",
+            "Setoran Kas",
+        ];
+
+        const rows = revenue.revenue.map((item) => [
+            item.warehouse.replace(/^konter\s*/i, ""),
+            item.transfer ?? 0,
+            item.tarikTunai ?? 0,
+            item.voucher ?? 0,
+            item.accessories ?? 0,
+            item.deposit ?? 0,
+            item.trx ?? 0,
+            item.bank_fee ?? 0,
+            item.expense ?? 0,
+            item.fee ?? 0,
+            item.cash ?? 0,
+        ]);
+
+        const totals = [
+            "Total",
+            sumByTrxType("transfer"),
+            sumByTrxType("tarikTunai"),
+            sumByTrxType("voucher"),
+            sumByTrxType("accessories"),
+            sumByTrxType("deposit"),
+            sumByTrxType("trx"),
+            sumByTrxType("bank_fee"),
+            sumByTrxType("expense"),
+            sumByTrxType("fee"),
+            sumByTrxType("cash"),
+        ];
+
+        const tsv = [headers, ...rows, totals]
+            .map((row) => row.join("\t"))
+            .join("\n");
+
+        try {
+            await navigator.clipboard.writeText(tsv);
+            setCopiedTable(true);
+            setTimeout(() => setCopiedTable(false), 2000);
+        } catch (err) {
+            console.error("Gagal menyalin tabel:", err);
+        }
+    };
 
     // Load depositData dari localStorage saat mount (Client-side)
     useEffect(() => {
@@ -124,17 +182,17 @@ export default function RevenueTable({ revenue, hasData }) {
 
         return (
             <div
-                className={`flex items-center gap-1 text-slate-400 dark:text-slate-500 ${isMobile ? "" : "opacity-0 group-hover:opacity-100 transition-opacity"}`}
+                className={`flex items-center gap-1 select-none text-slate-400 dark:text-slate-500 ${isMobile ? "" : "opacity-0 group-hover:opacity-100 transition-opacity"}`}
             >
                 <button
                     type="button"
                     onClick={() => handleCopy(item)}
                     className="p-1 rounded hover:text-slate-700 dark:hover:text-slate-200 transition-colors relative"
-                    title={depId ? `Salin: ${depId}.${depositAmount}` : "Klik untuk atur ID Deposit"}
+                    title={depId ? `ID Deposit: ${depId} | Salin: ${depId}.${depositAmount}.300891` : "Klik untuk atur ID Deposit"}
                 >
                     {isCopied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
                     {isCopied && (
-                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-30 font-sans">
+                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-30 font-sans select-none pointer-events-none">
                             Tersalin!
                         </span>
                     )}
@@ -143,8 +201,8 @@ export default function RevenueTable({ revenue, hasData }) {
                 <button
                     type="button"
                     onClick={() => handleOpenSetting(item)}
-                    className="p-1 rounded hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                    title="Atur ID Deposit"
+                    className={`p-1 rounded hover:text-slate-700 dark:hover:text-slate-200 transition-colors ${depId ? "text-indigo-600 dark:text-indigo-400" : ""}`}
+                    title={depId ? `ID Deposit: ${depId} (Klik untuk edit)` : "Atur ID Deposit"}
                 >
                     <Settings2 size={15} />
                 </button>
@@ -216,16 +274,9 @@ export default function RevenueTable({ revenue, hasData }) {
                                     <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
                                         <Building2 className="w-4 h-4" />
                                     </div>
-                                    <div className={`flex items-center gap-1.5 flex-wrap ${showDepButton ? "block" : "hidden"}`}>
-                                        <span className="font-semibold text-xs text-slate-800 dark:text-slate-100">
-                                            {item.warehouse.replace(/^konter\s*/i, "")}
-                                        </span>
-                                        {getDepositId(item) && (
-                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                                ID: {getDepositId(item)}
-                                            </span>
-                                        )}
-                                    </div>
+                                    <span className="font-semibold text-xs text-slate-800 dark:text-slate-100">
+                                        {item.warehouse.replace(/^konter\s*/i, "")}
+                                    </span>
                                 </div>
                                 {renderDepositActions(item, true)}
                             </div>
@@ -295,6 +346,28 @@ export default function RevenueTable({ revenue, hasData }) {
             {/* 4. TAMPILAN DESKTOP: FULL TABLE (HANYA MUNCUL DI DESKTOP) */}
             {/* ========================================================= */}
             <div className="hidden sm:block overflow-x-auto">
+                {hasData && (
+                    <div className="flex justify-end p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40 select-none">
+                        <button
+                            type="button"
+                            onClick={handleCopyTableForSheets}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs transition-colors cursor-pointer"
+                            title="Salin seluruh tabel langsung dalam format Google Sheets / Excel (TSV)"
+                        >
+                            {copiedTable ? (
+                                <>
+                                    <Check size={14} className="text-emerald-500" />
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Tersalin untuk Sheets!</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Copy size={14} />
+                                    <span>Copy Table (Google Sheets)</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800 dark:bg-slate-800/25">
@@ -339,14 +412,7 @@ export default function RevenueTable({ revenue, hasData }) {
                                 <tr key={i} className="group hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150">
                                     <td className="px-6 py-4 font-sans font-medium text-slate-800 dark:text-slate-200">
                                         <div className="flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span>{item.warehouse.replace(/^konter\s*/i, "")}</span>
-                                                {getDepositId(item) && (
-                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        ID: {getDepositId(item)}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            <span>{item.warehouse.replace(/^konter\s*/i, "")}</span>
                                             {renderDepositActions(item, false)}
                                         </div>
                                     </td>

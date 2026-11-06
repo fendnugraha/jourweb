@@ -36,6 +36,8 @@ const PortalCheckin = () => {
     const [timeIn, setTimeIn] = useState(null);
     const [locationLoading, setLocationLoading] = useState(false);
     const [fileLoading, setFileLoading] = useState(false);
+    // State untuk menampilkan progress kompresi foto agar user tahu proses sedang berjalan
+    const [compressionProgress, setCompressionProgress] = useState(0);
 
     useEffect(() => {
         if (user?.has_checked_in && !attendance) {
@@ -118,26 +120,56 @@ const PortalCheckin = () => {
             return;
         }
 
+        // Revoke URL preview lama untuk mencegah memory leak
         if (preview) URL.revokeObjectURL(preview);
 
+        // Langsung tampilkan preview dari file asli sementara kompresi berjalan
+        // → user bisa langsung lihat foto sudah terambil, tidak terasa "kembali ke awal"
         const objectUrl = URL.createObjectURL(imageFile);
         setPreview(objectUrl);
-
         setFileLoading(true);
+        setCompressionProgress(0);
+        setError(null);
+
         try {
-            await getAddress(location.lat, location.lng);
+            // Kompresi gambar berjalan di background (WebWorker)
+            // onProgress dipanggil berkala agar kita bisa tampilkan progress ke user
             const compressed = await imageCompression(imageFile, {
                 maxSizeMB: 0.5,
                 maxWidthOrHeight: 480,
                 useWebWorker: true,
+                onProgress: (progress) => {
+                    // progress: 0–100
+                    setCompressionProgress(progress);
+                },
             });
 
+            // Simpan waktu foto diambil (sebelum fetch alamat) agar tetap akurat meski fetch lambat
             setFile(compressed);
             setTimeIn(formatTimeWithSecond(new Date()));
-        } catch (error) {
-            console.error("Compression error:", error);
+
+            // Fetch alamat dilakukan SETELAH foto tersimpan, sehingga jika lambat/gagal
+            // foto dan tombol kirim tetap aktif — user tidak kehilangan foto
+            if (location?.lat && location?.lng) {
+                // Jalankan getAddress secara "fire and forget" (tidak di-await)
+                // Kalau gagal/timeout, absensi tetap bisa dikirim tanpa alamat
+                getAddress(location.lat, location.lng).catch(() => {
+                    // Gagal ambil alamat tidak dianggap error fatal
+                    console.warn("Gagal ambil alamat, absensi tetap bisa dikirim.");
+                });
+            }
+        } catch (compressionError) {
+            console.error("Compression error:", compressionError);
+            // Jika kompresi gagal, tetap gunakan file asli daripada tidak ada foto sama sekali
+            setFile(imageFile);
+            setTimeIn(formatTimeWithSecond(new Date()));
+            setError("Kompresi foto gagal, menggunakan foto asli.");
         } finally {
             setFileLoading(false);
+            setCompressionProgress(0);
+            // Reset nilai input agar onChange terpanggil lagi jika user foto ulang dengan file yang sama
+            // (Fix bug di sebagian HP Android yang tidak trigger onChange jika file sama)
+            if (e.target) e.target.value = "";
         }
     };
 
@@ -286,18 +318,40 @@ const PortalCheckin = () => {
                         <div className="border border-dashed border-slate-700/80 bg-slate-950/40 rounded-2xl p-4 text-center min-h-44 flex flex-col items-center justify-center relative overflow-hidden">
                             {preview ? (
                                 <AnimatePresence mode="wait">
-                                    <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex flex-col items-center">
-                                        <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-800 shadow-md mb-3">
+                                    <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex flex-col items-center gap-3">
+                                        <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-800 shadow-md">
                                             <Image src={preview} fill className="object-cover" alt="Preview Foto" />
+
+                                            {/* Overlay loading kompresi — ditampilkan di atas preview foto */}
+                                            {/* Mencegah user bingung karena foto sudah tampil tapi tombol kirim belum aktif */}
+                                            {fileLoading && (
+                                                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                                                    <div className="w-3/4 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                                                            style={{ width: `${compressionProgress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[11px] text-slate-300 font-medium">
+                                                        {compressionProgress < 100 ? `Mengompres foto... ${compressionProgress}%` : "Menyiapkan foto..."}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
+
+                                        {/* Tombol Foto Ulang — hanya aktif setelah kompresi selesai */}
                                         <button
                                             type="button"
+                                            disabled={fileLoading}
                                             onClick={() => {
+                                                // Revoke preview URL untuk hemat memori
+                                                if (preview) URL.revokeObjectURL(preview);
                                                 setFile(null);
                                                 setPreview(null);
                                                 setTimeIn(null);
+                                                setCompressionProgress(0);
                                             }}
-                                            className="px-3 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                                            className="px-3 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
                                             <Undo2 size={13} /> Foto Ulang
                                         </button>

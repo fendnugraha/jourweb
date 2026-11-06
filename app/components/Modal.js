@@ -91,7 +91,7 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
     return createPortal(
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 sm:p-6">
+                <div className="fixed inset-0 z-9999 flex items-end sm:items-center justify-center p-0 sm:p-6">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -106,16 +106,16 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
                     {/* Modal Content */}
                     <motion.div
                         ref={modalRef}
-                        initial={{ scale: 0.95, opacity: 0, y: 15 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 40 }}
                         transition={{ type: "spring", damping: 25, stiffness: 350 }}
                         onKeyDown={handleKeyDown}
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         tabIndex={-1}
-                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800 z-10`}
+                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800 z-10`}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4 dark:border-slate-800">

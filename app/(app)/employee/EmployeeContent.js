@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ClipboardCheck, CreditCard, ReceiptText, Scale } from "lucide-react";
+import { Calendar1, ClipboardCheck, CreditCard, ReceiptText, Scale } from "lucide-react";
 import AttendancePage from "./attendance/Attendance";
 import Payroll from "./Payroll";
 import useEmployee from "@/app/hooks/useEmployee";
@@ -11,6 +11,7 @@ import EmployeeReceivable from "./EmployeeReceivable";
 import MobileNavDrawer from "@/app/components/MobileNavDrawer";
 import { useAuth } from "@/app/utils/auth";
 import FinancialReport from "./report/FinancialReport";
+import EmployeeDayOff from "./EmployeeDayOff";
 
 const EmployeeContent = () => {
     const { user } = useAuth();
@@ -20,7 +21,10 @@ const EmployeeContent = () => {
     const [notification, setNotification] = useState(null);
 
     // 1. Menu dasar untuk semua role
-    const menuList = [{ id: "attendance", label: "Absensi Karyawan", icon: ClipboardCheck }];
+    const menuList = [
+        { id: "attendance", label: "Absensi Karyawan", icon: ClipboardCheck },
+        { id: "dayOff", label: "Jadwal Libur (Hari Libur)", icon: Calendar1 },
+    ];
 
     // 2. Tambahkan menu khusus jika user adalah Admin
     if (["Administrator", "Super Admin"].includes(userRole)) {
@@ -47,6 +51,19 @@ const EmployeeContent = () => {
                             className="space-y-6"
                         >
                             <AttendancePage userRole={userRole} />
+                        </motion.div>
+                    )}
+
+                    {activeSubTab === "dayOff" && (
+                        <motion.div
+                            key="dayOff"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="space-y-6"
+                        >
+                            <EmployeeDayOff />
                         </motion.div>
                     )}
 
