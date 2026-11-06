@@ -23,7 +23,7 @@ const EmployeeContent = () => {
     // 1. Menu dasar untuk semua role
     const menuList = [
         { id: "attendance", label: "Absensi Karyawan", icon: ClipboardCheck },
-        { id: "dayOff", label: "Jadwal Libur (Hari Libur)", icon: Calendar1 },
+        { id: "dayOff", label: "Jadwal Libur (Event)", icon: Calendar1 },
     ];
 
     // 2. Tambahkan menu khusus jika user adalah Admin
