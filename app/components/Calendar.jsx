@@ -17,7 +17,7 @@ const getItemStyle = (item) => {
         if (item.status === "Lembur") return { bg: "bg-violet-500 text-white", icon: <AlarmClockPlus size={12} /> };
         if (item.status === "Alpha") return { bg: "bg-rose-600 text-white", icon: <X size={12} strokeWidth={3} /> };
     }
-    if (item.type === "weekly_off") return { bg: "bg-amber-400 text-white", icon: <Bed size={12} /> };
+    if (item.type === "weekly_off") return { bg: "bg-rose-400 text-white", icon: <Bed size={12} /> };
     if (item.type === "company_event") return { bg: "bg-indigo-500 text-white", icon: <CalendarDays size={12} /> };
     if (item.type === "holiday") return { bg: "bg-amber-500 text-white", icon: <CalendarDays size={12} /> };
     if (item.type === "leave") return { bg: "bg-purple-500 text-white", icon: <CalendarDays size={12} /> };
@@ -109,7 +109,11 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                             className={`text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md font-medium truncate flex items-center gap-1 ${style.bg}`}
                                         >
                                             {style.icon}
-                                            <span className="truncate">{item.name || item.status || item.type}</span>
+                                            {item.type === "weekly_off" ? (
+                                                <span className="truncate">{item.employee_name}</span>
+                                            ) : (
+                                                <span className="truncate">{item.name || item.status}</span>
+                                            )}
                                         </div>
                                     );
                                 })}
