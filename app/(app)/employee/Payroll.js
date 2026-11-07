@@ -1,4 +1,4 @@
-import { ClipboardCheck, Plus, ReceiptText, Search, UserRound, Users } from "lucide-react";
+import { ClipboardCheck, Download, Plus, ReceiptText, Search, UserRound, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import EmployeeTable from "./EmployeeTable";
 import Modal from "@/app/components/Modal";
@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "motion/react";
 import CreatePayroll from "./CreatePayroll";
 import PayrollTable from "./PayrollTable";
 import Dropdown from "@/app/components/Dropdown";
+import { exportToExcel } from "@/app/utils/exportExcel";
 
 const Payroll = ({ employees, notification, mutateEmployee }) => {
     const [isModalAddEmployeeOpen, setIsModalAddEmployeeOpen] = useState(false);
@@ -48,6 +49,24 @@ const Payroll = ({ employees, notification, mutateEmployee }) => {
         const matchesEmployment = employment === "all" || employee.employment_type === employment;
         return matchesSearch && matchesStatus && matchesEmployment;
     });
+
+    const handleExportEmployeeData = () => {
+        const employeeData = [
+            ...employees.map((emp) => ({
+                "Employee ID": emp.id,
+                "Contact ID": emp.contact?.id,
+                Name: emp.contact?.name,
+                Gender: emp.gender,
+                "Base Salary": emp.base_salary,
+                "Hire Date": emp.hire_date,
+                Type: emp.employment_type,
+                "Contract Start": emp.contract_start,
+                "Contract End": emp.contract_end,
+                Status: emp.status,
+            })),
+        ];
+        exportToExcel(employeeData, "Data_Karyawan", "Karyawan");
+    };
 
     return (
         <div className="space-y-6">
@@ -99,6 +118,14 @@ const Payroll = ({ employees, notification, mutateEmployee }) => {
                         <span>{filteredEmployee.length || 0}</span>
                         <span className="text-indigo-500/80 font-medium">Pegawai</span>
                     </div>
+                    <button
+                        type="button"
+                        onClick={handleExportEmployeeData}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-green-500 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-green-500 dark:bg-green-600 dark:hover:bg-green-500 transition-colors cursor-pointer shrink-0"
+                    >
+                        <Download className="h-4 w-4" />
+                        <span>Export ke Excel</span>
+                    </button>
                     <button
                         type="button"
                         onClick={() => setIsModalAddEmployeeOpen(true)}
