@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import imageCompression from "browser-image-compression";
 import { Camera, Check, Clock, LogOut, MapPin, Navigation, RefreshCw, Sparkles, Undo2 } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "../utils/auth";
@@ -13,6 +12,64 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import InactiveUserScreen from "./InActiveUserScreen";
 import CheckInSuccess from "./CheckInSuccess";
+
+// Kompresi foto berbasis Canvas native (sangat ringan, cepat < 200ms, aman untuk semua HP Android ram 2GB-3GB tanpa crash WebWorker)
+async function compressImageSafely(imageFile, maxWidth = 640, quality = 0.75) {
+    return new Promise((resolve) => {
+        if (!imageFile || imageFile.size <= 350 * 1024) {
+            return resolve(imageFile);
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement("img");
+            img.onload = () => {
+                try {
+                    let { width, height } = img;
+                    if (width > maxWidth || height > maxWidth) {
+                        if (width > height) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        } else {
+                            width = Math.round((width * maxWidth) / height);
+                            height = maxWidth;
+                        }
+                    }
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) {
+                                const fileName = (imageFile.name || "attendance").replace(/\.[^/.]+$/, "") + ".jpg";
+                                const compressedFile = new File([blob], fileName, {
+                                    type: "image/jpeg",
+                                    lastModified: Date.now(),
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                resolve(imageFile);
+                            }
+                        },
+                        "image/jpeg",
+                        quality,
+                    );
+                } catch (err) {
+                    console.warn("Canvas compression error, using raw image:", err);
+                    resolve(imageFile);
+                }
+            };
+            img.onerror = () => resolve(imageFile);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(imageFile);
+        reader.readAsDataURL(imageFile);
+    });
+}
 
 const PortalCheckin = () => {
     const router = useRouter();
@@ -40,8 +97,9 @@ const PortalCheckin = () => {
     const [compressionProgress, setCompressionProgress] = useState(0);
 
     useEffect(() => {
-        if (user?.has_checked_in && !attendance) {
-            router.push("/transaction");
+        const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
+        if ((user?.has_checked_in || justCheckedIn) && !attendance) {
+            router.replace("/transaction");
         }
     }, [user?.has_checked_in, attendance, router]);
 
@@ -115,6 +173,11 @@ const PortalCheckin = () => {
         const imageFile = e.target.files?.[0];
         if (!imageFile) return;
 
+        if (imageFile.size === 0) {
+            alert("File foto tidak terbaca atau kosong. Silakan coba lagi.");
+            return;
+        }
+
         if (!imageFile.type.startsWith("image/")) {
             alert("File harus berupa gambar!");
             return;
@@ -123,52 +186,34 @@ const PortalCheckin = () => {
         // Revoke URL preview lama untuk mencegah memory leak
         if (preview) URL.revokeObjectURL(preview);
 
-        // Langsung tampilkan preview dari file asli sementara kompresi berjalan
-        // → user bisa langsung lihat foto sudah terambil, tidak terasa "kembali ke awal"
+        // Tampilkan preview foto langsung
         const objectUrl = URL.createObjectURL(imageFile);
         setPreview(objectUrl);
         setFileLoading(true);
-        setCompressionProgress(0);
+        setCompressionProgress(20);
         setError(null);
+        setTimeIn(formatTimeWithSecond(new Date()));
 
         try {
-            // Kompresi gambar berjalan di background (WebWorker)
-            // onProgress dipanggil berkala agar kita bisa tampilkan progress ke user
-            const compressed = await imageCompression(imageFile, {
-                maxSizeMB: 0.5,
-                maxWidthOrHeight: 480,
-                useWebWorker: true,
-                onProgress: (progress) => {
-                    // progress: 0–100
-                    setCompressionProgress(progress);
-                },
-            });
-
-            // Simpan waktu foto diambil (sebelum fetch alamat) agar tetap akurat meski fetch lambat
+            setCompressionProgress(60);
+            // Kompresi ringan menggunakan Canvas (cepat, ramah RAM rendah, tidak crash)
+            const compressed = await compressImageSafely(imageFile, 640, 0.75);
             setFile(compressed);
-            setTimeIn(formatTimeWithSecond(new Date()));
+            setCompressionProgress(100);
 
-            // Fetch alamat dilakukan SETELAH foto tersimpan, sehingga jika lambat/gagal
-            // foto dan tombol kirim tetap aktif — user tidak kehilangan foto
+            // Fetch alamat background (fire and forget)
             if (location?.lat && location?.lng) {
-                // Jalankan getAddress secara "fire and forget" (tidak di-await)
-                // Kalau gagal/timeout, absensi tetap bisa dikirim tanpa alamat
                 getAddress(location.lat, location.lng).catch(() => {
-                    // Gagal ambil alamat tidak dianggap error fatal
                     console.warn("Gagal ambil alamat, absensi tetap bisa dikirim.");
                 });
             }
         } catch (compressionError) {
             console.error("Compression error:", compressionError);
-            // Jika kompresi gagal, tetap gunakan file asli daripada tidak ada foto sama sekali
+            // Fallback: gunakan foto asli jika kompresi bermasalah
             setFile(imageFile);
-            setTimeIn(formatTimeWithSecond(new Date()));
-            setError("Kompresi foto gagal, menggunakan foto asli.");
         } finally {
             setFileLoading(false);
             setCompressionProgress(0);
-            // Reset nilai input agar onChange terpanggil lagi jika user foto ulang dengan file yang sama
-            // (Fix bug di sebagian HP Android yang tidak trigger onChange jika file sama)
             if (e.target) e.target.value = "";
         }
     };
@@ -206,11 +251,21 @@ const PortalCheckin = () => {
                 const response = await axios.post("/api/create-attendance", formData, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
+
+                // Flag instan di sessionStorage agar middleware auth tidak menolak akses ke /transaction
+                if (typeof window !== "undefined") {
+                    sessionStorage.setItem("just_checked_in", "true");
+                }
+
+                // Optimistic SWR cache update: set has_checked_in: true langsung tanpa menunggu fetch selesai
+                if (mutate) {
+                    await mutate((prev) => (prev ? { ...prev, has_checked_in: true } : prev), false);
+                }
+
                 setFile(null);
                 setPreview(null);
                 setLocation(null);
                 setAttendance(response.data?.data);
-                if (mutate) mutate();
             } catch (error) {
                 setError(error.response?.data?.message || "Absensi gagal!");
                 setNotification(error.response?.data?.message || "Absensi gagal!");
@@ -219,11 +274,22 @@ const PortalCheckin = () => {
         });
     };
 
+    const handleContinueToTransaction = async () => {
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("just_checked_in", "true");
+        }
+        if (mutate) {
+            await mutate((prev) => (prev ? { ...prev, has_checked_in: true } : prev), false);
+        }
+        router.replace("/transaction");
+    };
+
     if (attendance) {
-        return <CheckInSuccess attendance={attendance} onContinue={() => router.push("/transaction")} />;
+        return <CheckInSuccess attendance={attendance} onContinue={handleContinueToTransaction} />;
     }
 
-    if (user?.has_checked_in) return null;
+    const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
+    if (user?.has_checked_in || justCheckedIn) return null;
 
     if (!isUserActive) return <InactiveUserScreen logout={logout} />;
     return (
@@ -320,7 +386,8 @@ const PortalCheckin = () => {
                                 <AnimatePresence mode="wait">
                                     <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex flex-col items-center gap-3">
                                         <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-800 shadow-md">
-                                            <Image src={preview} fill className="object-cover" alt="Preview Foto" />
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={preview} className="w-full h-full object-cover" alt="Preview Foto" />
 
                                             {/* Overlay loading kompresi — ditampilkan di atas preview foto */}
                                             {/* Mencegah user bingung karena foto sudah tampil tapi tombol kirim belum aktif */}

@@ -46,8 +46,16 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             if (err?.response?.status === 422) {
                 setStatus?.(err.response?.status);
                 setErrors?.(err.response?.data?.errors);
+            } else if (err?.code === "ERR_NETWORK" || !err?.response) {
+                console.error("Login Network/CORS Error:", err);
+                setErrors?.({
+                    email: "Koneksi ke server gagal atau terputus (CORS/Network error). Silakan coba lagi beberapa saat.",
+                });
             } else {
                 console.error("Login error:", err);
+                setErrors?.({
+                    email: err?.response?.data?.message || "Terjadi kesalahan pada server saat login.",
+                });
             }
         } finally {
             setLoading?.(false);
@@ -93,10 +101,19 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             const isSuperAdmin = user?.role === "Super Admin";
             const isAdminWarehouse1 = user?.role === "Administrator" && user?.warehouse_id === 1;
             const isExemptFromCheckin = isSuperAdmin || isAdminWarehouse1;
-            const requiresCheckin = user && !user.has_checked_in && !isExemptFromCheckin;
+
+            // Cek apakah user baru saja berhasil absen (mencegah race condition SWR cache saat redirect ke /transaction)
+            const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
+
+            // Jika user data dari server sudah confirmed has_checked_in: true, bersihkan flag sessionStorage
+            if (user?.has_checked_in && justCheckedIn && typeof window !== "undefined") {
+                sessionStorage.removeItem("just_checked_in");
+            }
+
+            const requiresCheckin = user && !user.has_checked_in && !isExemptFromCheckin && !justCheckedIn;
 
             if (requiresCheckin && pathname !== "/portal-checkin") {
-                router.push("/portal-checkin");
+                router.replace("/portal-checkin");
             }
         }
     }, [middleware, redirectIfAuthenticated, user, error, isLoading, pathname, router]);

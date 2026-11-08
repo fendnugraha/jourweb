@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Calendar from "@/app/components/Calendar";
 import Modal from "@/app/components/Modal";
 import axios from "@/app/utils/axios";
+import { useAuth } from "@/app/utils/auth";
 import { FileSpreadsheet, Loader2 } from "lucide-react";
 
 const TYPE_CONFIG = {
@@ -49,6 +50,10 @@ const STATUS_CONFIG = {
 
 export default function EmployeeDayOff({ userRole }) {
     const router = useRouter();
+    const { user } = useAuth();
+    const effectiveRole = userRole || user?.role;
+    const canImport = ["Administrator", "Super Admin"].includes(effectiveRole);
+
     const [calendarData, setCalendarData] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -112,13 +117,14 @@ export default function EmployeeDayOff({ userRole }) {
                         ))}
                 </div>
 
-                <button
-                    onClick={() => router.push("/employee/employee-schedules-import")}
-                    disabled={!["Administrator", "Super Admin"].includes(userRole)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs shadow-emerald-600/20 transition-all cursor-pointer"
-                >
-                    <FileSpreadsheet size={14} /> Import Excel
-                </button>
+                {canImport && (
+                    <button
+                        onClick={() => router.push("/employee/employee-schedules-import")}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs shadow-emerald-600/20 transition-all cursor-pointer"
+                    >
+                        <FileSpreadsheet size={14} /> Import Excel
+                    </button>
+                )}
             </div>
 
             {/* ── Kalender ── */}

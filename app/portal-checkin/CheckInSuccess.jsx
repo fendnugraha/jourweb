@@ -15,7 +15,7 @@ export default function CheckInSuccess({ attendance, buttonWithText = true, onCo
         if (onContinue) {
             onContinue();
         } else {
-            router.push("/transaction");
+            router.replace("/transaction");
         }
     };
 

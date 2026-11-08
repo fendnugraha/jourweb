@@ -19,11 +19,15 @@ export const googleProvider = new GoogleAuthProvider();
 
 // Helper untuk mengirim Firebase ID Token ke Laravel Sanctum
 export async function sendTokenToLaravel(idToken) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}api/auth/firebase-login`, {
+    const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
+    const baseUrl = rawBaseUrl.replace(/\/+$/, "");
+
+    const response = await fetch(`${baseUrl}/api/auth/firebase-login`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
+            "X-Requested-With": "XMLHttpRequest",
         },
         body: JSON.stringify({ id_token: idToken }),
     });
