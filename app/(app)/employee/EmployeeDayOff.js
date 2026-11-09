@@ -76,6 +76,7 @@ export default function EmployeeDayOff({ userRole }) {
                 }
                 formattedData[item.date].push({
                     type: item.type,
+                    title: item.title,
                     name: item.title || item.type,
                     status: item.status,
                     employee_id: item.employee_id,

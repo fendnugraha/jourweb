@@ -339,7 +339,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                     }`}
                                                 >
                                                     <IconComp size={10} className="shrink-0" />
-                                                    <span className="truncate">{displayName}</span>
+                                                    <span className="truncate">{item.type === "company_event" ? item.title : displayName}</span>
                                                 </div>
                                             );
                                         })}
