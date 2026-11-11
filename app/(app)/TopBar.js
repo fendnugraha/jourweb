@@ -3,6 +3,7 @@
 import { Clock } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import NotificationList from "./NotificationsList";
+import InformationBadge from "./InformationBadge";
 
 export default function TopBar({ title }) {
     const [timeStr, setTimeStr] = useState("");
@@ -43,6 +44,7 @@ export default function TopBar({ title }) {
                 </div>
 
                 {/* Notifikasi Popover Container */}
+                <InformationBadge />
                 <NotificationList />
             </div>
         </header>
