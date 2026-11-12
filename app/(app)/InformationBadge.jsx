@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Info, X } from "lucide-react";
 
 const hqBankAccounts = [
-    { bankName: "BCA", accountNumber: "3371956822", accountHolder: "Rudi Hermawan" },
+    { bankName: "BCA", accountNumber: "3372738089", accountHolder: "Rudi Hermawan" },
     { bankName: "MANDIRI", accountNumber: "1300011681270", accountHolder: "Rudi Hermawan" },
     { bankName: "BRI", accountNumber: "377501027461532", accountHolder: "Rudi Hermawan" },
     { bankName: "BNI", accountNumber: "1798249870", accountHolder: "Novi Indriyani" },
