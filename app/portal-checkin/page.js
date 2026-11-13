@@ -13,64 +13,6 @@ import { useRouter } from "next/navigation";
 import InactiveUserScreen from "./InActiveUserScreen";
 import CheckInSuccess from "./CheckInSuccess";
 
-// Kompresi foto berbasis Canvas native (sangat ringan, cepat < 200ms, aman untuk semua HP Android ram 2GB-3GB tanpa crash WebWorker)
-async function compressImageSafely(imageFile, maxWidth = 640, quality = 0.75) {
-    return new Promise((resolve) => {
-        if (!imageFile || imageFile.size <= 350 * 1024) {
-            return resolve(imageFile);
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.createElement("img");
-            img.onload = () => {
-                try {
-                    let { width, height } = img;
-                    if (width > maxWidth || height > maxWidth) {
-                        if (width > height) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        } else {
-                            width = Math.round((width * maxWidth) / height);
-                            height = maxWidth;
-                        }
-                    }
-
-                    const canvas = document.createElement("canvas");
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    canvas.toBlob(
-                        (blob) => {
-                            if (blob) {
-                                const fileName = (imageFile.name || "attendance").replace(/\.[^/.]+$/, "") + ".jpg";
-                                const compressedFile = new File([blob], fileName, {
-                                    type: "image/jpeg",
-                                    lastModified: Date.now(),
-                                });
-                                resolve(compressedFile);
-                            } else {
-                                resolve(imageFile);
-                            }
-                        },
-                        "image/jpeg",
-                        quality,
-                    );
-                } catch (err) {
-                    console.warn("Canvas compression error, using raw image:", err);
-                    resolve(imageFile);
-                }
-            };
-            img.onerror = () => resolve(imageFile);
-            img.src = e.target.result;
-        };
-        reader.onerror = () => resolve(imageFile);
-        reader.readAsDataURL(imageFile);
-    });
-}
-
 const PortalCheckin = () => {
     const router = useRouter();
     const { user, logout, mutate } = useAuth({ middleware: "auth" });
@@ -92,9 +34,6 @@ const PortalCheckin = () => {
     const [error, setError] = useState(null);
     const [timeIn, setTimeIn] = useState(null);
     const [locationLoading, setLocationLoading] = useState(false);
-    const [fileLoading, setFileLoading] = useState(false);
-    // State untuk menampilkan progress kompresi foto agar user tahu proses sedang berjalan
-    const [compressionProgress, setCompressionProgress] = useState(0);
 
     useEffect(() => {
         const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
@@ -169,7 +108,7 @@ const PortalCheckin = () => {
         return () => clearTimeout(timer);
     }, [initLocationAndWarehouse]);
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = (e) => {
         const imageFile = e.target.files?.[0];
         if (!imageFile) return;
 
@@ -186,36 +125,21 @@ const PortalCheckin = () => {
         // Revoke URL preview lama untuk mencegah memory leak
         if (preview) URL.revokeObjectURL(preview);
 
-        // Tampilkan preview foto langsung
+        // Tampilkan preview foto langsung dan set file mentah (kompresi dilakukan di server backend)
         const objectUrl = URL.createObjectURL(imageFile);
         setPreview(objectUrl);
-        setFileLoading(true);
-        setCompressionProgress(20);
+        setFile(imageFile);
         setError(null);
         setTimeIn(formatTimeWithSecond(new Date()));
 
-        try {
-            setCompressionProgress(60);
-            // Kompresi ringan menggunakan Canvas (cepat, ramah RAM rendah, tidak crash)
-            const compressed = await compressImageSafely(imageFile, 640, 0.75);
-            setFile(compressed);
-            setCompressionProgress(100);
-
-            // Fetch alamat background (fire and forget)
-            if (location?.lat && location?.lng) {
-                getAddress(location.lat, location.lng).catch(() => {
-                    console.warn("Gagal ambil alamat, absensi tetap bisa dikirim.");
-                });
-            }
-        } catch (compressionError) {
-            console.error("Compression error:", compressionError);
-            // Fallback: gunakan foto asli jika kompresi bermasalah
-            setFile(imageFile);
-        } finally {
-            setFileLoading(false);
-            setCompressionProgress(0);
-            if (e.target) e.target.value = "";
+        // Fetch alamat background (fire and forget)
+        if (location?.lat && location?.lng) {
+            getAddress(location.lat, location.lng).catch(() => {
+                console.warn("Gagal ambil alamat, absensi tetap bisa dikirim.");
+            });
         }
+
+        if (e.target) e.target.value = "";
     };
 
     async function getAddress(lat, lng) {
@@ -388,35 +312,18 @@ const PortalCheckin = () => {
                                         <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-800 shadow-md">
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img src={preview} className="w-full h-full object-cover" alt="Preview Foto" />
-
-                                            {/* Overlay loading kompresi — ditampilkan di atas preview foto */}
-                                            {/* Mencegah user bingung karena foto sudah tampil tapi tombol kirim belum aktif */}
-                                            {fileLoading && (
-                                                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
-                                                    <div className="w-3/4 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-indigo-500 rounded-full transition-all duration-300"
-                                                            style={{ width: `${compressionProgress}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[11px] text-slate-300 font-medium">
-                                                        {compressionProgress < 100 ? `Mengompres foto... ${compressionProgress}%` : "Menyiapkan foto..."}
-                                                    </span>
-                                                </div>
-                                            )}
                                         </div>
 
-                                        {/* Tombol Foto Ulang — hanya aktif setelah kompresi selesai */}
+                                        {/* Tombol Foto Ulang */}
                                         <button
                                             type="button"
-                                            disabled={fileLoading}
+                                            disabled={isPending}
                                             onClick={() => {
                                                 // Revoke preview URL untuk hemat memori
                                                 if (preview) URL.revokeObjectURL(preview);
                                                 setFile(null);
                                                 setPreview(null);
                                                 setTimeIn(null);
-                                                setCompressionProgress(0);
                                             }}
                                             className="px-3 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                                         >
@@ -509,7 +416,10 @@ const PortalCheckin = () => {
                         }`}
                     >
                         {isPending ? (
-                            <span>Mengirim Absensi...</span>
+                            <span className="flex items-center gap-2">
+                                <RefreshCw size={14} className="animate-spin" />
+                                Mengirim Absensi...
+                            </span>
                         ) : (
                             <>
                                 <Check size={16} strokeWidth={2.5} />

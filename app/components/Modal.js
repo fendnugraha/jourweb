@@ -6,7 +6,15 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-export default function Modal({ isOpen, onClose, title, modalTitle, children, maxWidth = "max-w-lg" }) {
+export default function Modal({
+    isOpen,
+    onClose,
+    title,
+    modalTitle,
+    children,
+    maxWidth = "max-w-lg",
+    fullscreenOnMobile = true,
+}) {
     const modalRef = useRef(null);
     const previousFocusRef = useRef(null);
     const [mounted, setMounted] = useState(false);
@@ -26,7 +34,9 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
 
             const timer = setTimeout(() => {
                 if (modalRef.current) {
-                    const focusable = modalRef.current.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    const focusable = modalRef.current.querySelectorAll(
+                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+                    );
                     if (focusable.length > 0) {
                         // preventScroll mencegah layar melompat/flicker saat elemen difokuskan
                         focusable[0].focus({ preventScroll: true });
@@ -66,7 +76,9 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
 
         if (e.key === "Tab") {
             if (!modalRef.current) return;
-            const focusableElements = modalRef.current.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            const focusableElements = modalRef.current.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            );
             if (focusableElements.length === 0) return;
 
             const firstElement = focusableElements[0];
@@ -91,7 +103,13 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
     return createPortal(
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-9999 flex items-end sm:items-center justify-center p-0 sm:p-6">
+                <div
+                    className={`fixed inset-0 z-9999 flex justify-center ${
+                        fullscreenOnMobile
+                            ? "items-stretch sm:items-center p-0 sm:p-6"
+                            : "items-end sm:items-center p-0 sm:p-6"
+                    }`}
+                >
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -103,37 +121,46 @@ export default function Modal({ isOpen, onClose, title, modalTitle, children, ma
                         aria-hidden="true"
                     />
 
-                    {/* Modal Content */}
+                    {/* Modal Content Box */}
                     <motion.div
                         ref={modalRef}
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 40 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.98 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
                         onKeyDown={handleKeyDown}
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="modal-title"
                         tabIndex={-1}
-                        className={`relative w-full ${maxWidth} transform-gpu backface-hidden overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white p-5 sm:p-6 shadow-xl border border-slate-100 focus:outline-hidden dark:bg-slate-900 dark:border-slate-800 z-10`}
+                        className={`relative w-full ${maxWidth} bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden focus:outline-hidden z-10 ${
+                            fullscreenOnMobile
+                                ? "h-dvh sm:h-auto sm:max-h-[85vh] rounded-none sm:rounded-2xl border-0 sm:border border-slate-100 dark:border-slate-800"
+                                : "max-h-[90dvh] sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl border border-slate-100 dark:border-slate-800"
+                        }`}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 mb-4 dark:border-slate-800">
-                            <h2 id="modal-title" className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5 sm:px-6 sm:py-4 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 rounded-t-none sm:rounded-t-2xl">
+                            <h2
+                                id="modal-title"
+                                className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 truncate mr-2"
+                            >
                                 {displayTitle}
                             </h2>
                             <button
                                 type="button"
                                 onClick={onClose}
                                 aria-label="Close modal"
-                                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300 cursor-pointer"
+                                className="rounded-xl p-1.5 sm:p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300 cursor-pointer shrink-0"
                             >
                                 <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        {/* Body */}
-                        <div className="max-h-[calc(100vh-11rem)] overflow-y-auto pr-1 no-scrollbar">{children}</div>
+                        {/* Body Scrollable */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 overscroll-contain no-scrollbar">
+                            {children}
+                        </div>
                     </motion.div>
                 </div>
             )}
