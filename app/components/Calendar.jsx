@@ -411,7 +411,11 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                             {items.map((it, i) => {
                                                 const cfg = getItemConfig(it);
                                                 const IconComp = cfg?.icon || CalendarDays;
-                                                const name = it.employee_name || it.title || it.name || cfg?.label || it.type;
+                                                const name =
+                                                    it.type === "company_event"
+                                                        ? it.title || it.name || cfg?.label
+                                                        : it.employee_name || it.title || it.name || cfg?.label || it.type;
+
                                                 return (
                                                     <span
                                                         key={i}
