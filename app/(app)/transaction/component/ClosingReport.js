@@ -216,40 +216,42 @@ export default function ClosingReport({
                 return;
             }
 
-            setStatusText("Mengunci cabang...");
-            await changeLockStatus(warehouseId);
-
             setStatusText("Mengambil data transaksi...");
             const latestTransactions = await fetchTransaction();
 
-            setStatusText("Mengirim laporan Telegram...");
-
-            // 3. Hitung lockTargetTime secara bersih
-            const now = new Date().getTime();
-            const LOCK_DURATION_MS = 2 * 60 * 1000;
-            const lockTargetTime = now + LOCK_DURATION_MS;
+            setStatusText("Memproses tutup shift & laporan Telegram...");
 
             const result = await ClosingShift({
                 cred_id: warehouseCashId,
-                amount: dailyDashboard?.data?.totalCash - openingCash,
+                amount: (dailyDashboard?.data?.totalCash ?? 0) - openingCash,
                 warehouse: warehouseName,
                 message: copyDailyReport(),
                 warehouseId: warehouseId,
             });
 
-            const telegramResponseObj = result?.telegramData?.data || result?.telegramData;
+            setStatusText("Mengunci cabang...");
+            await changeLockStatus(warehouseId);
 
-            // Safe Storage Logic
-            setRawTelegramData(telegramResponseObj);
-            localStorage.setItem(`last_telegram_data_${warehouseId}`, JSON.stringify(telegramResponseObj));
-            localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
+            // 3. Hitung lockTargetTime setelah proses mutasi & kunci cabang berhasil
+            const now = new Date().getTime();
+            const LOCK_DURATION_MS = 2 * 60 * 1000;
+            const lockTargetTime = now + LOCK_DURATION_MS;
+
+            const telegramResponseObj = result?.telegramData?.data || result?.telegramData || null;
+
+            // Safe Storage Logic (hanya simpan data Telegram jika pengiriman berhasil)
+            if (telegramResponseObj) {
+                setRawTelegramData(telegramResponseObj);
+                localStorage.setItem(`last_telegram_data_${warehouseId}`, JSON.stringify(telegramResponseObj));
+                localStorage.setItem("last_telegram_data", JSON.stringify(telegramResponseObj));
+            }
             localStorage.setItem(`target_lock_time_${warehouseId}`, String(lockTargetTime));
             localStorage.setItem(`lock_warehouse_id_${warehouseId}`, String(warehouseId));
             localStorage.setItem("target_lock_time", String(lockTargetTime));
             localStorage.setItem("lock_warehouse_id", String(warehouseId));
 
-            setStatusText("Mengirim laporan...");
-            await SendTelegramAlert({
+            setStatusText("Mengirim laporan penjualan barang...");
+            const voucherTelegramResult = await SendTelegramAlert({
                 title: "PENJUALAN BARANG", // Kembali ke teks asli Anda
                 source: warehouseName,
                 message: formatVoucherText(latestTransactions),
@@ -262,7 +264,14 @@ export default function ClosingReport({
             setIsLocking(true);
             setIsClosingComplete(true);
 
-            if (notification) notification("Shift berhasil ditutup & Laporan Telegram dikirim!");
+            const allTelegramOk = result?.telegramSuccess !== false && voucherTelegramResult?.success !== false;
+            if (notification) {
+                notification(
+                    allTelegramOk
+                        ? "Shift berhasil ditutup & Laporan Telegram dikirim!"
+                        : "Shift berhasil ditutup, namun sebagian laporan Telegram gagal terkirim."
+                );
+            }
             alert("Shift berhasil ditutup!");
         } catch (error) {
             console.error("Closing shift error:", error);
@@ -272,7 +281,8 @@ export default function ClosingReport({
                 if (notification) notification("Koneksi internet lambat/timeout. Silakan periksa jaringan Anda.");
                 alert("Koneksi terputus saat menutup shift. Silakan muat ulang halaman dan periksa kembali statusnya.");
             } else {
-                if (notification) notification("Terjadi kesalahan saat menutup shift.");
+                const errMsg = error.response?.data?.message || "Terjadi kesalahan saat menutup shift.";
+                if (notification) notification(errMsg);
             }
         } finally {
             setLoading(false);
