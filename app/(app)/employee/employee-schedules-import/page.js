@@ -87,11 +87,7 @@ function StatusBadge({ status }) {
         label: status || "approved",
         style: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
     };
-    return (
-        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border capitalize ${cfg.style}`}>
-            {cfg.label}
-        </span>
-    );
+    return <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border capitalize ${cfg.style}`}>{cfg.label}</span>;
 }
 
 export default function ImportSchedulePage() {
@@ -315,11 +311,10 @@ export default function ImportSchedulePage() {
                                 <FileSpreadsheet className="text-emerald-600 dark:text-emerald-400" size={20} />
                             </div>
                             <div>
-                                <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                    Upload File Jadwal &amp; Libur
-                                </h1>
+                                <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 leading-tight">Upload File Jadwal &amp; Libur</h1>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Mendukung format file spreadsheet <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold">.xlsx, .xls, .csv</span>
+                                    Mendukung format file spreadsheet{" "}
+                                    <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold">.xlsx, .xls, .csv</span>
                                 </p>
                             </div>
                         </div>
@@ -343,13 +338,7 @@ export default function ImportSchedulePage() {
 
                     {/* Upload Dropzone */}
                     <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl p-6 sm:p-8 text-center transition-all bg-slate-50/40 dark:bg-slate-800/20 group">
-                        <input
-                            type="file"
-                            accept=".xlsx, .xls, .csv"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            id="excel-file-input"
-                        />
+                        <input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileUpload} className="hidden" id="excel-file-input" />
                         <label htmlFor="excel-file-input" className="cursor-pointer flex flex-col items-center gap-3">
                             <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 text-slate-400 group-hover:text-emerald-600 group-hover:scale-105 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-xs transition-all">
                                 <Upload size={20} />
@@ -365,7 +354,8 @@ export default function ImportSchedulePage() {
                                     )}
                                 </p>
                                 <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                                    Kolom wajib: <span className="font-mono font-semibold text-slate-600 dark:text-slate-400">employee_id, date, type</span> (optional: <span className="font-mono">title, status</span>)
+                                    Kolom wajib: <span className="font-mono font-semibold text-slate-600 dark:text-slate-400">employee_id, date, type</span>{" "}
+                                    (optional: <span className="font-mono">title, status</span>)
                                 </p>
                             </div>
                         </label>
@@ -381,7 +371,9 @@ export default function ImportSchedulePage() {
                                     <span className="text-lg font-bold text-slate-800 dark:text-slate-100 font-mono">{previewData.length}</span>
                                 </div>
                                 <div className="p-3 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40">
-                                    <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block tracking-wider">Libur Mingguan</span>
+                                    <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block tracking-wider">
+                                        Libur Mingguan
+                                    </span>
                                     <span className="text-lg font-bold text-amber-700 dark:text-amber-300 font-mono">{counts.weekly_off}</span>
                                 </div>
                                 <div className="p-3 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40">
@@ -389,7 +381,9 @@ export default function ImportSchedulePage() {
                                     <span className="text-lg font-bold text-rose-700 dark:text-rose-300 font-mono">{counts.leave}</span>
                                 </div>
                                 <div className="p-3 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40">
-                                    <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 block tracking-wider">Event Kantor</span>
+                                    <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 block tracking-wider">
+                                        Event Kantor
+                                    </span>
                                     <span className="text-lg font-bold text-indigo-700 dark:text-indigo-300 font-mono">{counts.company_event}</span>
                                 </div>
                             </div>
@@ -441,17 +435,11 @@ export default function ImportSchedulePage() {
                                                     <td className="p-3 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
                                                     <td className="p-3">
                                                         <div className="flex flex-col">
-                                                            <span className="font-semibold text-slate-800 dark:text-slate-100">
-                                                                {empName || "Karyawan"}
-                                                            </span>
-                                                            <span className="font-mono text-[10px] text-slate-400">
-                                                                ID: {row.employee_id}
-                                                            </span>
+                                                            <span className="font-semibold text-slate-800 dark:text-slate-100">{empName || "Karyawan"}</span>
+                                                            <span className="font-mono text-[10px] text-slate-400">ID: {row.employee_id}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="p-3 font-mono font-medium text-slate-700 dark:text-slate-300">
-                                                        {row.date}
-                                                    </td>
+                                                    <td className="p-3 font-mono font-medium text-slate-700 dark:text-slate-300">{row.date}</td>
                                                     <td className="p-3">
                                                         <TypeBadge type={row.type} />
                                                     </td>
@@ -481,7 +469,8 @@ export default function ImportSchedulePage() {
                             {/* Submit Button */}
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                                 <span className="text-xs text-slate-400">
-                                    Siap menyimpan <strong className="text-slate-700 dark:text-slate-200 font-mono">{previewData.length}</strong> jadwal ke sistem.
+                                    Siap menyimpan <strong className="text-slate-700 dark:text-slate-200 font-mono">{previewData.length}</strong> jadwal ke
+                                    sistem.
                                 </span>
 
                                 <button
@@ -509,15 +498,11 @@ export default function ImportSchedulePage() {
             </div>
 
             {/* ── MODAL DAFTAR ID KARYAWAN ── */}
-            <Modal
-                isOpen={isEmpModalOpen}
-                onClose={() => setIsEmpModalOpen(false)}
-                title="Daftar ID Karyawan"
-                maxWidth="max-w-md"
-            >
+            <Modal isOpen={isEmpModalOpen} onClose={() => setIsEmpModalOpen(false)} title="Daftar ID Karyawan" maxWidth="max-w-md">
                 <div className="space-y-3 text-xs">
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Gunakan nomor ID ini pada kolom <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">employee_id</span> file Excel Anda:
+                        Gunakan nomor ID ini pada kolom <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">employee_id</span> file
+                        Excel Anda:
                     </p>
 
                     <div className="relative">
@@ -533,10 +518,11 @@ export default function ImportSchedulePage() {
 
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl pr-1">
                         {filteredEmployees.map((emp) => (
-                            <div key={emp.id} className="p-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                <span className="font-medium text-slate-800 dark:text-slate-200">
-                                    {emp.contact?.name || emp.name || `Karyawan #${emp.id}`}
-                                </span>
+                            <div
+                                key={emp.id}
+                                className="p-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                            >
+                                <span className="font-medium text-slate-800 dark:text-slate-200">{emp.contact?.name || emp.name || `Karyawan #${emp.id}`}</span>
                                 <span className="px-2 py-0.5 rounded-lg font-mono font-bold text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                     ID: {emp.id}
                                 </span>

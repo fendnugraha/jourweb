@@ -266,7 +266,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                         {[...Array(startOffset)].map((_, i) => (
                             <div
                                 key={`leading-${i}`}
-                                className="min-h-13 sm:min-h-24 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
+                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
                             />
                         ))}
 
@@ -282,12 +282,12 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                 <div
                                     key={dateKey}
                                     onClick={() => onDateClick && onDateClick(dateKey, items)}
-                                    className={`group min-h-13 sm:min-h-24 p-1 sm:p-2 rounded-xl sm:rounded-2xl flex flex-col justify-between transition-all cursor-pointer relative border select-none ${
+                                    className={`group min-h-13 sm:min-h-25 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex flex-col justify-between sm:justify-start transition-all cursor-pointer relative border select-none ${
                                         isCurrentDay
                                             ? "border-emerald-500 dark:border-emerald-400 ring-2 ring-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/20 font-semibold"
                                             : items.length > 0
                                               ? "border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-xs"
-                                              : "border-slate-300 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                                              : "border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                                     }`}
                                 >
                                     {/* Baris Atas: Nomor Tanggal & Counter Badge */}
@@ -296,7 +296,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                         <span
                                             className={`text-[11px] sm:text-xs font-semibold leading-none flex items-center justify-center ${
                                                 isCurrentDay
-                                                    ? "w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] sm:text-[11px] shadow-xs shadow-emerald-600/30"
+                                                    ? "w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-emerald-600 text-white font-bold text-[10px] sm:text-[11px] shadow-xs shadow-emerald-600/30"
                                                     : isSunday
                                                       ? "text-rose-500 dark:text-rose-400"
                                                       : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
@@ -305,11 +305,17 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                             {format(day, "d")}
                                         </span>
 
-                                        {/* Counter badge jika ada lebih dari 1 data di desktop */}
-                                        {items.length > 1 && (
-                                            <span className="hidden sm:inline-flex px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                                                {items.length}
+                                        {/* Counter / Sisa badge di pojok kanan atas pada desktop */}
+                                        {items.length > 3 ? (
+                                            <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                                +{items.length - 3}
                                             </span>
+                                        ) : (
+                                            items.length > 1 && (
+                                                <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-semibold bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                                                    {items.length}
+                                                </span>
+                                            )
                                         )}
                                     </div>
 
@@ -324,29 +330,32 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                         </div>
                                     )}
 
-                                    {/* ── DESKTOP VIEW: Pills dengan Text & Icon ── */}
-                                    <div className="hidden sm:flex flex-col gap-1 mt-1 w-full overflow-hidden">
-                                        {items.slice(0, 2).map((item, idx) => {
+                                    {/* ── DESKTOP VIEW: Compact Pills (3 Event Default) ── */}
+                                    <div className="hidden sm:flex flex-col gap-0.5 mt-1 w-full overflow-hidden">
+                                        {items.slice(0, 3).map((item, idx) => {
                                             const cfg = getItemConfig(item);
-                                            const IconComp = cfg?.icon || CalendarDays;
-                                            const displayName = item.employee_name || item.title || item.name || cfg?.label || item.type;
+                                            const displayName =
+                                                item.type === "company_event"
+                                                    ? item.title || item.name || cfg?.label
+                                                    : item.employee_name || item.title || item.name || cfg?.label || item.type;
 
                                             return (
                                                 <div
                                                     key={idx}
-                                                    className={`px-1.5 py-0.5 rounded-lg border text-[10px] font-medium truncate flex items-center gap-1 ${
+                                                    title={displayName}
+                                                    className={`px-1.5 py-0.5 rounded-md border text-[9.5px] leading-tight font-medium truncate flex items-center gap-1 transition-colors ${
                                                         cfg?.desktopBadge || "bg-slate-100 text-slate-700 border-slate-200"
                                                     }`}
                                                 >
-                                                    <IconComp size={10} className="shrink-0" />
-                                                    <span className="truncate">{item.type === "company_event" ? item.title : displayName}</span>
+                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg?.dot || "bg-slate-400"}`} />
+                                                    <span className="truncate">{displayName}</span>
                                                 </div>
                                             );
                                         })}
 
-                                        {items.length > 2 && (
-                                            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold text-center">
-                                                +{items.length - 2} lainnya
+                                        {items.length > 3 && (
+                                            <span className="text-[8.5px] leading-none pt-0.5 text-slate-400 dark:text-slate-500 font-semibold text-center">
+                                                +{items.length - 3} lainnya
                                             </span>
                                         )}
                                     </div>
@@ -358,7 +367,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                         {[...Array(trailingOffset)].map((_, i) => (
                             <div
                                 key={`trailing-${i}`}
-                                className="min-h-13 sm:min-h-24 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
+                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
                             />
                         ))}
                     </div>
