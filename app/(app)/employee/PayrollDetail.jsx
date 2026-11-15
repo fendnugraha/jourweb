@@ -22,15 +22,15 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
             ? Number(employee.installment_account_id)
             : employee?.account_id
               ? Number(employee.account_id)
-              : "",
+              : 1,
         bonuses: Array.isArray(employee?.bonuses) ? employee.bonuses.map((b) => ({ name: b.name || "", amount: b.amount || 0 })) : [],
         deductions: Array.isArray(employee?.deductions) ? employee.deductions.map((d) => ({ name: d.name || "", amount: d.amount || 0 })) : [],
     }));
 
-    // Opsi pilihan akun rekening / kas modal (kecuali ID 1 / Potong Laba)
+    // Opsi pilihan akun pembayaran cicilan: bisa Potong Laba (ID 1) atau Akun Kas/Bank Modal Pusat (warehouse_id === 1)
     const accountOptions = useMemo(() => {
         return [
-            { value: "", label: "-- Pilih Akun Kas Modal Penerima Cicilan --" },
+            { value: 1, label: "Potong Laba (Pendapatan)" },
             ...accounts
                 .filter((acc) => Number(acc.id) !== 1 && Number(acc.warehouse_id) === 1)
                 .map((acc) => {
@@ -45,8 +45,9 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
 
     // Nama akun terpilih untuk label / preview
     const selectedAccountName = useMemo(() => {
-        if (!formData.installment_account_id) return null;
-        const acc = accounts.find((a) => Number(a.id) === Number(formData.installment_account_id));
+        const accId = Number(formData.installment_account_id || 1);
+        if (accId === 1) return "Potong Laba (Pendapatan)";
+        const acc = accounts.find((a) => Number(a.id) === accId);
         if (!acc) return null;
         const whName = acc.warehouse?.name ? acc.warehouse.name.replace(/^konter\s*/i, "") : null;
         return whName && acc.warehouse_id !== 1 ? `${acc.name} (${whName})` : acc.name;
@@ -145,13 +146,7 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
     const handleSave = (e) => {
         e?.preventDefault();
 
-        const installmentAmount = Number(formData.installment_receivable) || 0;
-        const selectedAccId = formData.installment_account_id ? Number(formData.installment_account_id) : null;
-
-        if (installmentAmount > 0 && (!selectedAccId || selectedAccId === 1)) {
-            alert("Silakan pilih Akun Kas Modal penerima pembayaran cicilan terlebih dahulu.");
-            return;
-        }
+        const resolvedAccId = formData.installment_account_id ? Number(formData.installment_account_id) : 1;
 
         // Calculate total savings if deduction named "Simpanan Wajib" exists
         const totalSavings = formData.deductions.filter((d) => d.name?.trim() === "Simpanan Wajib").reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
@@ -163,9 +158,9 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
             overtime: Number(formData.overtime) || 0,
             employee_receivable: Number(formData.employee_receivable) || 0,
             installment_receivable: Number(formData.installment_receivable) || 0,
-            installment_account_id: formData.installment_account_id ? Number(formData.installment_account_id) : null,
-            installment_account_name: selectedAccountName || null,
-            account_id: formData.installment_account_id ? Number(formData.installment_account_id) : (employee?.account_id ?? null),
+            installment_account_id: resolvedAccId,
+            installment_account_name: selectedAccountName || "Potong Laba (Pendapatan)",
+            account_id: resolvedAccId,
             bonuses: formData.bonuses.map((b) => ({
                 name: b.name?.trim() || "Bonus",
                 amount: Number(b.amount) || 0,

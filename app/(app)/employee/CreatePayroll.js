@@ -84,19 +84,22 @@ const CreatePayroll = ({ notification }) => {
                 const receivable = Number(employee.contact?.employee_receivables_sum?.total) || 0;
                 const installment = Number(employee.contact?.installment_receivables_sum?.total) || 0;
 
-                // Ambil sumber dana kas modal dari jurnal pencairan cicilan terakhir (jika bukan ID 1 / Potong Laba)
-                const latestInstallmentCredId = Number(employee.contact?.latest_installment_receivable?.journal?.cred_id) || null;
-                const defaultInstallmentAccountId =
-                    installment > 0 && latestInstallmentCredId && latestInstallmentCredId > 1 ? latestInstallmentCredId : null;
-                const matchedAcc = defaultInstallmentAccountId
-                    ? accounts.find((a) => Number(a.id) === defaultInstallmentAccountId)
-                    : null;
+                // Ambil sumber dana dari jurnal pencairan cicilan terakhir (ID 1 = Potong Laba, > 1 = Kas Modal)
+                const latestInstallmentCredId = Number(employee.contact?.latest_installment_receivable?.journal?.cred_id) || 1;
+                const defaultInstallmentAccountId = installment > 0 ? latestInstallmentCredId : 1;
+                const matchedAcc =
+                    defaultInstallmentAccountId > 1 ? accounts.find((a) => Number(a.id) === defaultInstallmentAccountId) : null;
                 const matchedWhName = matchedAcc?.warehouse?.name ? matchedAcc.warehouse.name.replace(/^konter\s*/i, "") : null;
-                const defaultInstallmentAccountName = matchedAcc
-                    ? matchedWhName && matchedAcc.warehouse_id !== 1
-                        ? `${matchedAcc.name} (${matchedWhName})`
-                        : matchedAcc.name
-                    : null;
+                const defaultInstallmentAccountName =
+                    installment > 0
+                        ? defaultInstallmentAccountId === 1
+                            ? "Potong Laba (Pendapatan)"
+                            : matchedAcc
+                              ? matchedWhName && matchedAcc.warehouse_id !== 1
+                                  ? `${matchedAcc.name} (${matchedWhName})`
+                                  : matchedAcc.name
+                              : `Akun #${defaultInstallmentAccountId}`
+                        : null;
 
                 const deductions = [
                     ...(employee.salary_components
@@ -148,7 +151,20 @@ const CreatePayroll = ({ notification }) => {
         processData.reduce((total, item) => total + (item.bonuses?.reduce((t, bonus) => t + (Number(bonus.amount) || 0), 0) || 0), 0) +
         processData.reduce((total, item) => total + Number(item.overtime || 0), 0);
     const totalKasbon = processData.reduce((total, item) => total + Number(item.employee_receivable || 0), 0);
-    const totalInstallment = processData.reduce((total, item) => total + Number(item.installment_receivable || 0), 0);
+
+    // Pisahkan cicilan berdasarkan akun tujuannya:
+    // 1. Cicilan Potong Laba (installment_account_id === 1 atau kosong) -> mengurangi pengajuan gaji ke owner
+    // 2. Cicilan Kas Modal (installment_account_id > 1) -> tetap diajukan ke owner karena uangnya disetor kembali ke Kas Modal
+    const totalInstallmentLaba = processData.reduce((total, item) => {
+        const accId = Number(item.installment_account_id || item.account_id || 1);
+        return accId === 1 ? total + Number(item.installment_receivable || 0) : total;
+    }, 0);
+    const totalInstallmentModal = processData.reduce((total, item) => {
+        const accId = Number(item.installment_account_id || item.account_id || 1);
+        return accId > 1 ? total + Number(item.installment_receivable || 0) : total;
+    }, 0);
+
+    const totalInstallment = totalInstallmentLaba + totalInstallmentModal;
     const totalReceivable = totalKasbon + totalInstallment;
     const totalDeduction = processData.reduce((total, item) => {
         const deductions = item.deductions || [];
@@ -160,14 +176,9 @@ const CreatePayroll = ({ notification }) => {
     // Total gaji bersih yang diterima seluruh karyawan (Take Home Pay)
     const totalNetPay = totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable;
 
-    // Total permintaan dana gaji kepada Admin:
-    // Take Home Pay Karyawan + Simpanan Wajib (disetor ke tabungan) + Cicilan (dikembalikan ke Kas Modal, bukan potong laba)
-    const totalPayrollRequest = totalNetPay + totalSavingSum + totalInstallment;
-
-    // Cek karyawan yang punya potongan cicilan tapi belum memilih akun Kas Modal tujuan (> 1)
-    const employeesMissingInstallmentAccount = processData.filter(
-        (item) => Number(item.installment_receivable) > 0 && (!item.installment_account_id || Number(item.installment_account_id) === 1),
-    );
+    // Total permintaan dana gaji kepada Admin/Owner:
+    // Take Home Pay Karyawan + Simpanan Wajib + Cicilan yang masuk ke Kas Modal (sedangkan Kasbon & Cicilan Potong Laba otomatis memotong pengajuan)
+    const totalPayrollRequest = totalNetPay + totalSavingSum + totalInstallmentModal;
 
     const calculateTotalItem = (item) => {
         const basicSalary = Number(item.basic_salary) || 0;
@@ -222,12 +233,6 @@ const CreatePayroll = ({ notification }) => {
                 type: "error",
                 message: "Bulan dan tahun wajib diisi",
             });
-            return;
-        }
-
-        if (employeesMissingInstallmentAccount.length > 0) {
-            const names = employeesMissingInstallmentAccount.map((e) => e.name).join(", ");
-            notification(`Pilih akun Kas Modal penerima cicilan terlebih dahulu untuk: ${names} (pada tombol Detail & Edit).`);
             return;
         }
 
@@ -364,26 +369,24 @@ const CreatePayroll = ({ notification }) => {
                                                 {employee.installment_receivable > 0 && (
                                                     <span
                                                         className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
-                                                            employee.installment_account_id && Number(employee.installment_account_id) !== 1
+                                                            Number(employee.installment_account_id || 1) > 1
                                                                 ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60"
-                                                                : "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60"
+                                                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60"
                                                         }`}
                                                         title={
-                                                            employee.installment_account_name
-                                                                ? `Cicilan masuk ke Kas Modal: ${employee.installment_account_name}`
-                                                                : "Akun Kas Modal penerima cicilan belum dipilih!"
+                                                            Number(employee.installment_account_id || 1) > 1
+                                                                ? `Cicilan masuk ke Kas Modal: ${employee.installment_account_name || "Kas Modal"}`
+                                                                : "Cicilan Potong Laba (Mengurangi pengajuan gaji ke Owner)"
                                                         }
                                                     >
                                                         <span
                                                             className={`h-1.5 w-1.5 rounded-full ${
-                                                                employee.installment_account_id && Number(employee.installment_account_id) !== 1
-                                                                    ? "bg-indigo-500"
-                                                                    : "bg-amber-500 animate-pulse"
+                                                                Number(employee.installment_account_id || 1) > 1 ? "bg-indigo-500" : "bg-rose-500"
                                                             }`}
                                                         />
-                                                        {employee.installment_account_name
-                                                            ? `Cicilan → ${employee.installment_account_name}`
-                                                            : "Cicilan (Pilih Kas Modal!)"}
+                                                        {Number(employee.installment_account_id || 1) > 1
+                                                            ? `Cicilan → ${employee.installment_account_name || "Kas Modal"}`
+                                                            : "Cicilan (Potong Laba)"}
                                                     </span>
                                                 )}
                                             </div>
@@ -535,44 +538,38 @@ const CreatePayroll = ({ notification }) => {
                                 <span className="font-medium text-indigo-600 dark:text-indigo-400">+ {formatNumber(totalSavingSum)}</span>
                             </div>
 
-                            {totalInstallment > 0 && (
+                            {totalInstallmentModal > 0 && (
                                 <div className="flex justify-between text-xs">
-                                    <span className="text-slate-500">Setoran Cicilan Karyawan (Kembali ke Kas Modal)</span>
-                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">+ {formatNumber(totalInstallment)}</span>
+                                    <span className="text-slate-500">Setoran Cicilan (Masuk ke Kas Modal)</span>
+                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">+ {formatNumber(totalInstallmentModal)}</span>
+                                </div>
+                            )}
+
+                            {totalInstallmentLaba > 0 && (
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-500">Cicilan Potong Laba (Sudah Mengurangi Pengajuan)</span>
+                                    <span className="font-medium text-slate-500 dark:text-slate-400">({formatNumber(totalInstallmentLaba)})</span>
                                 </div>
                             )}
                         </div>
-
-                        {employeesMissingInstallmentAccount.length > 0 && (
-                            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-                                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold">Akun Kas Modal Belum Dipilih</p>
-                                    <p className="mt-0.5 text-[11px] opacity-90">
-                                        Silakan pilih akun Kas Modal penerima cicilan pada menu <b>Detail & Edit</b> untuk:{" "}
-                                        <b>{employeesMissingInstallmentAccount.map((e) => e.name).join(", ")}</b>.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
 
                         {/* Highlight */}
                         <div className="mt-6 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 p-4 text-white">
                             <div className="flex items-center justify-between gap-2 opacity-90">
                                 <div className="flex items-center gap-2">
                                     <Wallet size={16} />
-                                    <span className="text-xs uppercase tracking-wider font-semibold">Pengajuan Dana Gaji (Ke Admin)</span>
+                                    <span className="text-xs uppercase tracking-wider font-semibold">Pengajuan Dana Gaji (Ke Admin/Owner)</span>
                                 </div>
                             </div>
 
                             <div className="mt-2 text-3xl font-bold">{formatRupiah(totalPayrollRequest)}</div>
                             <p className="mt-1 text-[11px] text-indigo-100 opacity-85">
-                                Termasuk Gaji Bersih Karyawan + Simpanan Wajib + Pengembalian Cicilan ke Kas Modal
+                                Take Home Pay + Simpanan Wajib + Cicilan Kas Modal (Kasbon & Cicilan Potong Laba sudah dipotong)
                             </p>
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={loading || employeesMissingInstallmentAccount.length > 0}
+                                disabled={loading}
                                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <Play size={16} />
