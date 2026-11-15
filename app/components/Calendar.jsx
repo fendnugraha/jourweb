@@ -19,48 +19,60 @@ import {
     Sparkles,
 } from "lucide-react";
 
-// Config style per tipe jadwal/event (selaras dark & light mode)
+// Config style per tipe jadwal/event (Tailwind v4 crisp light & dark mode)
 const TYPE_CONFIG = {
     weekly_off: {
         label: "Libur Mingguan",
-        dot: "bg-amber-500",
-        desktopBadge: "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60",
-        listBadge: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+        dot: "bg-amber-500 dark:bg-amber-400",
+        desktopBadge:
+            "bg-amber-50/90 text-amber-800 border-amber-200/80 dark:bg-amber-500/12 dark:text-amber-300 dark:border-amber-500/25",
+        listBadge:
+            "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
         icon: Bed,
     },
     leave: {
         label: "Cuti",
-        dot: "bg-rose-500",
-        desktopBadge: "bg-rose-50 text-rose-800 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
-        listBadge: "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800",
+        dot: "bg-rose-500 dark:bg-rose-400",
+        desktopBadge:
+            "bg-rose-50/90 text-rose-800 border-rose-200/80 dark:bg-rose-500/12 dark:text-rose-300 dark:border-rose-500/25",
+        listBadge:
+            "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
         icon: CalendarDays,
     },
     company_event: {
         label: "Event Kantor",
-        dot: "bg-indigo-500",
-        desktopBadge: "bg-indigo-50 text-indigo-800 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60",
-        listBadge: "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800",
+        dot: "bg-indigo-500 dark:bg-indigo-400",
+        desktopBadge:
+            "bg-indigo-50/90 text-indigo-800 border-indigo-200/80 dark:bg-indigo-500/12 dark:text-indigo-300 dark:border-indigo-500/25",
+        listBadge:
+            "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30",
         icon: Sparkles,
     },
     holiday: {
         label: "Hari Libur",
-        dot: "bg-amber-500",
-        desktopBadge: "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60",
-        listBadge: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+        dot: "bg-amber-500 dark:bg-amber-400",
+        desktopBadge:
+            "bg-amber-50/90 text-amber-800 border-amber-200/80 dark:bg-amber-500/12 dark:text-amber-300 dark:border-amber-500/25",
+        listBadge:
+            "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
         icon: CalendarDays,
     },
     event: {
         label: "Event",
-        dot: "bg-indigo-500",
-        desktopBadge: "bg-indigo-50 text-indigo-800 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60",
-        listBadge: "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800",
+        dot: "bg-indigo-500 dark:bg-indigo-400",
+        desktopBadge:
+            "bg-indigo-50/90 text-indigo-800 border-indigo-200/80 dark:bg-indigo-500/12 dark:text-indigo-300 dark:border-indigo-500/25",
+        listBadge:
+            "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30",
         icon: Sparkles,
     },
     attendance: {
         label: "Absensi",
-        dot: "bg-emerald-500",
-        desktopBadge: "bg-emerald-50 text-emerald-800 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
-        listBadge: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
+        dot: "bg-emerald-500 dark:bg-emerald-400",
+        desktopBadge:
+            "bg-emerald-50/90 text-emerald-800 border-emerald-200/80 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-500/25",
+        listBadge:
+            "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
         icon: Check,
     },
 };
@@ -72,40 +84,55 @@ const getItemConfig = (item) => {
         if (item.status === "Hadir") {
             return {
                 label: "Hadir",
-                dot: "bg-emerald-500",
-                desktopBadge: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+                dot: "bg-emerald-500 dark:bg-emerald-400",
+                desktopBadge:
+                    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-500/25",
+                listBadge:
+                    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
                 icon: Check,
             };
         }
         if (item.status === "Good") {
             return {
                 label: "Good",
-                dot: "bg-amber-500",
-                desktopBadge: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                dot: "bg-amber-500 dark:bg-amber-400",
+                desktopBadge:
+                    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/12 dark:text-amber-300 dark:border-amber-500/25",
+                listBadge:
+                    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30",
                 icon: Star,
             };
         }
         if (item.status === "Telat") {
             return {
                 label: "Telat",
-                dot: "bg-rose-500",
-                desktopBadge: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+                dot: "bg-rose-500 dark:bg-rose-400",
+                desktopBadge:
+                    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/12 dark:text-rose-300 dark:border-rose-500/25",
+                listBadge:
+                    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30",
                 icon: Clock,
             };
         }
         if (item.status === "Lembur") {
             return {
                 label: "Lembur",
-                dot: "bg-violet-500",
-                desktopBadge: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800",
+                dot: "bg-violet-500 dark:bg-violet-400",
+                desktopBadge:
+                    "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/12 dark:text-violet-300 dark:border-violet-500/25",
+                listBadge:
+                    "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30",
                 icon: AlarmClockPlus,
             };
         }
         if (item.status === "Alpha") {
             return {
                 label: "Alpha",
-                dot: "bg-rose-600",
-                desktopBadge: "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800",
+                dot: "bg-rose-600 dark:bg-rose-400",
+                desktopBadge:
+                    "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/35",
+                listBadge:
+                    "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/35",
                 icon: X,
             };
         }
@@ -114,8 +141,9 @@ const getItemConfig = (item) => {
     return (
         TYPE_CONFIG[item.type] || {
             label: item.title || item.name || item.type || "Jadwal",
-            dot: "bg-slate-400",
-            desktopBadge: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+            dot: "bg-slate-400 dark:bg-slate-400",
+            desktopBadge: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60",
+            listBadge: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60",
             icon: CalendarDays,
         }
     );
@@ -154,11 +182,11 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
 
     return (
         <div
-            className={`w-full ${maxWidth} ${className} bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-6 shadow-xs space-y-4`}
+            className={`w-full ${maxWidth} ${className} bg-white dark:bg-slate-900/95 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-6 shadow-xs dark:shadow-xl dark:shadow-black/20 space-y-4`}
         >
             {/* ── HEADER CONTROLS ── */}
             {withHeader && (
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-slate-100 dark:border-slate-800/80">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/80">
                     {/* Month Title & Nav */}
                     <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
                         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -166,7 +194,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                 type="button"
                                 onClick={prevMonth}
                                 aria-label="Bulan sebelumnya"
-                                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-transparent dark:border-slate-700/60 transition-colors cursor-pointer"
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -174,7 +202,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                 type="button"
                                 onClick={nextMonth}
                                 aria-label="Bulan berikutnya"
-                                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/90 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-transparent dark:border-slate-700/60 transition-colors cursor-pointer"
                             >
                                 <ChevronRight size={16} />
                             </button>
@@ -185,7 +213,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                             <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 capitalize tracking-tight">
                                 {format(currentMonth, "MMMM", { locale: id })}
                             </h2>
-                            <span className="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-500 font-mono">
+                            <span className="text-xs sm:text-sm font-semibold text-slate-400 dark:text-slate-400 font-mono">
                                 {format(currentMonth, "yyyy")}
                             </span>
                         </div>
@@ -195,7 +223,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                             <button
                                 type="button"
                                 onClick={goToToday}
-                                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border dark:border-emerald-500/30 dark:hover:bg-emerald-500/25 transition-colors cursor-pointer"
                             >
                                 Hari Ini
                             </button>
@@ -203,13 +231,13 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                     </div>
 
                     {/* View Switcher (Kalender / List Agenda) */}
-                    <div className="flex items-center self-end sm:self-auto p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
+                    <div className="flex items-center self-end sm:self-auto p-1 bg-slate-100 dark:bg-slate-950/70 rounded-2xl border border-slate-200/60 dark:border-slate-800">
                         <button
                             type="button"
                             onClick={() => setViewMode("grid")}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                                 viewMode === "grid"
-                                    ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xs"
+                                    ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs dark:border dark:border-slate-700/70"
                                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                             }`}
                         >
@@ -220,13 +248,13 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                             onClick={() => setViewMode("list")}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                                 viewMode === "list"
-                                    ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xs"
+                                    ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs dark:border dark:border-slate-700/70"
                                     : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                             }`}
                         >
                             <ListFilter size={13} /> Agenda
                             {currentMonthEvents.length > 0 && (
-                                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
                                     {currentMonthEvents.length}
                                 </span>
                             )}
@@ -239,19 +267,19 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
             {viewMode === "grid" ? (
                 <div className="space-y-2">
                     {/* Nama Hari (Sen - Min) */}
-                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center bg-slate-50/70 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 rounded-xl py-1.5">
                         {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((dayName, idx) => {
                             const isSunday = idx === 6;
                             const isSaturday = idx === 5;
                             return (
                                 <div
                                     key={dayName}
-                                    className={`py-1 text-[11px] font-bold uppercase tracking-wider ${
+                                    className={`py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                                         isSunday
                                             ? "text-rose-500 dark:text-rose-400"
                                             : isSaturday
-                                              ? "text-amber-600/80 dark:text-amber-400/80"
-                                              : "text-slate-400 dark:text-slate-500"
+                                              ? "text-amber-600/80 dark:text-amber-400/90"
+                                              : "text-slate-400 dark:text-slate-400"
                                     }`}
                                 >
                                     {dayName}
@@ -266,7 +294,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                         {[...Array(startOffset)].map((_, i) => (
                             <div
                                 key={`leading-${i}`}
-                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
+                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-200/50 dark:border-slate-800/50 bg-slate-50/40 dark:bg-slate-950/30 pointer-events-none"
                             />
                         ))}
 
@@ -284,10 +312,10 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                     onClick={() => onDateClick && onDateClick(dateKey, items)}
                                     className={`group min-h-13 sm:min-h-25 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl flex flex-col justify-between sm:justify-start transition-all cursor-pointer relative border select-none ${
                                         isCurrentDay
-                                            ? "border-emerald-500 dark:border-emerald-400 ring-2 ring-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/20 font-semibold"
+                                            ? "border-emerald-500 dark:border-emerald-500/70 ring-2 ring-emerald-500/15 dark:ring-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-500/8 font-semibold"
                                             : items.length > 0
-                                              ? "border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-xs"
-                                              : "border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                                              ? "border-slate-200/90 dark:border-slate-700/70 bg-white dark:bg-slate-800/50 hover:border-emerald-400 dark:hover:border-emerald-500/60 dark:hover:bg-slate-800/85 hover:shadow-xs"
+                                              : "border-slate-200/60 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-700"
                                     }`}
                                 >
                                     {/* Baris Atas: Nomor Tanggal & Counter Badge */}
@@ -296,10 +324,10 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                         <span
                                             className={`text-[11px] sm:text-xs font-semibold leading-none flex items-center justify-center ${
                                                 isCurrentDay
-                                                    ? "w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-emerald-600 text-white font-bold text-[10px] sm:text-[11px] shadow-xs shadow-emerald-600/30"
+                                                    ? "w-5 h-5 sm:w-5.5 sm:h-5.5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-950 font-bold text-[10px] sm:text-[11px] shadow-xs shadow-emerald-600/30"
                                                     : isSunday
                                                       ? "text-rose-500 dark:text-rose-400"
-                                                      : "text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                                                      : "text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white"
                                             }`}
                                         >
                                             {format(day, "d")}
@@ -307,12 +335,12 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
 
                                         {/* Counter / Sisa badge di pojok kanan atas pada desktop */}
                                         {items.length > 3 ? (
-                                            <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                            <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30">
                                                 +{items.length - 3}
                                             </span>
                                         ) : (
                                             items.length > 1 && (
-                                                <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-semibold bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                                                <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md text-[9px] leading-none font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700/70 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/50">
                                                     {items.length}
                                                 </span>
                                             )
@@ -326,7 +354,11 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                 const cfg = getItemConfig(item);
                                                 return <span key={idx} className={`w-1.5 h-1.5 rounded-full ${cfg?.dot || "bg-emerald-500"}`} />;
                                             })}
-                                            {items.length > 3 && <span className="text-[8px] font-bold text-slate-400 leading-none">+{items.length - 3}</span>}
+                                            {items.length > 3 && (
+                                                <span className="text-[8px] font-bold text-slate-400 dark:text-slate-300 leading-none">
+                                                    +{items.length - 3}
+                                                </span>
+                                            )}
                                         </div>
                                     )}
 
@@ -344,7 +376,8 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                     key={idx}
                                                     title={displayName}
                                                     className={`px-1.5 py-0.5 rounded-md border text-[9.5px] leading-tight font-medium truncate flex items-center gap-1 transition-colors ${
-                                                        cfg?.desktopBadge || "bg-slate-100 text-slate-700 border-slate-200"
+                                                        cfg?.desktopBadge ||
+                                                        "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60"
                                                     }`}
                                                 >
                                                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg?.dot || "bg-slate-400"}`} />
@@ -354,7 +387,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                         })}
 
                                         {items.length > 3 && (
-                                            <span className="text-[8.5px] leading-none pt-0.5 text-slate-400 dark:text-slate-500 font-semibold text-center">
+                                            <span className="text-[8.5px] leading-none pt-0.5 text-slate-400 dark:text-slate-400 font-semibold text-center">
                                                 +{items.length - 3} lainnya
                                             </span>
                                         )}
@@ -367,7 +400,7 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                         {[...Array(trailingOffset)].map((_, i) => (
                             <div
                                 key={`trailing-${i}`}
-                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-100 dark:border-slate-800/40 bg-slate-50/20 dark:bg-slate-900/20 opacity-30 pointer-events-none"
+                                className="min-h-13 sm:min-h-25 p-1 rounded-xl sm:rounded-2xl border border-dashed border-slate-200/50 dark:border-slate-800/50 bg-slate-50/40 dark:bg-slate-950/30 pointer-events-none"
                             />
                         ))}
                     </div>
@@ -387,21 +420,25 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                     onClick={() => onDateClick && onDateClick(dateStr, items)}
                                     className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                                         isCurrentDay
-                                            ? "border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20 ring-1 ring-emerald-500/20"
-                                            : "border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700"
+                                            ? "border-emerald-500/80 dark:border-emerald-500/60 bg-emerald-50/30 dark:bg-emerald-500/8 ring-1 ring-emerald-500/20"
+                                            : "border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/75 hover:border-slate-300 dark:hover:border-slate-700"
                                     }`}
                                 >
                                     <div className="flex items-start sm:items-center gap-3">
                                         {/* Tanggal badge */}
                                         <div
-                                            className={`px-3 py-1.5 rounded-xl text-center shrink-0 ${
+                                            className={`px-3 py-1.5 rounded-xl text-center shrink-0 border ${
                                                 isCurrentDay
-                                                    ? "bg-emerald-600 text-white font-bold"
-                                                    : "bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold"
+                                                    ? "bg-emerald-600 dark:bg-emerald-500 text-white dark:text-slate-950 border-emerald-600 dark:border-emerald-400 font-bold"
+                                                    : "bg-white dark:bg-slate-900/90 text-slate-800 dark:text-slate-100 border-slate-200/70 dark:border-slate-700/70 font-semibold"
                                             }`}
                                         >
                                             <span className="block text-xs font-mono">{format(parsedDate, "dd MMM", { locale: id })}</span>
-                                            <span className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase font-medium">
+                                            <span
+                                                className={`block text-[10px] uppercase font-medium ${
+                                                    isCurrentDay ? "text-emerald-100 dark:text-slate-900" : "text-slate-500 dark:text-slate-400"
+                                                }`}
+                                            >
                                                 {format(parsedDate, "EEEE", { locale: id })}
                                             </span>
                                         </div>
@@ -420,7 +457,8 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                     <span
                                                         key={i}
                                                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border ${
-                                                            cfg?.listBadge || "bg-slate-100 text-slate-700 border-slate-200"
+                                                            cfg?.listBadge ||
+                                                            "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60"
                                                         }`}
                                                     >
                                                         <IconComp size={12} className="shrink-0" />

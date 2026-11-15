@@ -199,14 +199,6 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                     >
                         <RefreshCw className={`h-4 w-4 ${isValidating ? "animate-spin" : ""}`} />
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => handleOpenTransferModal(null)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 px-3.5 py-2 text-xs sm:text-sm font-semibold text-indigo-600 dark:text-indigo-300 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                    >
-                        <ArrowLeftRight className="h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                        <span className="truncate">Transfer Kas</span>
-                    </button>
                     <Link
                         href="/summary/branch-revenue"
                         className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-all cursor-pointer"
@@ -271,10 +263,7 @@ const WarehouseBalance = ({ selectedDate, setSelectedDate, warehouseBalance, err
                                 {filteredWarehouseBalance && filteredWarehouseBalance.length > 0 ? (
                                     filteredWarehouseBalance.map((w, i) => {
                                         return (
-                                            <div
-                                                key={w.id || i}
-                                                className="p-4 space-y-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/20 transition-colors"
-                                            >
+                                            <div key={w.id || i} className="p-4 space-y-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/20 transition-colors">
                                                 {/* Header Card */}
                                                 <div className="flex items-center justify-between gap-2">
                                                     <div className="flex items-center gap-2 min-w-0">

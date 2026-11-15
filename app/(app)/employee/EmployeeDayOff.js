@@ -13,39 +13,39 @@ const TYPE_CONFIG = {
     weekly_off: {
         label: "Libur Mingguan",
         dot: "bg-amber-400",
-        badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
+        badge: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30",
     },
     leave: {
         label: "Cuti",
         dot: "bg-rose-500",
-        badge: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800",
+        badge: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30",
     },
     company_event: {
         label: "Event Perusahaan",
         dot: "bg-indigo-500",
-        badge: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800",
+        badge: "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30",
     },
     holiday: {
         label: "Hari Libur",
         dot: "bg-amber-500",
-        badge: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
+        badge: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30",
     },
     attendance: {
         label: "Absensi",
         dot: "bg-emerald-500",
-        badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
+        badge: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30",
     },
 };
 
 const STATUS_CONFIG = {
-    approved: { label: "Disetujui", style: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
-    pending: { label: "Menunggu", style: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
-    rejected: { label: "Ditolak", style: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" },
-    Hadir: { label: "Hadir", style: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" },
-    Telat: { label: "Telat", style: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" },
-    Alpha: { label: "Alpha", style: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300" },
-    Lembur: { label: "Lembur", style: "bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300" },
-    Good: { label: "Good", style: "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" },
+    approved: { label: "Disetujui", style: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/25" },
+    pending: { label: "Menunggu", style: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/25" },
+    rejected: { label: "Ditolak", style: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/25" },
+    Hadir: { label: "Hadir", style: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/25" },
+    Telat: { label: "Telat", style: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/25" },
+    Alpha: { label: "Alpha", style: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border border-rose-200/60 dark:border-rose-500/25" },
+    Lembur: { label: "Lembur", style: "bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300 border border-violet-200/60 dark:border-violet-500/25" },
+    Good: { label: "Good", style: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 border border-amber-200/60 dark:border-amber-500/25" },
 };
 
 export default function EmployeeDayOff({ userRole }) {
