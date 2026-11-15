@@ -27,17 +27,19 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
         deductions: Array.isArray(employee?.deductions) ? employee.deductions.map((d) => ({ name: d.name || "", amount: d.amount || 0 })) : [],
     }));
 
-    // Opsi pilihan akun rekening / kas
+    // Opsi pilihan akun rekening / kas modal (kecuali ID 1 / Potong Laba)
     const accountOptions = useMemo(() => {
         return [
-            { value: "", label: "-- Pilih Akun Pembayaran Cicilan --" },
-            ...accounts.map((acc) => {
-                const whName = acc.warehouse?.name ? acc.warehouse.name.replace(/^konter\s*/i, "") : null;
-                return {
-                    value: Number(acc.id),
-                    label: whName && acc.warehouse_id !== 1 ? `${acc.name} (${whName})` : acc.name,
-                };
-            }),
+            { value: "", label: "-- Pilih Akun Kas Modal Penerima Cicilan --" },
+            ...accounts
+                .filter((acc) => Number(acc.id) !== 1 && Number(acc.warehouse_id) === 1)
+                .map((acc) => {
+                    const whName = acc.warehouse?.name ? acc.warehouse.name.replace(/^konter\s*/i, "") : null;
+                    return {
+                        value: Number(acc.id),
+                        label: whName && acc.warehouse_id !== 1 ? `${acc.name} (${whName})` : acc.name,
+                    };
+                }),
         ];
     }, [accounts]);
 
@@ -142,6 +144,14 @@ const PayrollDetail = ({ employee, onSave, onClose, accounts: accountsProp }) =>
     // Handle Submit
     const handleSave = (e) => {
         e?.preventDefault();
+
+        const installmentAmount = Number(formData.installment_receivable) || 0;
+        const selectedAccId = formData.installment_account_id ? Number(formData.installment_account_id) : null;
+
+        if (installmentAmount > 0 && (!selectedAccId || selectedAccId === 1)) {
+            alert("Silakan pilih Akun Kas Modal penerima pembayaran cicilan terlebih dahulu.");
+            return;
+        }
 
         // Calculate total savings if deduction named "Simpanan Wajib" exists
         const totalSavings = formData.deductions.filter((d) => d.name?.trim() === "Simpanan Wajib").reduce((sum, d) => sum + (Number(d.amount) || 0), 0);

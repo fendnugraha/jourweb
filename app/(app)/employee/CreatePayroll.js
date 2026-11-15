@@ -3,7 +3,7 @@
 import Dropdown from "@/app/components/Dropdown";
 import Modal from "@/app/components/Modal";
 import { DateTimeNow, formatNumber, formatRupiah } from "@/app/utils/format";
-import { AlarmClockPlus, Clock, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
+import { AlarmClockPlus, AlertCircle, Clock, Pencil, Play, Plus, ReceiptText, Search, Star, Undo2, Wallet } from "lucide-react";
 import { useState } from "react";
 import CreateSalaryComponents from "./CreateSalaryComponent";
 import axios from "@/app/utils/axios";
@@ -84,6 +84,20 @@ const CreatePayroll = ({ notification }) => {
                 const receivable = Number(employee.contact?.employee_receivables_sum?.total) || 0;
                 const installment = Number(employee.contact?.installment_receivables_sum?.total) || 0;
 
+                // Ambil sumber dana kas modal dari jurnal pencairan cicilan terakhir (jika bukan ID 1 / Potong Laba)
+                const latestInstallmentCredId = Number(employee.contact?.latest_installment_receivable?.journal?.cred_id) || null;
+                const defaultInstallmentAccountId =
+                    installment > 0 && latestInstallmentCredId && latestInstallmentCredId > 1 ? latestInstallmentCredId : null;
+                const matchedAcc = defaultInstallmentAccountId
+                    ? accounts.find((a) => Number(a.id) === defaultInstallmentAccountId)
+                    : null;
+                const matchedWhName = matchedAcc?.warehouse?.name ? matchedAcc.warehouse.name.replace(/^konter\s*/i, "") : null;
+                const defaultInstallmentAccountName = matchedAcc
+                    ? matchedWhName && matchedAcc.warehouse_id !== 1
+                        ? `${matchedAcc.name} (${matchedWhName})`
+                        : matchedAcc.name
+                    : null;
+
                 const deductions = [
                     ...(employee.salary_components
                         ?.filter((sc) => sc.type === "deduction")
@@ -113,13 +127,14 @@ const CreatePayroll = ({ notification }) => {
                         overtime: overtimeCount > 0 ? overtimeCount * 100000 : 0,
                         employee_receivable: receivable > 0 ? receivable : 0,
                         installment_receivable: installment > 0 ? installment : 0,
+                        installment_account_id: defaultInstallmentAccountId,
+                        installment_account_name: defaultInstallmentAccountName,
                         attendances: employee.attendances || [],
                         total_savings: totalSavings,
                         deductions,
                     }),
-                    // Cek storedMonth (localStorage) dulu, jika tidak ada baru gunakan parameter `month`
-                    month: storedMonth || month,
-                    year: storedYear || year,
+                    month: month || storedMonth,
+                    year: year || storedYear,
                     bonuses: [],
                 };
             });
@@ -132,15 +147,27 @@ const CreatePayroll = ({ notification }) => {
     const totalBonus =
         processData.reduce((total, item) => total + (item.bonuses?.reduce((t, bonus) => t + (Number(bonus.amount) || 0), 0) || 0), 0) +
         processData.reduce((total, item) => total + Number(item.overtime || 0), 0);
-    const totalReceivable =
-        processData.reduce((total, item) => total + Number(item.employee_receivable || 0), 0) +
-        processData.reduce((total, item) => total + Number(item.installment_receivable || 0), 0);
+    const totalKasbon = processData.reduce((total, item) => total + Number(item.employee_receivable || 0), 0);
+    const totalInstallment = processData.reduce((total, item) => total + Number(item.installment_receivable || 0), 0);
+    const totalReceivable = totalKasbon + totalInstallment;
     const totalDeduction = processData.reduce((total, item) => {
         const deductions = item.deductions || [];
         const deductionTotal = deductions.reduce((t, deduction) => t + Number(deduction.amount || 0), 0);
         return total + deductionTotal;
     }, 0);
-    const totalSavingSum = processData.reduce((total, item) => total + (item.total_savings || 0), 0);
+    const totalSavingSum = processData.reduce((total, item) => total + Number(item.total_savings || 0), 0);
+
+    // Total gaji bersih yang diterima seluruh karyawan (Take Home Pay)
+    const totalNetPay = totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable;
+
+    // Total permintaan dana gaji kepada Admin:
+    // Take Home Pay Karyawan + Simpanan Wajib (disetor ke tabungan) + Cicilan (dikembalikan ke Kas Modal, bukan potong laba)
+    const totalPayrollRequest = totalNetPay + totalSavingSum + totalInstallment;
+
+    // Cek karyawan yang punya potongan cicilan tapi belum memilih akun Kas Modal tujuan (> 1)
+    const employeesMissingInstallmentAccount = processData.filter(
+        (item) => Number(item.installment_receivable) > 0 && (!item.installment_account_id || Number(item.installment_account_id) === 1),
+    );
 
     const calculateTotalItem = (item) => {
         const basicSalary = Number(item.basic_salary) || 0;
@@ -198,6 +225,12 @@ const CreatePayroll = ({ notification }) => {
             return;
         }
 
+        if (employeesMissingInstallmentAccount.length > 0) {
+            const names = employeesMissingInstallmentAccount.map((e) => e.name).join(", ");
+            notification(`Pilih akun Kas Modal penerima cicilan terlebih dahulu untuk: ${names} (pada tombol Detail & Edit).`);
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -249,7 +282,7 @@ const CreatePayroll = ({ notification }) => {
                         <span className="flex gap-1 items-center">
                             <ReceiptText className="h-4 w-4" /> {month}/{year}
                         </span>
-                        <span>{formatRupiah(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable + totalSavingSum)}</span>
+                        <span>{formatRupiah(totalPayrollRequest)}</span>
                     </button>
                 </div>
 
@@ -317,9 +350,42 @@ const CreatePayroll = ({ notification }) => {
                                         className="group text-xs hover:bg-slate-50/40 dark:hover:bg-slate-850/20 transition-colors duration-150"
                                     >
                                         <td className="px-6 py-4">
-                                            <div className="flex gap-1 items-center">
-                                                {employee.name} {employee.employee_receivable > 0 && <div className="bg-green-400 h-2 w-2 rounded-full" />}
-                                                {employee.installment_receivable > 0 && <div className="bg-red-400 h-2 w-2 rounded-full" />}
+                                            <div className="flex flex-wrap gap-1.5 items-center">
+                                                <span className="font-semibold text-slate-800 dark:text-slate-100">{employee.name}</span>
+                                                {employee.employee_receivable > 0 && (
+                                                    <span
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
+                                                        title="Potongan Kasbon (Potong Laba)"
+                                                    >
+                                                        <span className="bg-emerald-500 h-1.5 w-1.5 rounded-full" />
+                                                        Kasbon
+                                                    </span>
+                                                )}
+                                                {employee.installment_receivable > 0 && (
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${
+                                                            employee.installment_account_id && Number(employee.installment_account_id) !== 1
+                                                                ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60"
+                                                                : "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60"
+                                                        }`}
+                                                        title={
+                                                            employee.installment_account_name
+                                                                ? `Cicilan masuk ke Kas Modal: ${employee.installment_account_name}`
+                                                                : "Akun Kas Modal penerima cicilan belum dipilih!"
+                                                        }
+                                                    >
+                                                        <span
+                                                            className={`h-1.5 w-1.5 rounded-full ${
+                                                                employee.installment_account_id && Number(employee.installment_account_id) !== 1
+                                                                    ? "bg-indigo-500"
+                                                                    : "bg-amber-500 animate-pulse"
+                                                            }`}
+                                                        />
+                                                        {employee.installment_account_name
+                                                            ? `Cicilan → ${employee.installment_account_name}`
+                                                            : "Cicilan (Pilih Kas Modal!)"}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="flex gap-4 items-center font-normal mt-1">
                                                 <div className="flex gap-1 items-center" title="Hadir Tepat Waktu / Good">
@@ -448,43 +514,66 @@ const CreatePayroll = ({ notification }) => {
                             </div>
 
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Bonus</span>
+                                <span className="text-slate-500">Bonus & Lembur</span>
                                 <span className="text-emerald-600 dark:text-emerald-400">+ {formatNumber(totalBonus)}</span>
                             </div>
 
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Potongan</span>
+                                <span className="text-slate-500">Potongan (Komponen, Kasbon, Cicilan)</span>
                                 <span className="text-rose-600 dark:text-rose-400">- {formatNumber(totalDeduction + totalReceivable)}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                                <span className="text-slate-500">Simpanan Wajib</span>
-                                <span>{formatNumber(totalSavingSum)}</span>
                             </div>
 
                             <div className="border-t border-dashed border-slate-300 dark:border-slate-700 my-3" />
 
-                            <div className="flex justify-between font-semibold">
-                                <span>Total Diterima</span>
-                                <span>{formatNumber(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable)}</span>
+                            <div className="flex justify-between font-semibold text-slate-800 dark:text-slate-100">
+                                <span>Total Diterima Karyawan (Take Home Pay)</span>
+                                <span>{formatNumber(totalNetPay)}</span>
                             </div>
+
+                            <div className="flex justify-between text-xs pt-1">
+                                <span className="text-slate-500">Simpanan Wajib (Masuk Tabungan)</span>
+                                <span className="font-medium text-indigo-600 dark:text-indigo-400">+ {formatNumber(totalSavingSum)}</span>
+                            </div>
+
+                            {totalInstallment > 0 && (
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-slate-500">Setoran Cicilan Karyawan (Kembali ke Kas Modal)</span>
+                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">+ {formatNumber(totalInstallment)}</span>
+                                </div>
+                            )}
                         </div>
+
+                        {employeesMissingInstallmentAccount.length > 0 && (
+                            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+                                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold">Akun Kas Modal Belum Dipilih</p>
+                                    <p className="mt-0.5 text-[11px] opacity-90">
+                                        Silakan pilih akun Kas Modal penerima cicilan pada menu <b>Detail & Edit</b> untuk:{" "}
+                                        <b>{employeesMissingInstallmentAccount.map((e) => e.name).join(", ")}</b>.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Highlight */}
                         <div className="mt-6 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 p-4 text-white">
-                            <div className="flex items-center gap-2 opacity-90">
-                                <Wallet size={16} />
-                                <span className="text-xs uppercase tracking-wider">Pengajuan Gaji</span>
+                            <div className="flex items-center justify-between gap-2 opacity-90">
+                                <div className="flex items-center gap-2">
+                                    <Wallet size={16} />
+                                    <span className="text-xs uppercase tracking-wider font-semibold">Pengajuan Dana Gaji (Ke Admin)</span>
+                                </div>
                             </div>
 
-                            <div className="mt-2 text-3xl font-bold">
-                                {formatRupiah(totalSalary + totalCommission + totalBonus - totalDeduction - totalReceivable + totalSavingSum)}
-                            </div>
+                            <div className="mt-2 text-3xl font-bold">{formatRupiah(totalPayrollRequest)}</div>
+                            <p className="mt-1 text-[11px] text-indigo-100 opacity-85">
+                                Termasuk Gaji Bersih Karyawan + Simpanan Wajib + Pengembalian Cicilan ke Kas Modal
+                            </p>
 
                             <button
                                 onClick={handleSubmit}
-                                disabled={loading}
-                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300 disabled:opacity-50"
+                                disabled={loading || employeesMissingInstallmentAccount.length > 0}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <Play size={16} />
                                 {loading ? "Processing..." : "Process"}

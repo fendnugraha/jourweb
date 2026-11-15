@@ -92,6 +92,7 @@ const PayrollTable = () => {
                                     const totalCost = grossAndCommission + Number(item?.total_allowances || 0);
                                     const netPay = Number(item?.net_pay || 0);
                                     const totalSavings = Number(item?.total_savings || 0);
+                                    const totalInstallments = Number(item?.total_installments || 0);
 
                                     return (
                                         <tr key={index} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors duration-150">
@@ -120,7 +121,7 @@ const PayrollTable = () => {
                                                 {formatNumber(totalSavings)}
                                             </td>
                                             <td className="px-5 py-4 text-right font-mono font-bold text-indigo-700 dark:text-indigo-300">
-                                                {formatNumber(netPay + totalSavings)}
+                                                {formatNumber(netPay + totalSavings + totalInstallments)}
                                             </td>
                                             <td className="px-5 py-4 text-center">
                                                 <StatusBadge status={"Completed"} />
