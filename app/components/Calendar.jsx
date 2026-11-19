@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, parseISO, isToday, isSameMonth } from "date-fns";
 import id from "date-fns/locale/id";
+import { useAuth } from "@/app/utils/auth";
 import {
     ChevronLeft,
     ChevronRight,
@@ -17,6 +18,8 @@ import {
     AlarmClockPlus,
     CalendarCheck,
     Sparkles,
+    Trash2,
+    Loader2,
 } from "lucide-react";
 
 // Config style per tipe jadwal/event (Tailwind v4 crisp light & dark mode)
@@ -149,7 +152,20 @@ const getItemConfig = (item) => {
     );
 };
 
-export default function Calendar({ data = {}, className = "", maxWidth = "max-w-5xl", withHeader = true, onDateClick }) {
+export default function Calendar({
+    data = {},
+    className = "",
+    maxWidth = "max-w-5xl",
+    withHeader = true,
+    onDateClick,
+    onDeleteEvent,
+    userRole,
+    deletingId = null,
+}) {
+    const { user } = useAuth();
+    const effectiveRole = userRole || user?.role;
+    const canDelete = ["Super Admin", "Administrator"].includes(effectiveRole) && typeof onDeleteEvent === "function";
+
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
 
@@ -370,18 +386,36 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                 item.type === "company_event"
                                                     ? item.title || item.name || cfg?.label
                                                     : item.employee_name || item.title || item.name || cfg?.label || item.type;
+                                            const isDeleting = deletingId !== null && deletingId === item.id;
 
                                             return (
                                                 <div
-                                                    key={idx}
+                                                    key={item.id ?? idx}
                                                     title={displayName}
-                                                    className={`px-1.5 py-0.5 rounded-md border text-[9.5px] leading-tight font-medium truncate flex items-center gap-1 transition-colors ${
+                                                    className={`group/pill px-1.5 py-0.5 rounded-md border text-[9.5px] leading-tight font-medium truncate flex items-center justify-between gap-1 transition-colors ${
                                                         cfg?.desktopBadge ||
                                                         "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60"
                                                     }`}
                                                 >
-                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg?.dot || "bg-slate-400"}`} />
-                                                    <span className="truncate">{displayName}</span>
+                                                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg?.dot || "bg-slate-400"}`} />
+                                                        <span className="truncate">{displayName}</span>
+                                                    </div>
+
+                                                    {canDelete && item.id && (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isDeleting}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onDeleteEvent(item, dateKey);
+                                                            }}
+                                                            title={`Hapus ${displayName}`}
+                                                            className="opacity-0 group-hover/pill:opacity-100 focus:opacity-100 p-0.5 -mr-0.5 rounded hover:bg-rose-500/20 text-current hover:text-rose-600 dark:hover:text-rose-300 transition-opacity shrink-0 cursor-pointer"
+                                                        >
+                                                            {isDeleting ? <Loader2 size={9} className="animate-spin" /> : <X size={9} strokeWidth={2.5} />}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             );
                                         })}
@@ -452,10 +486,11 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                     it.type === "company_event"
                                                         ? it.title || it.name || cfg?.label
                                                         : it.employee_name || it.title || it.name || cfg?.label || it.type;
+                                                const isDeleting = deletingId !== null && deletingId === it.id;
 
                                                 return (
                                                     <span
-                                                        key={i}
+                                                        key={it.id ?? i}
                                                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border ${
                                                             cfg?.listBadge ||
                                                             "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-200 dark:border-slate-600/60"
@@ -464,6 +499,20 @@ export default function Calendar({ data = {}, className = "", maxWidth = "max-w-
                                                         <IconComp size={12} className="shrink-0" />
                                                         <span>{name}</span>
                                                         {it.status && <span className="text-[10px] opacity-75 capitalize">• {it.status}</span>}
+                                                        {canDelete && it.id && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={isDeleting}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteEvent(it, dateStr);
+                                                                }}
+                                                                title={`Hapus ${name}`}
+                                                                className="ml-0.5 p-0.5 rounded-md hover:bg-rose-500/20 text-current hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer"
+                                                            >
+                                                                {isDeleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                                                            </button>
+                                                        )}
                                                     </span>
                                                 );
                                             })}

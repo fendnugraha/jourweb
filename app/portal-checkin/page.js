@@ -176,20 +176,12 @@ const PortalCheckin = () => {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
 
-                // Flag instan di sessionStorage agar middleware auth tidak menolak akses ke /transaction
-                if (typeof window !== "undefined") {
-                    sessionStorage.setItem("just_checked_in", "true");
-                }
-
-                // Optimistic SWR cache update: set has_checked_in: true langsung tanpa menunggu fetch selesai
-                if (mutate) {
-                    await mutate((prev) => (prev ? { ...prev, has_checked_in: true } : prev), false);
-                }
+                const attendanceData = response.data?.data || response.data;
 
                 setFile(null);
                 setPreview(null);
                 setLocation(null);
-                setAttendance(response.data?.data);
+                setAttendance(attendanceData);
             } catch (error) {
                 setError(error.response?.data?.message || "Absensi gagal!");
                 setNotification(error.response?.data?.message || "Absensi gagal!");

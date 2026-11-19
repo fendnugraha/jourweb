@@ -7,7 +7,7 @@ import Calendar from "@/app/components/Calendar";
 import Modal from "@/app/components/Modal";
 import axios from "@/app/utils/axios";
 import { useAuth } from "@/app/utils/auth";
-import { FileSpreadsheet, Loader2 } from "lucide-react";
+import { FileSpreadsheet, Loader2, Trash2 } from "lucide-react";
 
 const TYPE_CONFIG = {
     weekly_off: {
@@ -52,10 +52,11 @@ export default function EmployeeDayOff({ userRole }) {
     const router = useRouter();
     const { user } = useAuth();
     const effectiveRole = userRole || user?.role;
-    const canImport = ["Administrator", "Super Admin"].includes(effectiveRole);
+    const canManageSchedule = ["Administrator", "Super Admin"].includes(effectiveRole);
 
     const [calendarData, setCalendarData] = useState({});
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -75,6 +76,8 @@ export default function EmployeeDayOff({ userRole }) {
                     formattedData[item.date] = [];
                 }
                 formattedData[item.date].push({
+                    id: item.id,
+                    date: item.date,
                     type: item.type,
                     title: item.title,
                     name: item.title || item.type,
@@ -89,6 +92,50 @@ export default function EmployeeDayOff({ userRole }) {
             console.error("Gagal memuat data jadwal:", err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteSchedule = async (item, dateKey) => {
+        if (!canManageSchedule || !item?.id) return;
+
+        const targetDate = dateKey || item.date || selectedDate?.date;
+        const label =
+            item.type === "company_event"
+                ? item.title || item.name
+                : `${item.employee_name || ""} (${item.title || item.name || item.type})`.trim();
+
+        if (!confirm(`Yakin ingin menghapus jadwal/event "${label}" pada tanggal ${targetDate}?`)) {
+            return;
+        }
+
+        try {
+            setDeletingId(item.id);
+            await axios.delete(`/api/employee-schedules/${item.id}`);
+
+            setCalendarData((prev) => {
+                const updated = { ...prev };
+                if (targetDate && Array.isArray(updated[targetDate])) {
+                    const remaining = updated[targetDate].filter((ev) => ev.id !== item.id);
+                    if (remaining.length > 0) {
+                        updated[targetDate] = remaining;
+                    } else {
+                        delete updated[targetDate];
+                    }
+                }
+                return updated;
+            });
+
+            setSelectedDate((prev) => {
+                if (!prev || prev.date !== targetDate) return prev;
+                const currentList = Array.isArray(prev.data) ? prev.data : prev.data ? [prev.data] : [];
+                const remaining = currentList.filter((ev) => ev.id !== item.id);
+                return { ...prev, data: remaining };
+            });
+        } catch (err) {
+            console.error("Gagal menghapus jadwal:", err);
+            alert(err.response?.data?.message || "Gagal menghapus jadwal/event.");
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -118,7 +165,7 @@ export default function EmployeeDayOff({ userRole }) {
                         ))}
                 </div>
 
-                {canImport && (
+                {canManageSchedule && (
                     <button
                         onClick={() => router.push("/employee/employee-schedules-import")}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold shadow-xs shadow-emerald-600/20 transition-all cursor-pointer"
@@ -135,7 +182,15 @@ export default function EmployeeDayOff({ userRole }) {
                     <span className="text-xs">Memuat kalender...</span>
                 </div>
             ) : (
-                <Calendar data={calendarData} maxWidth="max-w-full" className="rounded-2xl" onDateClick={handleDateClick} />
+                <Calendar
+                    data={calendarData}
+                    maxWidth="max-w-full"
+                    className="rounded-2xl"
+                    onDateClick={handleDateClick}
+                    onDeleteEvent={canManageSchedule ? handleDeleteSchedule : undefined}
+                    userRole={effectiveRole}
+                    deletingId={deletingId}
+                />
             )}
 
             {/* ── Modal Detail Tanggal (Support Multi-Item) ── */}
@@ -157,26 +212,45 @@ export default function EmployeeDayOff({ userRole }) {
 
                                     return (
                                         <div
-                                            key={idx}
+                                            key={item.id ?? idx}
                                             className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2"
                                         >
-                                            <div className="flex flex-wrap gap-1.5 items-center">
-                                                {typeConfig ? (
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-semibold ${typeConfig.badge}`}
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex flex-wrap gap-1.5 items-center">
+                                                    {typeConfig ? (
+                                                        <span
+                                                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-semibold ${typeConfig.badge}`}
+                                                        >
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${typeConfig.dot}`} />
+                                                            {typeConfig.label}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-500">
+                                                            Hari Normal
+                                                        </span>
+                                                    )}
+                                                    {statusConfig && (
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${statusConfig.style}`}>
+                                                            {statusConfig.label}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {canManageSchedule && item.id && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={deletingId === item.id}
+                                                        onClick={() => handleDeleteSchedule(item, selectedDate.date)}
+                                                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 dark:hover:bg-rose-500/25 border border-rose-200/70 dark:border-rose-500/30 transition-colors cursor-pointer disabled:opacity-50"
+                                                        title="Hapus Jadwal/Event"
                                                     >
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${typeConfig.dot}`} />
-                                                        {typeConfig.label}
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-500">
-                                                        Hari Normal
-                                                    </span>
-                                                )}
-                                                {statusConfig && (
-                                                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${statusConfig.style}`}>
-                                                        {statusConfig.label}
-                                                    </span>
+                                                        {deletingId === item.id ? (
+                                                            <Loader2 size={11} className="animate-spin" />
+                                                        ) : (
+                                                            <Trash2 size={11} />
+                                                        )}
+                                                        <span>Hapus</span>
+                                                    </button>
                                                 )}
                                             </div>
 
