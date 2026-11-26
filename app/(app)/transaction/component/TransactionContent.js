@@ -120,6 +120,9 @@ const TransactionContent = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [accountFilter, setAccountFilter] = useState("all");
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+    const hasActiveMobileFilter = Boolean(searchTerm || accountFilter !== "all" || dateFilter.preset !== "today");
 
     // --- Sub-Tab State ---
     const [activeSubTab, setActiveSubTab] = useState("transactions");
@@ -253,7 +256,7 @@ const TransactionContent = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full max-w-full min-w-0">
             <Notification message={notification} onClose={() => setNotification(null)} />
 
             {/* HEADER WELCOME BANNER */}
@@ -261,7 +264,7 @@ const TransactionContent = () => {
                 <HeaderProfile />
             </motion.div>
 
-            <div className="space-y-6" id="stock-inventory-section">
+            <div className="space-y-6 w-full max-w-full min-w-0" id="stock-inventory-section">
                 <MobileNavDrawer menuList={navTabs} activeTab={activeSubTab} setActiveTab={setActiveSubTab} />
 
                 {/* TAB CONTENT WITH ANIMATION */}
@@ -276,10 +279,81 @@ const TransactionContent = () => {
                             className="space-y-6"
                         >
                             {/* FILTER & BUTTON ACTIONS */}
-                            <div className="p-4 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800 space-y-4 shadow-sm">
-                                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                                    {/* Left Side: Search & Filter Inputs */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:max-w-3xl">
+                            <div className="w-full max-w-full min-w-0 overflow-hidden p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-100 dark:bg-slate-900 dark:border-slate-800 space-y-3 sm:space-y-4 shadow-sm">
+                                <div className="flex flex-col gap-3 sm:gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                    {/* Mobile Top Row: Action Buttons First + Compact Filter Toggle */}
+                                    <div className="flex flex-col gap-2.5 sm:hidden">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setModalName("create-transaction");
+                                                    setIsModalAddTransactionOpen(true);
+                                                }}
+                                                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500 active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                <Plus className="h-4 w-4 shrink-0" />
+                                                <span className="truncate">Transaksi</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setModalName("add-mutation");
+                                                    setIsModalAddMutationOpen(true);
+                                                }}
+                                                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                <Plus className="h-4 w-4 shrink-0" />
+                                                <span className="truncate">Mutasi</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMobileFilters((prev) => !prev)}
+                                                aria-label="Toggle filter"
+                                                className={`relative inline-flex items-center justify-center gap-1 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer shrink-0 ${
+                                                    showMobileFilters || hasActiveMobileFilter
+                                                        ? "border-indigo-500/60 bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/40"
+                                                        : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                                }`}
+                                            >
+                                                <Filter className="h-4 w-4" />
+                                                {hasActiveMobileFilter && (
+                                                    <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-indigo-600 ring-2 ring-white dark:ring-slate-900" />
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        {!["Administrator", "Super Admin"].includes(userRole) && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    mutateDashboard();
+                                                    setModalName("closing-report");
+                                                    setIsModalAddTransactionOpen(true);
+                                                }}
+                                                className="w-full inline-flex items-center justify-between gap-2 border border-red-500/30 rounded-xl text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2 transition-colors cursor-pointer"
+                                            >
+                                                <div className="flex items-center gap-1.5">
+                                                    <ReceiptText className="h-4 w-4 shrink-0" />
+                                                    <span>Report</span>
+                                                </div>
+                                                {isDashboardLoading ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <span className={`${isDashboardValidating ? "animate-pulse" : ""} truncate font-mono text-xs`}>
+                                                        {formatRupiah(totalSetoran - warehouseOpenCash)}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Left Side: Search & Filter Inputs (Collapsible on Mobile, Always Open on sm+) */}
+                                    <div
+                                        className={`${showMobileFilters ? "grid" : "hidden sm:grid"} grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 w-full xl:max-w-3xl`}
+                                    >
                                         {/* Search Input */}
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 dark:text-slate-500 pointer-events-none">
@@ -317,10 +391,27 @@ const TransactionContent = () => {
                                                 label="Transaction Date"
                                             />
                                         </div>
+
+                                        {/* Warehouse Dropdown di Mobile (Khusus Admin) */}
+                                        {["Administrator", "Super Admin"].includes(userRole) && (
+                                            <div className="w-full sm:hidden">
+                                                <Dropdown
+                                                    id="warehouse-filter-mobile"
+                                                    label="Warehouse Filter"
+                                                    options={warehouseOptions}
+                                                    selectedValue={selectedWarehouseId}
+                                                    onChange={(val) => {
+                                                        setSelectedWarehouseId(val);
+                                                        resetFilter();
+                                                    }}
+                                                    ariaLabel="Filter inventory by warehouse"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* Right Side: Admin Warehouse Filter & Action Buttons */}
-                                    <div className="flex flex-wrap items-center gap-2.5 sm:justify-end w-full xl:w-auto">
+                                    {/* Right Side: Admin Warehouse Filter & Action Buttons (sm+ Desktop/Tablet) */}
+                                    <div className="hidden sm:flex flex-wrap items-center gap-2.5 sm:justify-end w-full xl:w-auto">
                                         {/* Warehouse Dropdown (Khusus Admin) */}
                                         {["Administrator", "Super Admin"].includes(userRole) && (
                                             <div className="w-full sm:w-48">
@@ -392,8 +483,8 @@ const TransactionContent = () => {
                                     </div>
                                 </div>
 
-                                {/* Horizontal Category Tabs */}
-                                <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800/60">
+                                {/* Horizontal Category Tabs (Aktif di Mobile & Desktop dengan scroll horizontal) */}
+                                <div className="w-full max-w-full min-w-0 flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-slate-100 dark:border-slate-800/60">
                                     {categoryOptions.map((opt) => {
                                         const Icon = opt.icon;
                                         const isActive = categoryFilter === opt.value;
@@ -581,6 +672,7 @@ const TransactionContent = () => {
                             selectedBankAccount={selectedBankAccount}
                             setSelectedBankAccount={setSelectedBankAccount}
                             accounts={accounts}
+                            accountBalance={cashBankBalanceData}
                             warehouseId={selectedWarehouseId}
                             mutate={mutate}
                             mutateBalance={mutateBalance}
@@ -630,6 +722,22 @@ const TransactionContent = () => {
                     title="Delete Ledger Transaction"
                     description="Are you absolutely sure you want to delete this bookkeeping entry? This operational ledger action will affect cumulative revenue reports and is irreversible."
                 />
+
+                {/* Mobile Floating Action Button (Quick Add Transaction saat scroll di HP, di atas bottom nav) */}
+                {activeSubTab === "transactions" && !isModalAddTransactionOpen && !isModalAddMutationOpen && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setModalName("create-transaction");
+                            setIsModalAddTransactionOpen(true);
+                        }}
+                        aria-label="Tambah Transaksi"
+                        className="fixed bottom-20 right-4 z-30 md:hidden inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/35 hover:bg-indigo-500 active:scale-95 transition-all cursor-pointer"
+                    >
+                        <Plus className="h-4 w-4 stroke-[2.5]" />
+                        <span>Transaksi</span>
+                    </button>
+                )}
             </div>
         </div>
     );

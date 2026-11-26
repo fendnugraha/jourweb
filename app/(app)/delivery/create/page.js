@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -46,6 +47,7 @@ export default function CreateDeliveryPage() {
 
 function CreateDeliveryContent() {
   const router = useRouter();
+  const { mutate: globalMutate } = useSWRConfig();
   const { warehouses } = useWarehouse();
   const { employees } = useEmployee();
 
@@ -184,8 +186,9 @@ function CreateDeliveryContent() {
       const response = await axios.post("/api/create-delivery", {
         deliveries: cart,
       });
+      await globalMutate("/api/deliveries");
       setNotification(response.data.message || "Pengiriman berhasil dirilis!");
-      setTimeout(() => router.push("/delivery"), 1000);
+      setTimeout(() => router.push("/delivery"), 600);
     } catch (e) {
       setNotification(
         e.response?.data?.message ||
@@ -250,10 +253,11 @@ function CreateDeliveryContent() {
         "/api/create-delivery-multiple",
         multipleForm,
       );
+      await globalMutate("/api/deliveries");
       setNotification(
         response.data.message || "Pengiriman masal berhasil dirilis!",
       );
-      setTimeout(() => router.push("/delivery"), 1000);
+      setTimeout(() => router.push("/delivery"), 600);
     } catch (e) {
       setNotification(
         e.response?.data?.message ||

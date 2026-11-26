@@ -1,41 +1,31 @@
 import Dropdown from "@/app/components/Dropdown";
-
+import { useAuth } from "@/app/utils/auth";
 import axios from "@/app/utils/axios";
-
-import { calculateFee, DateTimeNow } from "@/app/utils/format";
-
+import { calculateFee, DateTimeNow, formatRupiah } from "@/app/utils/format";
+import { SendTelegramAlert } from "@/app/utils/SendTelegramAlert";
 import { AlertCircle, Loader2, Sparkles, ArrowUp, ArrowDown, Flower2 } from "lucide-react";
-
-import { useState } from "react";
-
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-
 import TabSwitcher from "@/app/components/TabSwitcher";
+
+const escapeTelegramMarkdown = (text = "") => String(text).replace(/([_*`\[])/g, "\\$1");
 
 const CreateTransaction = ({
     warehouseCashId,
-
     selectedBankAccount,
-
     setSelectedBankAccount,
-
     accounts,
-
+    accountBalance,
     warehouseId,
-
     mutate,
-
     mutateBalance,
-
     isModalOpen,
-
     notification,
-
     setPersonalSetting,
-
     feeAuto,
     userRole,
 }) => {
+    const { user } = useAuth();
     const { today } = DateTimeNow();
 
     const [newType, setNewType] = useState("transfer");
@@ -66,13 +56,42 @@ const CreateTransaction = ({
 
     const accountOptions = [
         { value: "", label: "-- Select Account --" },
-
         ...accounts
-
             .filter((account) => account.account_id === 2 && account.warehouse_id === warehouseId)
-
             .map((account) => ({ value: account.id, label: account.group })),
     ];
+
+    // Saldo akun sumber dana (Transfer = Rekening Agen, Tarik Tunai = Kas Tunai cabang)
+    const activeBankId = newType === "transfer" ? formData.cred_id : formData.debt_id;
+    const sourceAccountId = newType === "transfer" ? formData.cred_id : warehouseCashId;
+
+    const sourceBalance = useMemo(() => {
+        const list = accountBalance?.data?.chartOfAccounts;
+        if (!sourceAccountId || !Array.isArray(list)) return null;
+        const found = list.find((a) => Number(a.id) === Number(sourceAccountId));
+        return found ? Number(found.balance) : null;
+    }, [accountBalance, sourceAccountId]);
+
+    const activeBankBalance = useMemo(() => {
+        const list = accountBalance?.data?.chartOfAccounts;
+        if (!activeBankId || !Array.isArray(list)) return null;
+        const found = list.find((a) => Number(a.id) === Number(activeBankId));
+        return found ? Number(found.balance) : null;
+    }, [accountBalance, activeBankId]);
+
+    const numAmount = Number(formData.amount) || 0;
+    const numFee = Number(formData.fee_amount) || 0;
+    const expectedFee = Number(calculateFee(numAmount)) || 0;
+    const isFeeMismatch = !isFeeActive && numAmount > 0 && formData.fee_amount !== "" && numFee !== expectedFee;
+    const isInsufficientSource = sourceBalance !== null && numAmount > 0 && numAmount > sourceBalance;
+
+    const currentBranchName = useMemo(() => {
+        if (user?.warehouse?.name && Number(user?.warehouse_id) === Number(warehouseId)) {
+            return user.warehouse.name;
+        }
+        const matchedAcc = accounts?.find((a) => Number(a.warehouse_id) === Number(warehouseId) && a.warehouse?.name);
+        return matchedAcc?.warehouse?.name || user?.warehouse?.name || `Warehouse #${warehouseId || "-"}`;
+    }, [accounts, user, warehouseId]);
 
     const handleAddTxSubmit = async (e) => {
         e.preventDefault();
@@ -83,6 +102,38 @@ const CreateTransaction = ({
 
         try {
             const response = await axios.post("/api/create-transfer", formData);
+
+            // Kirim alert ke Telegram jika fee admin tidak sama dengan standar calculateFee
+            const createdJournal = response.data?.journal;
+            const submittedTrxType = createdJournal?.trx_type || formData.trx_type;
+            const submittedAmount = Number(createdJournal?.amount ?? formData.amount) || 0;
+            const submittedFee = Number(createdJournal?.fee_amount ?? formData.fee_amount) || 0;
+            const stdFee = Number(calculateFee(submittedAmount)) || 0;
+
+            if (submittedTrxType !== "Bank Fee" && submittedFee !== stdFee) {
+                const journalId = createdJournal?.id ?? "-";
+                const journalInvoice = createdJournal?.invoice ? ` (${escapeTelegramMarkdown(createdJournal.invoice)})` : "";
+                const rawDesc =
+                    createdJournal?.description ||
+                    (formData.description
+                        ? `${formData.description} - ${String(formData.custName || "").toUpperCase()}`
+                        : `${submittedTrxType} - ${String(formData.custName || "").toUpperCase()}`);
+
+                const telegramMessage = [
+                    `👤 User: *${escapeTelegramMarkdown(user?.name || "Unknown")}*`,
+                    `🆔 ID Jurnal: *#${journalId}*${journalInvoice}`,
+                    `💰 Nominal: *${formatRupiah(submittedAmount)}* (${escapeTelegramMarkdown(submittedTrxType)})`,
+                    `🏷️ Fee: *${formatRupiah(submittedFee)}* _(Standar: ${formatRupiah(stdFee)})_`,
+                    `📝 Keterangan: ${escapeTelegramMarkdown(rawDesc || "-")}`,
+                ].join("\n");
+
+                SendTelegramAlert({
+                    title: "⚠️ FEE ADMIN TIDAK SESUAI",
+                    source: escapeTelegramMarkdown(currentBranchName),
+                    message: telegramMessage,
+                    forwardChatId: 851552604,
+                }).catch((err) => console.error("Telegram fee mismatch alert error:", err));
+            }
 
             const successMessage = response.data.message;
 
@@ -236,11 +287,17 @@ const CreateTransaction = ({
                     </div>
 
                     {/* Dropdown Akun Bank */}
-
                     <div className="space-y-1">
-                        <label id="tx-category-label" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                            Rekening Agen
-                        </label>
+                        <div className="flex items-center justify-between gap-2">
+                            <label id="tx-category-label" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                Rekening Agen
+                            </label>
+                            {activeBankBalance !== null && (
+                                <span className="text-[11px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/12 px-2 py-0.5 rounded-md border border-emerald-200/70 dark:border-emerald-500/25">
+                                    Saldo: {formatRupiah(activeBankBalance)}
+                                </span>
+                            )}
+                        </div>
 
                         <Dropdown
                             id="tx-category"
@@ -260,12 +317,18 @@ const CreateTransaction = ({
                     </div>
 
                     {/* Nominal & Fee Admin Inputs */}
-
-                    <div className="grid gap-3 sm:grid-cols-5">
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-5">
                         <div className="space-y-1 sm:col-span-3">
-                            <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                Jumlah {newType === "transfer" ? "Transfer" : "Penarikan"} (Rp IDR)
-                            </label>
+                            <div className="flex items-center justify-between gap-2">
+                                <label htmlFor="tx-amount" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                    Jumlah {newType === "transfer" ? "Transfer" : "Penarikan"} (Rp)
+                                </label>
+                                {newType === "withdrawal" && sourceBalance !== null && (
+                                    <span className="text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400">
+                                        Kas: {formatRupiah(sourceBalance)}
+                                    </span>
+                                )}
+                            </div>
 
                             <div className="relative flex items-center">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-mono text-xs select-none">Rp</span>
@@ -273,11 +336,14 @@ const CreateTransaction = ({
                                 <input
                                     id="tx-amount"
                                     type="number"
+                                    inputMode="numeric"
                                     required
                                     value={formData.amount}
                                     onChange={handleAmountChange}
                                     placeholder="50000"
-                                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 pr-3.5 text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                                    className={`w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-2 pl-10 text-sm text-slate-800 dark:text-slate-100 font-mono focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                                        newType === "withdrawal" ? "pr-24" : "pr-3.5"
+                                    }`}
                                 />
                                 {newType === "withdrawal" && (
                                     <button
@@ -297,14 +363,25 @@ const CreateTransaction = ({
 
                             <AnimatePresence>
                                 {formData.amount && !isNaN(parseFloat(formData.amount)) && (
-                                    <motion.p
+                                    <motion.div
                                         initial={{ opacity: 0, y: -4 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-                                        className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold"
+                                        className="space-y-0.5 pt-0.5"
                                     >
-                                        Preview: Rp {parseFloat(formData.amount).toLocaleString("id-ID")}
-                                    </motion.p>
+                                        {isInsufficientSource ? (
+                                            <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                                <span>
+                                                    Melebihi saldo {newType === "transfer" ? "rekening" : "kas"} ({formatRupiah(sourceBalance)})
+                                                </span>
+                                            </p>
+                                        ) : (
+                                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
+                                                Preview: Rp {parseFloat(formData.amount).toLocaleString("id-ID")}
+                                            </p>
+                                        )}
+                                    </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
@@ -320,6 +397,7 @@ const CreateTransaction = ({
                                 <input
                                     id="tx-fee"
                                     type="number"
+                                    inputMode="numeric"
                                     required
                                     value={formData.fee_amount}
                                     onChange={(e) => setFormData({ ...formData, fee_amount: e.target.value })}
@@ -341,8 +419,39 @@ const CreateTransaction = ({
                                     Auto
                                 </button>
                             </div>
+
+                            {isFeeMismatch && (
+                                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium pt-0.5">
+                                    Standar fee: {formatRupiah(expectedFee)}
+                                </p>
+                            )}
                         </div>
                     </div>
+
+                    {/* Ringkasan Cepat untuk Kasir */}
+                    {numAmount > 0 && !isFeeActive && (
+                        newType === "transfer" ? (
+                            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs">
+                                <span className="text-slate-500 dark:text-slate-400 font-medium">Total Bayar Customer</span>
+                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{formatRupiah(numAmount + numFee)}</span>
+                            </div>
+                        ) : (
+                            <div className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-[11px] space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-500 dark:text-slate-400">Tunai Utuh (Fee Bayar Tunai)</span>
+                                    <span className="font-mono font-bold text-slate-700 dark:text-slate-200">{formatRupiah(numAmount)}</span>
+                                </div>
+                                {numFee > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-500 dark:text-slate-400">Tunai Potong Fee</span>
+                                        <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                                            {formatRupiah(Math.max(numAmount - numFee, 0))}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    )}
 
                     {/* Nama Customer */}
 

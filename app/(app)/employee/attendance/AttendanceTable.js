@@ -1,5 +1,6 @@
 import Modal from "@/app/components/Modal";
 import Notification from "@/app/components/Notification";
+import axios from "@/app/utils/axios";
 import { diffTimeHuman } from "@/app/utils/format";
 import {
     AlarmClockPlus,
@@ -9,13 +10,16 @@ import {
     ChevronRight,
     Clock,
     ClockAlert,
+    Loader2,
     MapPin,
     Sparkles,
     StarCheck,
     Store,
+    Trophy,
     UserCheck,
     Users,
     UserX,
+    WandSparkles,
 } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
@@ -70,6 +74,14 @@ const safeTimeStr = (time) => {
     return str;
 };
 
+const parseTimeToSeconds = (time) => {
+    const normalized = safeTimeStr(time);
+    if (!normalized) return null;
+    const parts = normalized.split(":").map(Number);
+    if (parts.some((n) => Number.isNaN(n))) return null;
+    return (parts[0] || 0) * 3600 + (parts[1] || 0) * 60 + (parts[2] || 0);
+};
+
 /**
  * Render Badge Selisih Waktu menggunakan diffTimeHuman
  */
@@ -102,11 +114,79 @@ const renderDiffBadge = (targetOpeningTime, timeIn, status) => {
     );
 };
 
-const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, searchTerm = "" }) => {
+const AttendanceTable = ({ userAttendance = [], selectedDate, userRole, mutate, mutateMonthly, selectedZone, searchTerm = "" }) => {
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [selectedAttendance, setSelectedAttendance] = useState(null);
     const [notification, setNotification] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [autoAssignLoading, setAutoAssignLoading] = useState(false);
+
+    const isSuperAdmin = userRole === "Super Admin";
+
+    // Hitung kandidat selisih plus (+) tertinggi per jalur (warehouse_zone_id), kecuali yang telat / lembur
+    const zoneTopCandidates = useMemo(() => {
+        const safeData = Array.isArray(userAttendance) ? userAttendance : [];
+        const byZone = new Map();
+
+        safeData.forEach((wh) => {
+            const zoneId = wh?.warehouse_zone_id;
+            if (!zoneId) return;
+            const zoneName = wh?.zone?.zone_name || `Jalur #${zoneId}`;
+            const defaultOpen = wh?.opening_time;
+
+            (wh?.attendance || []).forEach((att) => {
+                if (!att?.id || ["Late", "Overtime"].includes(att?.approval_status)) return;
+
+                const targetSec = parseTimeToSeconds(att?.work_start || defaultOpen);
+                const actualSec = parseTimeToSeconds(att?.time_in);
+                if (targetSec === null || actualSec === null) return;
+
+                const earlySeconds = targetSec - actualSec;
+                if (earlySeconds <= 0) return;
+
+                const existing = byZone.get(zoneId);
+                if (
+                    !existing ||
+                    earlySeconds > existing.earlySeconds ||
+                    (earlySeconds === existing.earlySeconds && Number(att.id) < Number(existing.attendanceId))
+                ) {
+                    byZone.set(zoneId, {
+                        zoneId,
+                        zoneName,
+                        attendanceId: att.id,
+                        staffName: att?.contact?.name || "Staf",
+                        warehouseName: wh?.name || "-",
+                        earlySeconds,
+                        earlyMinutes: Math.floor(earlySeconds / 60),
+                        isAlreadyGood: att?.approval_status === "Good",
+                    });
+                }
+            });
+        });
+
+        const list = Array.from(byZone.values()).sort((a, b) => a.zoneName.localeCompare(b.zoneName));
+        const winnerIds = new Set(list.map((item) => item.attendanceId));
+        const pendingCount = list.filter((item) => !item.isAlreadyGood).length;
+
+        return { list, winnerIds, pendingCount };
+    }, [userAttendance]);
+
+    const handleAutoAssignExcellent = async () => {
+        if (!isSuperAdmin || autoAssignLoading) return;
+        setAutoAssignLoading(true);
+        try {
+            const response = await axios.post("/api/attendance/auto-excellent", {
+                date: selectedDate,
+            });
+            setNotification(response.data?.message || "Berhasil menetapkan status Excellent per jalur!");
+            if (mutate) await mutate();
+            if (mutateMonthly) await mutateMonthly();
+        } catch (err) {
+            setNotification(err.response?.data?.message || "Gagal menjalankan Auto Excellent.");
+        } finally {
+            setAutoAssignLoading(false);
+        }
+    };
 
     // Summary Analytics Data
     const stats = useMemo(() => {
@@ -229,6 +309,75 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                         </div>
                     </div>
                 </div>
+
+                {/* ========================================== */}
+                {/* 0.5 BAR OTOMATISASI EXCELLENT (SUPER ADMIN) */}
+                {/* ========================================== */}
+                {isSuperAdmin && zoneTopCandidates.list.length > 0 && (
+                    <div className="rounded-2xl border border-amber-200/80 dark:border-amber-800/50 bg-linear-to-r from-amber-50/90 via-white to-indigo-50/60 dark:from-amber-950/25 dark:via-slate-900 dark:to-indigo-950/20 p-3.5 sm:p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                                <span className="p-1.5 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 shrink-0">
+                                    <Trophy className="w-4 h-4" />
+                                </span>
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                                        Kandidat Excellent Harian per Jalur ({zoneTopCandidates.list.length} Jalur)
+                                    </h4>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Otomatis pilih 1 staf dengan selisih datang lebih awal (+) terbanyak di tiap jalur (selain terlambat).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                {zoneTopCandidates.list.map((cand) => (
+                                    <span
+                                        key={cand.zoneId}
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${
+                                            cand.isAlreadyGood
+                                                ? "bg-amber-100/80 text-amber-800 border-amber-300/80 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30"
+                                                : "bg-white text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                                        }`}
+                                    >
+                                        {cand.isAlreadyGood ? (
+                                            <StarCheck className="w-3 h-3 text-amber-500 shrink-0" />
+                                        ) : (
+                                            <Sparkles className="w-3 h-3 text-indigo-500 shrink-0" />
+                                        )}
+                                        <span className="font-bold">{cand.zoneName}:</span>
+                                        <span>{cand.staffName}</span>
+                                        <span className="font-mono text-emerald-600 dark:text-emerald-400">(+{cand.earlyMinutes}m)</span>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleAutoAssignExcellent}
+                            disabled={autoAssignLoading}
+                            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs active:scale-95 disabled:opacity-60 ${
+                                zoneTopCandidates.pendingCount > 0
+                                    ? "bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-amber-500/20"
+                                    : "bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-700"
+                            }`}
+                        >
+                            {autoAssignLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <WandSparkles className="w-4 h-4" />
+                            )}
+                            <span>
+                                {autoAssignLoading
+                                    ? "Memproses..."
+                                    : zoneTopCandidates.pendingCount > 0
+                                      ? `Set Excellent Otomatis (${zoneTopCandidates.pendingCount} Jalur)`
+                                      : "Sinkron Ulang Excellent"}
+                            </span>
+                        </button>
+                    </div>
+                )}
 
                 {/* ========================================== */}
                 {/* 1. TAMPILAN MOBILE (Modern Store Cards)    */}
@@ -358,7 +507,15 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                         </div>
 
                                                         {/* Selisih Waktu (diffTimeHuman) */}
-                                                        <div>{renderDiffBadge(targetOpeningTime, att?.time_in, status)}</div>
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            {renderDiffBadge(targetOpeningTime, att?.time_in, status)}
+                                                            {zoneTopCandidates.winnerIds.has(att.id) && status !== "Good" && (
+                                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-500/30">
+                                                                    <Trophy className="w-2.5 h-2.5 text-amber-500" />
+                                                                    <span>Top Jalur</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 );
                                             })
@@ -546,7 +703,18 @@ const AttendanceTable = ({ userAttendance = [], userRole, mutate, selectedZone, 
                                                                         <span className="font-mono text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/40 px-2.5 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
                                                                             {att?.time_in || "-"}
                                                                         </span>
-                                                                        {renderDiffBadge(targetOpeningTime, att?.time_in, status)}
+                                                                        <div className="flex items-center justify-center gap-1 flex-wrap">
+                                                                            {renderDiffBadge(targetOpeningTime, att?.time_in, status)}
+                                                                            {zoneTopCandidates.winnerIds.has(att.id) && status !== "Good" && (
+                                                                                <span
+                                                                                    title="Selisih lebih awal (+) tertinggi di jalur ini"
+                                                                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-500/30"
+                                                                                >
+                                                                                    <Trophy className="w-2.5 h-2.5 text-amber-500" />
+                                                                                    <span>Top</span>
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 );
                                                             })}

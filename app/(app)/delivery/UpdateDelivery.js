@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from "motion/react";
 import axios from "@/app/utils/axios";
 import { getLocationPromise } from "@/app/utils/format";
 
-export default function UpdateDelivery({ selectedDelivery, isModalOpen, notification, mutate }) {
+export default function UpdateDelivery({ selectedDelivery, employees = [], isModalOpen, notification, mutate }) {
     const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
         status: "",
+        courier_id: "",
         amount: "",
         note: "",
     });
@@ -20,6 +21,7 @@ export default function UpdateDelivery({ selectedDelivery, isModalOpen, notifica
         if (selectedDelivery) {
             setFormData({
                 status: selectedDelivery.status || "",
+                courier_id: selectedDelivery.courier_id ?? "",
                 amount: selectedDelivery.amount || "",
                 note: selectedDelivery.note || "",
             });
@@ -33,6 +35,17 @@ export default function UpdateDelivery({ selectedDelivery, isModalOpen, notifica
         { value: "in_transit", label: "Proses (Dalam Pengiriman)" },
         { value: "delivered", label: "Selesai (Sampai Tujuan)" },
         { value: "picked_up", label: "Di Ambil (Pick Up)" },
+        { value: "cancelled", label: "Dibatalkan" },
+    ];
+
+    const courierOptions = [
+        { value: "", label: "Tanpa Kurir (Ambil Sendiri)" },
+        ...(employees || [])
+            .filter((emp) => emp.contact?.user?.role === "Courier")
+            .map((emp) => ({
+                value: emp.id,
+                label: emp.contact?.name || `Kurir #${emp.id}`,
+            })),
     ];
 
     const handleSubmit = async (e) => {
@@ -61,6 +74,7 @@ export default function UpdateDelivery({ selectedDelivery, isModalOpen, notifica
         try {
             const payload = {
                 ...formData,
+                courier_id: formData.courier_id ? Number(formData.courier_id) : null,
                 latitude: locationData.latitude,
                 longitude: locationData.longitude,
             };
@@ -72,7 +86,7 @@ export default function UpdateDelivery({ selectedDelivery, isModalOpen, notifica
             if (notification) notification(successMessage, "success");
             isModalOpen(false);
 
-            setFormData({ status: "", amount: "", note: "" });
+            setFormData({ status: "", courier_id: "", amount: "", note: "" });
             if (mutate) mutate();
         } catch (error) {
             const errMsg = error.response?.data?.message || "Terjadi kesalahan saat menyimpan transaksi.";
@@ -123,23 +137,43 @@ export default function UpdateDelivery({ selectedDelivery, isModalOpen, notifica
                 </div>
             )}
 
-            {/* Dropdown Status */}
-            <div className="space-y-1">
-                <label htmlFor="tx-status" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Pilih Status
-                </label>
-                <Dropdown
-                    id="tx-status"
-                    label="Transaction status Selector"
-                    options={statusOptions}
-                    selectedValue={formData.status}
-                    onChange={(val) => {
-                        setFormData({
-                            ...formData,
-                            status: val,
-                        });
-                    }}
-                />
+            {/* Dropdown Status & Kurir */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label htmlFor="tx-status" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Pilih Status
+                    </label>
+                    <Dropdown
+                        id="tx-status"
+                        label="Transaction status Selector"
+                        options={statusOptions}
+                        selectedValue={formData.status}
+                        onChange={(val) => {
+                            setFormData({
+                                ...formData,
+                                status: val,
+                            });
+                        }}
+                    />
+                </div>
+
+                <div className="space-y-1">
+                    <label htmlFor="tx-courier" className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Kurir Pengantar
+                    </label>
+                    <Dropdown
+                        id="tx-courier"
+                        label="Courier Selector"
+                        options={courierOptions}
+                        selectedValue={formData.courier_id}
+                        onChange={(val) => {
+                            setFormData({
+                                ...formData,
+                                courier_id: val,
+                            });
+                        }}
+                    />
+                </div>
             </div>
 
             {/* Input Amount */}

@@ -9,7 +9,8 @@ export function useDeliveries() {
     fetcher,
     {
       revalidateOnFocus: true,
-      dedupingInterval: 60000,
+      revalidateOnMount: true,
+      dedupingInterval: 2000,
       fallbackData: [],
     },
   );

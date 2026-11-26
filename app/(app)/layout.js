@@ -44,7 +44,7 @@ const AppLayout = ({ children }) => {
     return (
         <div className="flex h-screen overflow-hidden">
             <Navigation logout={logout} user={user} />
-            <div className="flex-1">{children}</div>
+            <div className="flex-1 min-w-0 overflow-hidden">{children}</div>
         </div>
     );
 };

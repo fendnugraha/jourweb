@@ -44,7 +44,7 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
     const effectiveDestinationId = useMemo(() => {
         if (
             availableWarehouses.length > 0 &&
-            availableWarehouses.account_id === 2 &&
+            selectedDestinationWarehouseId !== null &&
             !availableWarehouses.some((w) => Number(w.id) === Number(selectedDestinationWarehouseId))
         ) {
             return availableWarehouses[0].id;
@@ -175,6 +175,12 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
         const acc = accountBalance.data.chartOfAccounts.find((a) => Number(a.id) === Number(formData.cred_id));
         return acc ? acc.balance : null;
     }, [accountBalance, formData.cred_id]);
+
+    const findDestBalance = useMemo(() => {
+        if (!formData.debt_id || !accountBalance?.data?.chartOfAccounts) return null;
+        const acc = accountBalance.data.chartOfAccounts.find((a) => Number(a.id) === Number(formData.debt_id));
+        return acc ? acc.balance : null;
+    }, [accountBalance, formData.debt_id]);
 
     const isInsufficientBalance = Boolean(
         findSourceBalance !== null &&
@@ -385,6 +391,11 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                             {destWarehouseInfo?.name || destWarehouseInfo?.code || "Tujuan"}
                                         </strong>
                                     </span>
+                                    {findDestBalance !== null && findDestBalance !== undefined && (
+                                        <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50 dark:bg-indigo-500/12 px-2 py-0.5 rounded-md border border-indigo-200/60 dark:border-indigo-500/25">
+                                            {formatRupiah(findDestBalance)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                             <div className={isGroupMismatch ? "ring-2 ring-amber-400/80 rounded-xl" : ""}>
@@ -449,17 +460,18 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                     </div>
 
                     {/* Section 3: Nominal & Admin Bank */}
-                    <div className="grid grid-cols-[1fr_130px] gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2.5">
                         {/* Jumlah */}
                         <div className="space-y-1">
                             <label htmlFor="tx-amount" className={labelClass}>
-                                Jumlah (Rp IDR)
+                                Jumlah (Rp)
                             </label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-mono text-xs">Rp</span>
                                 <input
                                     id="tx-amount"
                                     type="number"
+                                    inputMode="numeric"
                                     required
                                     value={formData.amount}
                                     onChange={(e) => patch({ amount: e.target.value })}
@@ -498,6 +510,7 @@ const CreateMutation = ({ accountBalance = [], accounts = [], mutate, mutateBala
                                 <input
                                     id="tx-admin-fee"
                                     type="number"
+                                    inputMode="numeric"
                                     required
                                     value={formData.admin_fee}
                                     onChange={(e) => patch({ admin_fee: e.target.value })}

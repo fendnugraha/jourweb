@@ -26,10 +26,16 @@ import {
     ArrowUpRight,
     Siren,
     ShieldCheck,
+    ChevronDown,
+    Check,
+    Ban,
+    Loader2,
+    UserCheck,
 } from "lucide-react";
 import { calculateDeliveryETA, formatDateTime, formatNumber } from "@/app/utils/format";
 import useWarehouse from "@/app/hooks/useWarehouse";
 import Modal from "@/app/components/Modal";
+import DropdownMenu from "@/app/components/DropdownMenu";
 import DeliveryForm from "./DeliveryForm";
 import useEmployee from "@/app/hooks/useEmployee";
 import Notification from "@/app/components/Notification";
@@ -38,6 +44,7 @@ import UpdateDelivery from "./UpdateDelivery";
 import TabSwitcher from "@/app/components/TabSwitcher";
 import DeliveryFormMultiple from "./DeliveryFormMultiple";
 import { useRouter } from "next/navigation";
+import axios from "@/app/utils/axios";
 
 export default function DeliveryContent() {
     const router = useRouter();
@@ -53,6 +60,7 @@ export default function DeliveryContent() {
         created_at: item.created_at,
         amount: item.journal?.amount ?? 0,
         fee: item.journal?.fee_amount ?? 0,
+        note: item.journal?.description ?? "",
         status: item.status,
         priority: item.priority,
 
@@ -75,6 +83,7 @@ export default function DeliveryContent() {
         destination_account: item.destination_account?.name ?? "-", // Nama Akun Kas / COA
 
         // Courier
+        courier_id: item.courier_id ?? item.courier?.id ?? null,
         courier_name: item.courier?.contact?.name ?? "Tanpa Kurir",
         courier_phone: item.courier?.contact?.phone ?? "-", // Pakai phone, bukan email
         courier_location: item.courier?.contact?.user?.latitude
@@ -86,9 +95,49 @@ export default function DeliveryContent() {
     }));
 
     const [notification, setNotification] = useState(null);
+    const [updatingKey, setUpdatingKey] = useState(null); // e.g. `${id}:status` or `${id}:courier`
 
     const { warehouses } = useWarehouse();
     const { employees } = useEmployee();
+
+    const couriersList = useMemo(
+        () => (employees || []).filter((emp) => emp.contact?.user?.role === "Courier"),
+        [employees],
+    );
+
+    const handleQuickUpdate = async (deliveryItem, payload, actionType = "status", successMessage = "Data pengiriman diperbarui") => {
+        if (!deliveryItem?.id) return;
+        const lockKey = `${deliveryItem.id}:${actionType}`;
+        setUpdatingKey(lockKey);
+
+        try {
+            // Optimistic SWR update
+            await mutate(
+                (current = []) =>
+                    current.map((row) => {
+                        if (row.id !== deliveryItem.id) return row;
+                        const updatedRow = { ...row, ...payload };
+                        if ("courier_id" in payload) {
+                            const selectedEmp = couriersList.find((c) => Number(c.id) === Number(payload.courier_id));
+                            updatedRow.courier = selectedEmp
+                                ? { id: selectedEmp.id, contact_id: selectedEmp.contact_id, contact: selectedEmp.contact }
+                                : null;
+                        }
+                        return updatedRow;
+                    }),
+                false,
+            );
+
+            await axios.put(`/api/deliveries/${deliveryItem.id}`, payload);
+            await mutate();
+            setNotification(successMessage);
+        } catch (err) {
+            await mutate();
+            setNotification(err.response?.data?.message || "Gagal memperbarui pengiriman");
+        } finally {
+            setUpdatingKey(null);
+        }
+    };
 
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedStatus, setSelectedStatus] = useState("all");
@@ -115,6 +164,7 @@ export default function DeliveryContent() {
             delivered: deliveriesData.filter((i) => i.status === "delivered").length,
             pending: deliveriesData.filter((i) => i.status === "pending").length,
             picked_up: deliveriesData.filter((i) => i.status === "picked_up").length,
+            cancelled: deliveriesData.filter((i) => i.status === "cancelled").length,
         };
     }, [deliveriesData]);
 
@@ -134,36 +184,128 @@ export default function DeliveryContent() {
         });
     }, [deliveriesData, searchTerm, selectedStatus]);
 
-    const renderStatusBadge = (status) => {
+    const renderStatusBadge = (status, interactive = false, isRowUpdating = false) => {
+        const chevron = interactive ? (
+            isRowUpdating ? (
+                <Loader2 className="w-2.5 h-2.5 animate-spin ml-0.5 opacity-80" />
+            ) : (
+                <ChevronDown className="w-3 h-3 ml-0.5 opacity-70" />
+            )
+        ) : null;
+
         switch (status?.toLowerCase()) {
             case "delivered":
             case "selesai":
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40">
-                        <CheckCircle2 className="w-3 h-3" /> Selesai
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50 border border-emerald-200/60 dark:border-emerald-900/40 transition-colors">
+                        <CheckCircle2 className="w-3 h-3" /> Selesai {chevron}
                     </span>
                 );
             case "in_transit":
             case "dalam_proses":
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40">
-                        <Bike className="w-3 h-3 animate-pulse" /> Proses
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:text-amber-400 dark:hover:bg-amber-900/50 border border-amber-200/60 dark:border-amber-900/40 transition-colors">
+                        <Bike className="w-3 h-3 animate-pulse" /> Proses {chevron}
                     </span>
                 );
             case "picked_up":
             case "diambil":
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/40">
-                        <Footprints className="w-3 h-3" /> Di Ambil
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 hover:bg-indigo-100/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50 border border-indigo-200/60 dark:border-indigo-900/40 transition-colors">
+                        <Footprints className="w-3 h-3" /> Di Ambil {chevron}
+                    </span>
+                );
+            case "cancelled":
+            case "batal":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 hover:bg-rose-100/80 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200/60 dark:border-rose-900/40 transition-colors">
+                        <Ban className="w-3 h-3" /> Batal {chevron}
                     </span>
                 );
             default:
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700">
-                        <Clock className="w-3 h-3" /> Pending
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 hover:bg-slate-200/70 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700 transition-colors">
+                        <Clock className="w-3 h-3" /> Pending {chevron}
                     </span>
                 );
         }
+    };
+
+    const quickStatusDefinitions = [
+        { value: "pending", label: "Pending", icon: Clock },
+        { value: "in_transit", label: "Proses (OTW)", icon: Bike },
+        { value: "delivered", label: "Selesai", icon: CheckCircle2 },
+        { value: "picked_up", label: "Di Ambil (HQ)", icon: Footprints },
+        { value: "cancelled", label: "Batalkan", icon: Ban },
+    ];
+
+    const renderQuickStatusMenu = (item) => {
+        const isUpdating = updatingKey === `${item.id}:status`;
+        const menuItems = quickStatusDefinitions.map((st) => {
+            const Icon = st.icon;
+            const isCurrent = item.status === st.value;
+            return {
+                label: st.label,
+                icon: isCurrent ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Icon className="w-3.5 h-3.5" />,
+                attributes: { disabled: isCurrent || isUpdating },
+                onClick: () => handleQuickUpdate(item, { status: st.value }, "status", `Status diubah ke ${st.label}`),
+            };
+        });
+
+        return (
+            <DropdownMenu
+                ariaLabel={`Ubah status ${item.reference_no}`}
+                title={renderStatusBadge(item.status, true, isUpdating)}
+                items={menuItems}
+            />
+        );
+    };
+
+    const renderQuickCourierMenu = (item, compact = false) => {
+        const isUpdating = updatingKey === `${item.id}:courier`;
+        const currentCourierId = item.courier_id ? Number(item.courier_id) : null;
+
+        const menuItems = [
+            {
+                label: "Tanpa Kurir (Ambil Sendiri)",
+                icon: currentCourierId === null ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Footprints className="w-3.5 h-3.5" />,
+                attributes: { disabled: currentCourierId === null || isUpdating },
+                onClick: () => handleQuickUpdate(item, { courier_id: null }, "courier", "Kurir dikosongkan (Ambil Sendiri)"),
+            },
+            ...couriersList.map((emp) => {
+                const empId = Number(emp.id);
+                const empName = emp.contact?.name || `Kurir #${empId}`;
+                const isCurrent = currentCourierId === empId;
+                return {
+                    label: empName,
+                    icon: isCurrent ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <UserCheck className="w-3.5 h-3.5" />,
+                    attributes: { disabled: isCurrent || isUpdating },
+                    onClick: () => handleQuickUpdate(item, { courier_id: empId }, "courier", `Kurir diganti ke ${empName}`),
+                };
+            }),
+        ];
+
+        return (
+            <DropdownMenu
+                ariaLabel={`Ganti kurir ${item.reference_no}`}
+                items={menuItems}
+                title={
+                    compact ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 dark:bg-slate-800 dark:hover:bg-indigo-950/50 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-200/70 dark:border-slate-700 text-[11px] font-medium transition-colors">
+                            {isUpdating ? <Loader2 className="w-3 h-3 animate-spin text-indigo-500" /> : <User className="w-3 h-3 text-indigo-500" />}
+                            <span>{item.courier_name}</span>
+                            <ChevronDown className="w-3 h-3 opacity-60" />
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 -ml-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-300 font-medium transition-colors group/courier">
+                            {isUpdating && <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />}
+                            <span>{item.courier_name}</span>
+                            <ChevronDown className="w-3 h-3 text-slate-400 group-hover/courier:text-indigo-500 transition-colors" />
+                        </span>
+                    )
+                }
+            />
+        );
     };
 
     const renderPriorityBadge = (priority) => {
@@ -350,7 +492,7 @@ export default function DeliveryContent() {
                 </div>
 
                 {/* STATUS FILTER PILLS */}
-                <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
+                <div className="w-full max-w-full min-w-0 flex items-center gap-1.5 overflow-x-auto pt-1 no-scrollbar">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-1 flex items-center gap-1 shrink-0 select-none">
                         <Filter className="w-3 h-3 text-indigo-500" /> Status:
                     </span>
@@ -430,7 +572,7 @@ export default function DeliveryContent() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1.5">
-                                            {renderStatusBadge(item.status)}
+                                            {renderQuickStatusMenu(item)}
                                             <button
                                                 onClick={() => {
                                                     setModalName("edit");
@@ -479,11 +621,10 @@ export default function DeliveryContent() {
 
                                     <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
                                         <div className="flex items-center gap-1.5">
-                                            <User className="w-3.5 h-3.5 text-slate-400" />
-                                            <span>
-                                                Kurir: <strong className="text-slate-600 dark:text-slate-300 font-medium">{item.courier_name}</strong>
-                                            </span>
+                                            <span>Kurir:</span>
+                                            {renderQuickCourierMenu(item, true)}
                                         </div>
+                                        {renderPriorityBadge(item.priority)}
                                     </div>
                                 </div>
                             );
@@ -563,7 +704,7 @@ export default function DeliveryContent() {
 
                                                 {/* Kurir / ETA */}
                                                 <td className="px-6 py-4">
-                                                    <span className="text-slate-700 dark:text-slate-300 font-medium block">{item.courier_name}</span>
+                                                    <div>{renderQuickCourierMenu(item, false)}</div>
                                                     {item.status === "in_transit" && item.courier_location ? (
                                                         <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-0.5 rounded-full mt-1 border border-indigo-100 dark:border-indigo-900/50">
                                                             <Navigation className="w-2.5 h-2.5 animate-pulse" />
@@ -584,7 +725,7 @@ export default function DeliveryContent() {
                                                 </td>
 
                                                 {/* Status */}
-                                                <td className="px-6 py-4 text-center whitespace-nowrap">{renderStatusBadge(item.status)}</td>
+                                                <td className="px-6 py-4 text-center whitespace-nowrap">{renderQuickStatusMenu(item)}</td>
 
                                                 {/* Aksi */}
                                                 <td className="px-6 py-4 text-center whitespace-nowrap">
@@ -644,7 +785,13 @@ export default function DeliveryContent() {
                     </div>
                 )}
                 {modalName === "edit" && (
-                    <UpdateDelivery selectedDelivery={selectedDelivery} isModalOpen={setIsModalOpen} notification={setNotification} mutate={mutate} />
+                    <UpdateDelivery
+                        selectedDelivery={selectedDelivery}
+                        employees={employees}
+                        isModalOpen={setIsModalOpen}
+                        notification={setNotification}
+                        mutate={mutate}
+                    />
                 )}
             </Modal>
         </div>

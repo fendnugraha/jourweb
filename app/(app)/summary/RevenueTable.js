@@ -22,19 +22,7 @@ export default function RevenueTable({ revenue, hasData }) {
     const handleCopyTableForSheets = async () => {
         if (!hasData) return;
 
-        const headers = [
-            "Cabang",
-            "Transfer",
-            "Tarik Tunai",
-            "Voucher",
-            "Acc.",
-            "Deposit",
-            "Tx",
-            "Bank Fee",
-            "Biaya",
-            "Laba Bersih",
-            "Setoran Kas",
-        ];
+        const headers = ["Cabang", "Transfer", "Tarik Tunai", "Voucher", "Acc.", "Deposit", "Tx", "Bank Fee", "Biaya", "Laba Bersih", "Setoran Kas"];
 
         const rows = revenue.revenue.map((item) => [
             item.warehouse.replace(/^konter\s*/i, ""),
@@ -64,9 +52,7 @@ export default function RevenueTable({ revenue, hasData }) {
             sumByTrxType("cash"),
         ];
 
-        const tsv = [headers, ...rows, totals]
-            .map((row) => row.join("\t"))
-            .join("\n");
+        const tsv = [headers, ...rows, totals].map((row) => row.join("\t")).join("\n");
 
         try {
             await navigator.clipboard.writeText(tsv);
@@ -347,7 +333,7 @@ export default function RevenueTable({ revenue, hasData }) {
             {/* ========================================================= */}
             <div className="hidden sm:block overflow-x-auto">
                 {hasData && (
-                    <div className="flex justify-end p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40 select-none">
+                    <div className="flex justify-end p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 select-none">
                         <button
                             type="button"
                             onClick={handleCopyTableForSheets}

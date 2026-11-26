@@ -99,7 +99,7 @@ const ExpenseLog = ({
                 description: "",
                 active_tab: formData.active_tab,
             });
-            setExpenseAmount(0);
+            setExpenseAmount("");
             setErrors([]);
             setFormError("");
             mutate();
@@ -274,6 +274,7 @@ const ExpenseLog = ({
                                 <input
                                     id="tx-amount"
                                     type="number"
+                                    inputMode="numeric"
                                     required
                                     value={expenseAmount}
                                     onChange={(e) => {
