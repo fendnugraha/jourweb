@@ -29,7 +29,7 @@ const Login = () => {
     const [isPending, startTransition] = useTransition();
 
     const router = useRouter();
-    const { login, error: authError } = useAuth({
+    const { login, syncSessionAfterToken, error: authError } = useAuth({
         middleware: "guest",
         redirectIfAuthenticated: "/transaction",
     });
@@ -164,9 +164,9 @@ const Login = () => {
                 // 3. Exchange Token ke Endpoint Backend Laravel (/api/auth/firebase-login)
                 const res = await sendTokenToLaravel(idToken);
 
-                if (res.success) {
+                if (res.success && res.token) {
                     setMessage("Login Google berhasil! Mengalihkan...");
-                    router.push("/transaction");
+                    await syncSessionAfterToken(res.token, "/transaction");
                 }
             } catch (error) {
                 console.error("Google Auth Error:", error);

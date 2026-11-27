@@ -35,23 +35,20 @@ export async function sendTokenToLaravel(idToken) {
     // Ambil respon sebagai teks terlebih dahulu
     const responseText = await response.text();
 
+    let data;
     try {
-        const data = JSON.parse(responseText);
-
-        if (!response.ok) {
-            throw new Error(data.message || "Gagal autentikasi server.");
-        }
-
-        if (data.token) {
-            localStorage.setItem("sanctum_token", data.token);
-        }
-
-        return data;
-    } catch (err) {
+        data = JSON.parse(responseText);
+    } catch {
         // Jika gagal parsing JSON (artinya responnya HTML error dari Laravel)
         console.error("Respon Server Lain (HTML/Error):", responseText);
         throw new Error(`Server Error (${response.status}): Cek console log atau laravel.log`);
     }
+
+    if (!response.ok) {
+        throw new Error(data.message || "Gagal autentikasi server.");
+    }
+
+    return data;
 }
 
 export { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification };

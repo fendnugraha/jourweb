@@ -1,13 +1,39 @@
 "use client";
 
-import useSWR from "swr";
-import axios from "./axios";
-import { useCallback, useEffect } from "react";
+import useSWR, { useSWRConfig } from "swr";
+import axios, {
+    clearSanctumToken,
+    getSanctumToken,
+    setSanctumToken,
+    subscribeSanctumToken,
+} from "./axios";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
+
+const USER_SWR_KEY = "/api/user";
+const getServerTokenSnapshot = () => null;
+
+const resolvePostLoginRoute = (freshUser, fallbackRoute = "/transaction") => {
+    if (!freshUser) return fallbackRoute;
+    const isSuperAdmin = freshUser.role === "Super Admin";
+    const isAdminWarehouse1 = freshUser.role === "Administrator" && freshUser.warehouse_id === 1;
+    const isExemptFromCheckin = isSuperAdmin || isAdminWarehouse1;
+    const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
+
+    if (!freshUser.has_checked_in && !isExemptFromCheckin && !justCheckedIn) {
+        return "/portal-checkin";
+    }
+    return fallbackRoute;
+};
 
 export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     const router = useRouter();
     const pathname = usePathname();
+    const { mutate: globalMutate } = useSWRConfig();
+
+    // Berlangganan secara reaktif terhadap perubahan sanctum_token di localStorage
+    const token = useSyncExternalStore(subscribeSanctumToken, getSanctumToken, getServerTokenSnapshot);
+    const hasToken = Boolean(token);
 
     // 1. Fetching data user dari Laravel API
     const {
@@ -16,12 +42,44 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         isLoading,
         mutate,
     } = useSWR(
-        typeof window !== "undefined" && localStorage.getItem("sanctum_token") ? "/api/user" : null,
-        () => axios.get("/api/user").then((res) => res.data),
+        hasToken ? USER_SWR_KEY : null,
+        () => axios.get(USER_SWR_KEY).then((res) => res.data),
         {
             revalidateOnFocus: false,
-            shouldRetryOnError: false,
+            shouldRetryOnError: (err) => {
+                const status = err?.response?.status;
+                return status !== 401 && status !== 419;
+            },
+            errorRetryCount: 2,
+            errorRetryInterval: 3000,
         },
+    );
+
+    // Helper sinkronisasi sesi setelah mendapat token baru (Email/Password maupun Google Login)
+    // Memastikan cache SWR "/api/user" langsung berisi data user terbaru & bebas dari stale error sebelum pindah halaman
+    const syncSessionAfterToken = useCallback(
+        async (newToken, targetRoute) => {
+            const userResponse = await axios.get(USER_SWR_KEY, {
+                headers: newToken ? { Authorization: `Bearer ${newToken}` } : undefined,
+            });
+            const freshUser = userResponse.data;
+
+            // Isi cache "/api/user" & bersihkan error lama TERLEBIH DAHULU sebelum mengaktifkan key SWR
+            await globalMutate(USER_SWR_KEY, freshUser, { revalidate: false });
+
+            if (newToken) {
+                setSanctumToken(newToken);
+            }
+
+            const destination = resolvePostLoginRoute(
+                freshUser,
+                targetRoute || redirectIfAuthenticated || "/transaction",
+            );
+            router.replace(destination);
+
+            return freshUser;
+        },
+        [globalMutate, redirectIfAuthenticated, router],
     );
 
     // 2. Action Login Biasa (Email & Password)
@@ -31,17 +89,15 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
         setStatus?.(null);
 
         try {
-            // 🔥 PERBAIKAN: Gunakan '/login' atau '/api/login' dengan slash diawal
             const response = await axios.post("/api/login", props);
+            const newToken = response.data?.token;
 
-            // Simpan token Sanctum ke localStorage
-            if (response.data?.token) {
-                localStorage.setItem("sanctum_token", response.data.token);
+            if (!newToken) {
+                throw new Error("Token autentikasi tidak ditemukan dari server.");
             }
 
             setMessage?.("Login successful!");
-            await mutate(); // Refresh cache SWR user
-            router.push(redirectIfAuthenticated || "/transaction");
+            await syncSessionAfterToken(newToken, redirectIfAuthenticated || "/transaction");
         } catch (err) {
             if (err?.response?.status === 422) {
                 setStatus?.(err.response?.status);
@@ -65,37 +121,44 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     // 3. Action Logout (Menghapus token dari LocalStorage & Server)
     const logout = useCallback(async () => {
         try {
-            // 🔥 PERBAIKAN: Panggil endpoint API logout dengan tepat
             await axios.post("/api/logout");
         } catch (err) {
             console.error("Logout error:", err);
         } finally {
-            // Selalu hapus token dari localStorage agar UI ter-reset
-            localStorage.removeItem("sanctum_token");
-            await mutate(null, false);
-            router.push("/");
+            clearSanctumToken();
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("just_checked_in");
+            }
+            // Reset ke undefined (bukan null) & bersihkan error pada key "/api/user"
+            await globalMutate(USER_SWR_KEY, undefined, { revalidate: false });
+            router.replace("/");
         }
-    }, [mutate, router]);
+    }, [globalMutate, router]);
 
     // 4. Auth Guard & Middleware Logic
     useEffect(() => {
-        const hasToken = typeof window !== "undefined" && !!localStorage.getItem("sanctum_token");
-
-        // Halaman Guest: Jika user sudah login, lempar ke dashboard
-        if (middleware === "guest" && user) {
-            router.push(redirectIfAuthenticated || "/transaction");
+        // Halaman Guest: Jika user sudah login & token aktif, lempar ke dashboard/transaction
+        if (middleware === "guest" && hasToken && user) {
+            const destination = resolvePostLoginRoute(user, redirectIfAuthenticated || "/transaction");
+            router.replace(destination);
             return;
         }
 
         // Halaman Terproteksi (auth)
         if (middleware === "auth") {
-            if (!hasToken || error) {
-                localStorage.removeItem("sanctum_token");
-                router.push("/");
+            const status = error?.response?.status;
+            const isUnauthorized = status === 401 || status === 419;
+
+            // HANYA logout paksa bila token memang tidak ada atau ditolak server (401/419),
+            // JANGAN logout bila hanya gangguan sinyal sementara (ERR_NETWORK / 5xx)
+            if (!hasToken || isUnauthorized) {
+                clearSanctumToken();
+                globalMutate(USER_SWR_KEY, undefined, { revalidate: false });
+                router.replace("/");
                 return;
             }
 
-            if (isLoading) return;
+            if (isLoading || !user) return;
 
             // Logika Check-in & Routing berbasis Role
             const isSuperAdmin = user?.role === "Super Admin";
@@ -116,14 +179,18 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
                 router.replace("/portal-checkin");
             }
         }
-    }, [middleware, redirectIfAuthenticated, user, error, isLoading, pathname, router]);
+    }, [middleware, redirectIfAuthenticated, hasToken, user, error, isLoading, pathname, router, globalMutate]);
+
+    // Selama token ada tetapi objek user belum selesai dimuat (dan tidak error), anggap masih loading sesi
+    const authLoading = isLoading || (hasToken && !user && !error);
 
     return {
         user,
         error,
-        authLoading: isLoading,
+        authLoading,
         mutate,
         login,
         logout,
+        syncSessionAfterToken,
     };
 };
