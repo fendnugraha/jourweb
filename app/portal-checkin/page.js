@@ -15,7 +15,7 @@ import CheckInSuccess from "./CheckInSuccess";
 
 const PortalCheckin = () => {
     const router = useRouter();
-    const { user, logout, mutate } = useAuth({ middleware: "auth" });
+    const { user, authLoading, logout, mutate } = useAuth({ middleware: "auth" });
     const [attendance, setAttendance] = useState(null);
     const isUserActive = user?.is_active;
 
@@ -206,6 +206,8 @@ const PortalCheckin = () => {
 
     const justCheckedIn = typeof window !== "undefined" && sessionStorage.getItem("just_checked_in") === "true";
     if (user?.has_checked_in || justCheckedIn) return null;
+
+    if (authLoading || !user) return null;
 
     if (!isUserActive) return <InactiveUserScreen logout={logout} />;
     return (

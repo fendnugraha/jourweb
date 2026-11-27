@@ -12,6 +12,9 @@ import { useRouter, usePathname } from "next/navigation";
 
 const USER_SWR_KEY = "/api/user";
 const getServerTokenSnapshot = () => null;
+const emptySubscribe = () => () => {};
+const getClientHydratedSnapshot = () => true;
+const getServerHydratedSnapshot = () => false;
 
 const resolvePostLoginRoute = (freshUser, fallbackRoute = "/transaction") => {
     if (!freshUser) return fallbackRoute;
@@ -30,6 +33,9 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
     const router = useRouter();
     const pathname = usePathname();
     const { mutate: globalMutate } = useSWRConfig();
+
+    // Deteksi apakah sudah melewati fase SSR/hydration agar snapshot server (null) tidak dianggap "belum login"
+    const isHydrated = useSyncExternalStore(emptySubscribe, getClientHydratedSnapshot, getServerHydratedSnapshot);
 
     // Berlangganan secara reaktif terhadap perubahan sanctum_token di localStorage
     const token = useSyncExternalStore(subscribeSanctumToken, getSanctumToken, getServerTokenSnapshot);
@@ -137,8 +143,13 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
 
     // 4. Auth Guard & Middleware Logic
     useEffect(() => {
+        // Jangan jalankan auth guard pada commit hydration awal (ketika server snapshot masih null)
+        if (!isHydrated) return;
+
+        const liveToken = getSanctumToken();
+
         // Halaman Guest: Jika user sudah login & token aktif, lempar ke dashboard/transaction
-        if (middleware === "guest" && hasToken && user) {
+        if (middleware === "guest" && liveToken && user) {
             const destination = resolvePostLoginRoute(user, redirectIfAuthenticated || "/transaction");
             router.replace(destination);
             return;
@@ -149,10 +160,16 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
             const status = error?.response?.status;
             const isUnauthorized = status === 401 || status === 419;
 
-            // HANYA logout paksa bila token memang tidak ada atau ditolak server (401/419),
-            // JANGAN logout bila hanya gangguan sinyal sementara (ERR_NETWORK / 5xx)
-            if (!hasToken || isUnauthorized) {
+            // Jika token ditolak server (401/419), hapus token dari storage & bersihkan cache user
+            if (isUnauthorized) {
                 clearSanctumToken();
+                globalMutate(USER_SWR_KEY, undefined, { revalidate: false });
+                router.replace("/");
+                return;
+            }
+
+            // Jika memang tidak ada token di localStorage, arahkan ke halaman awal tanpa menyentuh storage
+            if (!liveToken) {
                 globalMutate(USER_SWR_KEY, undefined, { revalidate: false });
                 router.replace("/");
                 return;
@@ -179,10 +196,10 @@ export const useAuth = ({ middleware, redirectIfAuthenticated } = {}) => {
                 router.replace("/portal-checkin");
             }
         }
-    }, [middleware, redirectIfAuthenticated, hasToken, user, error, isLoading, pathname, router, globalMutate]);
+    }, [isHydrated, middleware, redirectIfAuthenticated, hasToken, user, error, isLoading, pathname, router, globalMutate]);
 
-    // Selama token ada tetapi objek user belum selesai dimuat (dan tidak error), anggap masih loading sesi
-    const authLoading = isLoading || (hasToken && !user && !error);
+    // Selama belum ter-hydrate atau token ada tetapi objek user belum selesai dimuat (dan tidak error), anggap masih loading sesi
+    const authLoading = !isHydrated || isLoading || (hasToken && !user && !error);
 
     return {
         user,
